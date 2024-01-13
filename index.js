@@ -1,4 +1,4 @@
-const token = '6812294191:AAGUUSaiYzydaJIOHpVQiTaTU2S8MTWeB-w';
+const token = '6812294191:AAGUUSaiYzydaJIOHpVQiTaTU2S8MTWeB-wa'; 
 const TelegramBot = require('node-telegram-bot-api');;
 const express = require('express');
 const { menu, nsfw, sfw } = require('./menu.js')
