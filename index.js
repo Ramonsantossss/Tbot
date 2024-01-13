@@ -1,4 +1,4 @@
-const token = '681229hhhhh4191:AAGUUSaiYzydaJIOHpVQiTaTU2S8MTWeB-wa'; 
+const token = '6812294191:AAGUUSaiYzydaJIOHpVQiTaTU2S8MTWeB-w'; 
 const TelegramBot = require('node-telegram-bot-api');;
 const express = require('express');
 const { menu, nsfw, sfw } = require('./menu.js')
@@ -23,9 +23,10 @@ bot.on('message', (msg) => {
   const messageText = msg.text;
   const body = messageText.trim();
   const isCmd = body.startsWith(prefix);
+  const command = isCmd ? body.slice(1).trim().split(/ +/).shift().toLocaleLowerCase() : null
   const args = body.split(/ +/).slice(1);
   const q = args.join(" ");
-
+console.log(command)
   switch (isCmd ? body.slice(1).trim().split(/ +/).shift().toLocaleLowerCase() : null) {
     case "menu":
     case 'start': {
