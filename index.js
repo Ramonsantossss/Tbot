@@ -1,10 +1,16 @@
 const TelegramBot = require('node-telegram-bot-api');
 const { prefix, nomeBot, token } = require("./config.js");
-const express = require('express');
+var express = require('express'),
+    cors = require('cors'),
+    secure = require('ssl-express-www');
+const PORT = 8080
+var mainrouter = require('./routes/main'),
+    apirouter = require('./routes/api')
 const { menu, nsfw, sfw } = require('./menu.js')
 
+
 const bot = new TelegramBot(token, { polling: true });
-const PORT = 8080;
+
 
 const master = `
 Informações do criador:
@@ -211,17 +217,19 @@ bot.on('callback_query', (callbackQuery) => {
 });
 
 
-const app = express();
+
+var app = express()
 app.enable('trust proxy');
-app.set("json spaces", 2);
-app.use(express.static("public"));
+app.set("json spaces", 2)
+app.use(cors())
+app.use(secure)
+app.use(express.static("public"))
 
-app.use('/', (req, res) => {
-  res.sendFile(__dirname + '/html/index.html');
-});
+app.use('/', mainrouter);
+app.use('/api', apirouter);
 
-app.listen(PORT, () => {
-  console.log("Server rodando na porta " + PORT);
-});
+app.listen(8000, () => {
+    console.log("Server rodando na porta 8000")
+})
 
-module.exports = app;
+module.exports = app
