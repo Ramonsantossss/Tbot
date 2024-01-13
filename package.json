@@ -1,0 +1,13 @@
+{
+  "name": "CloverBTelegram",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^0.21.1",
+    "express": "^4.17.1",
+    "node-telegram-bot-api": "^0.64.0"
+  },
+  "description": "bot de telegram",
+  "author": "@clovermods"
+}
