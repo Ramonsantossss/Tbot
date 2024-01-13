@@ -27,6 +27,11 @@ bot.on('message', (msg) => {
   const args = body.split(/ +/).slice(1);
   const q = args.join(" ");
 console.log(command)
+  const reply = (text) => {
+  bot.sendMessage(chatId, text)
+  }
+
+
   switch (isCmd ? body.slice(1).trim().split(/ +/).shift().toLocaleLowerCase() : null) {
     case "menu":
     case 'start': {
