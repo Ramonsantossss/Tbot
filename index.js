@@ -1,9 +1,8 @@
-const token = '6812294191:AAGUUSaiYzydaJIOHpVQiTaTU2S8MTWeB-w'; 
-const TelegramBot = require('node-telegram-bot-api');;
+const TelegramBot = require('node-telegram-bot-api');
+const { prefix, nomeBot, token } = require("./config.js");
 const express = require('express');
 const { menu, nsfw, sfw } = require('./menu.js')
-const prefix = "/";
-const nomeBot = "Clover V1";
+
 const bot = new TelegramBot(token, { polling: true });
 const PORT = 8080;
 
@@ -15,7 +14,7 @@ WhatsApp: wa.me/557598659560
 Youtube: @clovermods
 `;
 
-console.log("Bot Online");
+console.log(`Bot Online\n\nPrefixo: ${prefix}\nNome Bot: ${nomeBot}\n`);
 
 bot.on('message', (msg) => {
   const chatId = msg.chat.id;
@@ -218,11 +217,11 @@ app.set("json spaces", 2);
 app.use(express.static("public"));
 
 app.use('/', (req, res) => {
-  res.sendFile(__dirname + '/index.html');
+  res.sendFile(__dirname + '/html/index.html');
 });
 
 app.listen(PORT, () => {
-  console.log("Server running on port " + PORT);
+  console.log("Server rodando na porta " + PORT);
 });
 
 module.exports = app;
