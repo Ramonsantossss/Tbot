@@ -180,7 +180,7 @@ async function saveUsers(users) {
   }
 }
 
-
+/*
 const bot = new TelegramBot(token, { polling: true });
 const master = `
 Informações do criador:
@@ -394,7 +394,7 @@ bot.on('callback_query', (callbackQuery) => {
       break;
   }
 });
-
+*/
 
 app.get('/', async (req, res) => {
   const user = req.session.user;
