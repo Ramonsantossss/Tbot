@@ -3,7 +3,35 @@ const yts = require("yt-search")
 const tiny = require("tinyurl")
 const axios = require("axios")
 const cheerio = require("cheerio")
+//const axios = require("axios")
 
+
+async function TiktokDownload(query) {
+  let response = await axios("https://lovetik.com/api/ajax/search", {
+    method: "POST",
+    data: new URLSearchParams(Object.entries({ query })),
+  });
+  const clean = (data) => {
+  let regex = /(<([^>]+)>)/gi;
+  data = data.replace(/(<br?\s?\/>)/gi, " \n");
+  return data.replace(regex, "");};
+async function shortener(url) {
+  return url;}
+  result = {};
+  result.legenda = clean(response.data.desc);
+  result.author = clean(response.data.author);
+  result.videoSemWt = await shortener(
+    (response.data.links[0].a || "").replace("https", "http")
+  );
+  result.videoOriginal = await shortener(
+    (response.data.links[1].a || "").replace("https", "http")
+  );
+  result.audio = await shortener(
+    (response.data.links[2].a || "").replace("https", "http")
+  );
+  result.thumb = await shortener(response.data.cover);
+  return result;
+}
 
 async function ytDonlodMp3(url) {
   return new Promise((resolve, reject) => {
@@ -204,5 +232,6 @@ module.exports = {
   ytDonlodMp4,
   ytPlayMp3,
   ytPlayMp4,
-  ytSearch
+  ytSearch,
+  TiktokDownload
 };
