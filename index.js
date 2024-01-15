@@ -1,3 +1,5 @@
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
 const TelegramBot = require('node-telegram-bot-api');
 const { prefix, nomeBot, token } = require("./config.js");
 var express = require('express'),
