@@ -72,6 +72,10 @@
       font-size: 18px;
       text-align: center;
     }
+    
+   .margem{
+   margin-left: 7px;
+   }
 </style>
 </head>
 <body>
@@ -90,16 +94,23 @@
 <div class="header">
 <div class="header-left">
 <div class="menu-icon dw dw-menu"></div>
-<div class="search-toggle-icon dw dw-search2" data-toggle="header_search"></div>
+
+<% if (user && user.isAdm) { %>
+<div class="margem">
+<div class="fas fa-users-cog" data-toggle="header_search"></div>
+</div>
 <div class="header-search">
 <form>
 <div class="form-group mb-0">
-<i class="dw dw-search2 search-icon"></i>
-<input type="text" class="form-control search-input" placeholder="Search Here">
+<hr>
+ <a class="verp" href="/admin">Editar Usuários</a>
+<hr> 
+<% } else { %>
+
+<% } %>
+
 <div class="dropdown">
-<a class="dropdown-toggle no-arrow" href="#" role="button" data-toggle="dropdown">
-<i class="ion-arrow-down-c"></i>
-</a>
+
 <div class="dropdown-menu dropdown-menu-right">
 <div class="form-group row">
 <label class="col-sm-12 col-md-2 col-form-label">From</label>
@@ -393,6 +404,7 @@
   </ul>
 </li>
 
+<hr>
 <li class="dropdown">
 <a href="javascript:;" class="dropdown-toggle" data-option="off">
 <span class="micon bi bi-headset"></span>
@@ -407,6 +419,14 @@
 </li>
 </ul>
 </li>
+<hr>
+<li>
+<a href="/login" class="dropdown-toggle no-arrow">
+<span class="micon bi bi-power-off"></span>
+<span class="mtext">SAIR</span>
+</a>
+</li>
+
 <li>
 <li>
 </li>
@@ -434,7 +454,7 @@
 </div>
 <div class="widget-icon">
 <div class="icon">
-<i class="icon-copy fa fa-database faa-pulse animated faa-slow" aria-hidden="true"></i>
+<i class="icon-copy fa fa-user faa-pulse animated faa-slow" aria-hidden="true"></i>
 </div>
 </div>
 </div>
@@ -489,7 +509,11 @@
 </div>
 </div>
 
-<div class="col-xl-3 col-lg-3 col-md-6 mb-20">
+<% if (!user.isAdm === true) { %>
+
+
+<% } else { %>
+ <div class="col-xl-3 col-lg-3 col-md-6 mb-20">
 <div class="card-box height-100-p widget-style3">
 <div class="d-flex flex-wrap">
 <div class="widget-data">
@@ -508,7 +532,7 @@
 </div>
 </div>
 </div>
-
+<% } %>
 
 
 </div>

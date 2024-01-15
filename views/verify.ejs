@@ -6,12 +6,12 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<meta property="og:title" content="CRIAR CONTA">
+    <title>Tela de login</title>
+    
+<meta property="og:title" content="ENTRAR">
 <meta property="og:description" content="FEITA POR: @clovermods">
 <link rel="apple-touch-icon" sizes="180x180" href="https://telegra.ph/file/e28fabcd7e856b4bcef0a.jpg">
 
-    <title>Tela de login</title>
     <style>
         body{
             font-family: Arial, Helvetica, sans-serif;
@@ -88,18 +88,19 @@ function logar() {
   
   
     <div>
-        <form action="/register" method="post">
-        <h1>Registrar</h1>
-        <input type="text" placeholder="Insira o nome de Usuário" id="username" name="username" required>
-        <br><br>
-        <input type="password" placeholder="Insira Sua Senha" id="password" name="password" required>
-        <br><br>
-        <input type="text" id="email" placeholder="Seu E-mail" name="email" required>
-        <p>Um código de verificação será enviado pro seu email</p>
-        
-        <button>Registrar</button>
-        <p>Já tem uma conta? <a href="/">Entrar</a></p>
-        </form>
+
+
+<form action="/verify" method="post">
+  <h1>Verifique seu perfil</h1>
+  <br>
+  <p>Um código de verificação foi enviado pro seu email</p>
+  <br>
+  <input type="text" id="username" placeholder="Nome de usuário" name="username" required>
+  <br><br>
+  <input type="number" id="verificationCode" placeholder="Código de verificação" name="verificationCode" required>
+  <br><br>
+  <button type="submit">Verificar</button>
+</form>
     </div>
     
     
