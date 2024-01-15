@@ -4145,7 +4145,98 @@ app.get("/download/pinterest", async (req, res, next) => {
      }
    });
 
+app.get('/memes', async (req, res, next) => {
+  const { username, key } = req.query;
+  const users = Person
+  // Verifica se o usuário existe e a chave está correta
+  const user = await User.findOne({ username, key });
+  if (!user) {
+    return res.status(401).send('Acesso não autorizado.');
+  }
 
+  const resultadoDiminuicao = diminuirSaldo(username);
+  const add = adicionarSaldo(username)
+  if (resultadoDiminuicao && add) {
+
+    const meme = JSON.parse(fs.readFileSync(__dirname + '/data/memes-video.json'));
+    const randmeme = meme[Math.floor(Math.random() * meme.length)];
+
+    res.json({
+      url: `${randmeme}`
+    })
+  } else {
+    console.log('Saldo insuficiente.');
+  }
+})
+
+app.get('/18/video', async (req, res, next) => {
+  const { username, key } = req.query;
+  const users = Person
+  const user = await User.findOne({ username, key });
+  if (!user) {
+    return res.status(401).send('Acesso não autorizado.');
+  }
+  const resultadoDiminuicao = diminuirSaldo(username);
+  const add = adicionarSaldo(username)
+  if (resultadoDiminuicao && add) {
+
+    const vid = require("./data/pack.js")
+    const video_18 = vid.video_18
+    const danvid = video_18[Math.floor(Math.random() * video_18.length)];
+
+    res.json({
+      url: `${danvid}`
+    })
+  } else {
+    console.log('Saldo insuficiente.');
+  }
+})
+
+app.get('/18/travazap', async (req, res, next) => {
+  const { username, key } = req.query;
+  const users = Person
+  const user = await User.findOne({ username, key });
+  if (!user) {
+    return res.status(401).send('Acesso não autorizado.');
+  }
+  const resultadoDiminuicao = diminuirSaldo(username);
+  const add = adicionarSaldo(username)
+  if (resultadoDiminuicao && add) {
+
+    const tra = require("./data/pack.js")
+    const travazap = tra.travazap
+    const traft = travazap[Math.floor(Math.random() * travazap.length)];
+
+    res.json({
+      url: `${traft}`
+    })
+  } else {
+    console.log('Saldo insuficiente.');
+  }
+})
+
+app.get('/18/foto_18', async (req, res, next) => {
+  const { username, key } = req.query;
+  const users = Person
+  const user = await User.findOne({ username, key });
+  if (!user) {
+    return res.status(401).send('Acesso não autorizado.');
+  }
+  const resultadoDiminuicao = diminuirSaldo(username);
+  const add = adicionarSaldo(username)
+  if (resultadoDiminuicao && add) {
+
+    const tra = require("./data/pack.js")
+    const foto_18 = tra.foto_18
+    const traft = foto_18[Math.floor(Math.random() * foto_18.length)];
+
+    res.json({
+      url: `${traft}`
+    })
+  } else {
+    console.log('Saldo insuficiente.');
+  }
+})
 
 
 app.listen(8000, () => {
