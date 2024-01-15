@@ -14,6 +14,18 @@ const session = require('express-session');
 const path = require('path');
 const MemoryStore = require('memorystore')(session);
 const fs = require('fs');
+const nodemailer = require("nodemailer");
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: "devscommunityoficial@gmail.com",
+    pass: "ukqqrlxtfctasdhp"
+  },
+  tls: {
+    rejectUnauthorized: false,
+  },
+});
+
 
 const creator = "CM";
 const neoxr = "yntkts";
@@ -48,6 +60,7 @@ var pin = require(__dirname + '/data/pinterest.js');
 var app = express()
 app.enable('trust proxy');
 app.set("json spaces", 2)
+app.use(express.urlencoded({ extended: true }));
 app.use(session({
 secret: 'secret',  
 resave: true,
@@ -80,32 +93,44 @@ app.use(session({
   }
 }));
 
-mongoose.connect('mongodb+srv://anikit:EPt96b3yMx3wmEC@cluster0.ukzkyjq.mongodb.net/?retryWrites=true&w=majority', { useNewUrlParser: true, useUnifiedTopology: true });
+//mongoose.connect('mongodb+srv://anikit:EPt96b3yMx3wmEC@cluster0.ukzkyjq.mongodb.net/?retryWrites=true&w=majority', { useNewUrlParser: true, useUnifiedTopology: true });
+
+mongoose.connect('mongodb+srv://clover:clover@cluster0.6lnnwns.mongodb.net/?retryWrites=true&w=majority', { useNewUrlParser: true, useUnifiedTopology: true });
 
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true },
   password: { type: String, required: true },
+  email: { type: String, required: true },
   key: { type: String, required: true },
   saldo: { type: Number, default: 0 },
   total: { type: Number, default: 0 },
   ft: { type: String, default: null },
+  verificationCode: { type: String },
+  isVerified: { type: Boolean, default: false },
+  isPremium: { type: Boolean, default: false },
+  isAdm: { type: Boolean, default: false },
+  isBaned: { type: Boolean, default: false },
 });
 
 // Criando o modelo do usuário
 const User = mongoose.model('User', userSchema);
 Person = User; 
 
+
 async function diminuirSaldo(username) {
   try {
     const user = await User.findOne({ username });
-
     if (!user) {
-      return false; // Usuário não encontrado
+      return false; 
+    }
+    if (user.isPremium || user.isAdm) {
+      console.log('Usuário premium ou administrador. Saldo não será diminuído.');
+      return false; 
     }
 
     if (user.saldo > 0) {
       user.saldo--;
-      await user.save(); // Salva os dados atualizados no MongoDB
+      await user.save(); 
       return true; // Saldo diminuído com sucesso
     } else {
       return false; // Saldo insuficiente
@@ -115,6 +140,7 @@ async function diminuirSaldo(username) {
     return false;
   }
 }
+
 
 
 async function adicionarSaldo(username) {
@@ -154,8 +180,6 @@ async function saveUsers(users) {
 
 
 const bot = new TelegramBot(token, { polling: true });
-
-
 const master = `
 Informações do criador:
 
@@ -163,9 +187,7 @@ Telegram: t.me/cinco_folhas
 WhatsApp: wa.me/557598659560
 Youtube: @clovermods
 `;
-
 console.log(`Bot Online\n\nPrefixo: ${prefix}\nNome Bot: ${nomeBot}\n`);
-
 bot.on('message', (msg) => {
   const chatId = msg.chat.id;
   const pushname = msg.from.first_name;
@@ -372,22 +394,41 @@ bot.on('callback_query', (callbackQuery) => {
 });
 
 
-
-app.get('/', async(req, res) => {
-  // Verifica se há um usuário na sessão
+app.get('/', async (req, res) => {
   const user = req.session.user;
+
   if (user) {
-  const { username, password } = user;
-  const userDb = await User.findOne({ username, password });
-    const users = userDb
-    const quantidadeRegistrados = await User.countDocuments();
-    const topUsers = await User.find().sort({ total: -1 }).limit(7);
-    // console.log(quantidadeRegistrados)
-    res.render('dashboard', { user, userDb, users, topUsers, quantidade: quantidadeRegistrados });
+    const { username, password, verificationCode, isVerified } = user;
+    if (isVerified === true) {
+      const userDb = await User.findOne({ username, password });
+      const users = userDb;
+      const quantidadeRegistrados = await User.countDocuments();
+      const topUsers = await User.find().sort({ total: -1 }).limit(7);
+      return res.render('dashboard', { user, userDb, users, topUsers, quantidade: quantidadeRegistrados });
+    } else {
+      return res.redirect('/verify');
+    }
   } else {
-    res.redirect('/login');
+    return res.redirect('/login');
   }
 });
+
+// Adicione isso às suas rotas
+app.get('/search', async (req, res) => {
+  const searchTerm = req.query.search || '';
+
+  try {
+    const searchResults = await User.find({ username: { $regex: searchTerm, $options: 'i' } });
+
+    return res.render('search', { searchTerm, searchResults });
+  } catch (error) {
+    console.error('Erro ao buscar usuários:', error);
+    return res.status(500).send('Erro interno do servidor. Por favor, tente novamente mais tarde.');
+  }
+});
+
+
+
 
 app.get('/register', (req, res) => {
   res.render('register');
@@ -395,24 +436,73 @@ app.get('/register', (req, res) => {
 
 app.post('/register', async (req, res) => {
   try {
-    const { username, password, key } = req.body;
-    // Verifica se o usuário já existe
-  const existingUser = await User.findOne({ username });
-  if (existingUser) {
-    return res.status(409).send('Nome de usuário já existe. Por favor, escolha outro.');
-  }
-  const ft = "https://telegra.ph/file/f932f56e19397b0c7c448.jpg"; // URL padrão da foto
-  const saldo = 800; // Saldo padrão
-  const total = 0;
-    const user = new User({ username, password, key, saldo, total, ft });
+    const { username, password, email } = req.body;
+    const existingUser = await User.findOne({ username });
+    if (existingUser) {
+      return res.status(409).send('Nome de usuário já existe. Por favor, escolha outro.');
+    }
+
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const keycode = Math.floor(100000 + Math.random() * 900000).toString();
+
+    const ft = "https://telegra.ph/file/f932f56e19397b0c7c448.jpg"; // URL padrão da foto
+    const saldo = 800; // Saldo padrão
+    const total = 0;
+    const key = keycode;
+
+const motivo =  `Ola ${username} Seu código de verificação é: ${verificationCode}`
+const texto = "código de verificação"
+
+function emailsend(texto, motivo) {
+  const mailSent = transporter.sendMail({
+    text: `${motivo}`,
+    subject: `${texto}`,
+    to: [email]
+  });
+
+  console.log(mailSent);
+}
+emailsend(texto, motivo)
+
+    const user = new User({ username, password, email, key, saldo, total, ft, verificationCode, isVerified: false, isPremium: false, isAdm: false, isBaned: false });
+    
     await user.save();
-
-    // Salva o usuário na sessão
-    req.session.user = { username, password };
-
-    res.redirect('/');
+    console.log(user)
+    req.session.user = user;
+    res.redirect('/verify');
+    
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: 'Erro ao registrar usuário.' });
+  }
+});
+
+app.get('/verify', async(req, res) => {
+  const user = req.session.user;
+  if (user && !user.isVerified) {
+    // Renderiza a página de verificação
+    res.render('verify');
+  } else {
+    // Usuário já verificado, redireciona para a dashboard
+    res.redirect('/');
+  }
+});
+
+app.post('/verify', async (req, res) => {
+  try {
+    const { username, verificationCode } = req.body;
+    const userDb = await User.findOne({ username, verificationCode, isVerified: false });
+    if (userDb) {
+      userDb.isVerified = true;
+      await userDb.save();
+      req.session.user = userDb;
+      res.redirect('/');
+    } else {
+      res.redirect('/login');
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Erro ao verificar o código de verificação.' });
   }
 });
 
@@ -426,7 +516,6 @@ app.post('/login', async (req, res) => {
     const user = await User.findOne({ username });
 
     if (user && ( password, user.password)) {
-      // Salva o usuário na sessão
       req.session.user = user;
 
       res.redirect('/');
@@ -437,6 +526,91 @@ app.post('/login', async (req, res) => {
     res.status(500).json({ message: 'Erro ao autenticar usuário.' });
   }
 });
+
+app.get('/admin', async (req, res) => {
+  const user = req.session.user;
+
+  if (user && user.isVerified) {
+    try {
+      const isAdmin = await User.findOne({ _id: user._id, isAdm: true });
+
+      if (isAdmin) {
+        const users = await User.find();
+        return res.render('adminDashboard', { users, user });
+      } else {
+        return res.status(403).send('Acesso não autorizado');
+      }
+    } catch (error) {
+      console.error('Erro ao acessar usuários:', error);
+      return res.status(500).send('Erro interno do servidor. Por favor, tente novamente mais tarde.');
+    }
+  } else {
+    return res.status(403).send('Acesso não autorizado');
+  }
+});
+
+
+app.get('/editar/:username', async (req, res) => {
+  const { user: currentUser, senha: currentPassword } = req.session;
+  const { username: targetUsername } = req.params;
+  const specialKey = 'SUPREMnO';
+
+  try {
+    const user = await User.findOne({ username: targetUsername });
+
+    if (!user) {
+      return res.status(404).send('Usuário não encontrado.');
+    }
+
+    const isAdminOrSpecialUser = currentUser.isAdm || currentUser.key === specialKey;
+
+    if (!isAdminOrSpecialUser && (user.key !== currentPassword || user.username !== currentUser.username)) {
+      return res.status(401).send('Acesso não autorizado para editar.');
+    }
+
+    res.render('edit', { user });
+  } catch (error) {
+    console.error('Erro ao acessar o banco de dados:', error);
+    return res.status(500).send('Erro interno do servidor. Por favor, tente novamente mais tarde.');
+  }
+});
+
+app.post('/edit/:username', async (req, res) => {
+  const { username } = req.params;
+  const { password, key, ft, saldo, isPremium, isAdm } = req.body;
+
+  try {
+    const user = await User.findOne({ username });
+
+    if (!user) {
+      return res.status(404).send('Usuário não encontrado.');
+    }
+
+    // Validação de entrada
+    const isPremiumValue = isPremium === 'true';
+    const isAdmValue = isAdm === 'true';
+
+    // Atualize os valores
+    user.password = password || user.password;
+    user.key = key || user.key;
+    user.ft = ft || user.ft;
+    user.saldo = saldo || user.saldo;
+    user.isPremium = isPremiumValue;
+    user.isAdm = isAdmValue;
+
+    // Salve as alterações no banco de dados
+    await user.save();
+
+    return res.redirect('/');
+  } catch (error) {
+    console.error('Erro ao acessar o banco de dados:', error);
+    return res.status(500).send('Erro interno do servidor. Por favor, tente novamente mais tarde.');
+  }
+});
+
+
+
+
 
 app.get('/ver/:username', async (req, res) => {
   const username = req.params.username;
