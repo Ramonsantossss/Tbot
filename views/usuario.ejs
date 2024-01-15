@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Logins</title>
+</head>
+<style>
+    * {
+        margin: 0;
+    }
+
+    body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        background-color: #111;
+        color: white;
+    }
+
+
+    body.dark-theme {
+        background-color: black;
+    }
+
+    .dark-theme .video-container {
+        background-color: #444;
+        /* Cor de fundo do contêiner de vídeo escuro */
+    }
+
+    .dark-theme .header {
+        background-color: #444;
+        /* Cor de fundo do cabeçalho escuro */
+    }
+
+    h4 {
+        padding: 7px;
+        background-color: black;
+        box-shadow: 2px white;
+        margin: 7px;
+        border-radius: 4px;
+    }
+
+
+    .menu-container {
+        position: fixed;
+        top: 0;
+        left: -100%;
+        /* Start off hidden */
+        height: 100%;
+        width: 180px;
+        background-color: #333;
+        color: #fff;
+        padding: 20px;
+        transition: left 0.3s ease-in-out;
+    }
+
+    .menu-container.show-menu {
+        left: 0;
+        /* Show the menu when class 'show-menu' is added */
+    }
+
+    .menu-container button {
+        display: block;
+        width: 100%;
+        margin-bottom: 10px;
+        padding: 10px;
+        font-size: 16px;
+        background-color: #007bff;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .menu-container button:hover {
+        background-color: #0056b3;
+    }
+
+    .menu-toggle {
+        position: fixed;
+        top: 10px;
+        left: 10px;
+        font-size: 24px;
+        cursor: pointer;
+        display: block;
+
+
+    }
+
+    .header {
+        background-color: black;
+        justify-content: space-between;
+        padding: 0 10%;
+        height: 3.5em;
+        margin: 0;
+        box-shadow: 1px 1px 4px black;
+    }
+
+    .menu-toggle.hide-menu {
+        display: none;
+        /* Hide the menu toggle when class 'hide-menu' is added */
+    }
+
+    .close-button {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        font-size: 24px;
+        cursor: pointer;
+    }
+
+
+    .video-container {
+        margin-left: 200px;
+        max-width: 99%;
+        margin: 20px auto;
+        margin: 15px;
+        padding: 20px;
+        border-radius: 8px;
+    }
+
+    input[type="text"] {
+        width: 90%;
+        padding: 10px;
+        margin: 10px 0;
+        font-size: 16px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        background-color: black;
+        text-align: center;
+    }
+
+    input[type="password"] {
+        width: 90%;
+        padding: 10px;
+        margin: 10px 0;
+        font-size: 16px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        background-color: black;
+    }
+
+    button[type="submit"] {
+        display: block;
+        margin-top: 10px;
+        padding: 10px;
+        font-size: 16px;
+        background-color: #007bff;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    button {
+        display: block;
+        margin-top: 10px;
+        padding: 10px;
+        font-size: 16px;
+        background-color: #007bff;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .video-player-container {
+        margin-top: 10px;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+    }
+
+    img {
+        width: 40%;
+        border-radius: 50%;
+        box-shadow: 0px 0px 23px 5px violet;
+    }
+</style>
+
+</head>
+
+<body>
+
+    <br>
+    <h1>Perfil</h1>
+    <div class="video-container">
+        <center>
+            <img src="<%= dados.ft %>">
+        </center>
+        <h4>Nick: <%= dados.username %>
+        </h4>
+        <h4>Request: <%= dados.total %>
+        </h4>
+        <br>
+        <center>
+
+        </center>
+    </div>
+
+
+    <script>
+
+    </script>
+</body>
+
+</html>
