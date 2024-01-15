@@ -438,6 +438,14 @@ app.post('/login', async (req, res) => {
   }
 });
 
+app.get('/ver/:username', async (req, res) => {
+  const username = req.params.username;
+  const dados = await User.findOne({ username });
+  res.render('usuario', { dados });
+});
+
+// Fim do sistemas e inicio das Apis \\
+
 app.get('/nsfw/ahegao', async (req, res, next) => {
   const { username, key } = req.query;
   const users = Person
