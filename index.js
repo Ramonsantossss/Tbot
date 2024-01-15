@@ -55,7 +55,8 @@ var {
   ytDonlodMp4,
   ytPlayMp3,
   ytPlayMp4,
-  ytSearch
+  ytSearch,
+  TiktokDownload
 } = require(__dirname + "/data/yt");
 var pin = require(__dirname + '/data/pinterest.js');
 
@@ -3738,6 +3739,33 @@ app.get('/download/ytmp3', async (req, res, next) => {
       })
       .catch((error) => {
         console.log(error)
+        res.json(error)
+      });
+  } else {
+    res.json(loghandler.invalidKey)
+  }
+});
+
+
+
+app.get('/download/tiktok', async (req, res, next) => {
+  const url = req.query.url;
+    const { username, key } = req.query;
+  const users = Person
+  // Verifica se o usuário existe e a chave está correta
+  const user = await User.findOne({ username, key });
+  if (!user) {
+    return res.status(401).send('Acesso não autorizado.');
+  }
+
+  const resultadoDiminuicao = diminuirSaldo(username);
+  const add = adicionarSaldo(username)
+  if (resultadoDiminuicao && add) {
+    TiktokDownload(url)
+      .then((result) => {
+        res.json(result);
+      })
+      .catch((error) => {
         res.json(error)
       });
   } else {
