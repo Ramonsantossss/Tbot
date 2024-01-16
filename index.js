@@ -4269,69 +4269,74 @@ app.get('/18/foto_18', async (req, res, next) => {
 
 
 app.get('/welcome', async (req, res) => {
-const { username, key } = req.query;
-const users = Person
-  const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
-  try {
-const nick = req.query.nick || 'User'
-const discriminator = req.query.discriminator || '0001'
-const memberCount = req.query.memberCount || '140'
-const grupoNome = req.query.guildName || 'Server DEV'
-const avatar = req.query.avatar || 'https://telegra.ph/file/617f4aacdaa5c255405e9.jpg'
-const background = req.query.background || 'https://telegra.ph/file/22d6c0065a8fad9704c19.jpg'
+  const { username, key } = req.query;
 
-    const response = await axios.get(`http://us-02.bed.ovh:25643/welcome?username=${nick}&discriminator=${discriminator}&background=${background}&avatar=${avatar}&guildName=${grupoNome}&memberCount=${memberCount}`);
-    const imagem = response.data; 
-    res.setHeader('Content-Type', 'image/jpeg'); 
-    res.send(imagem);
+  try {
+    const user = await User.findOne({ username, key });
+
+    if (!user) {
+      return res.status(401).send('Acesso não autorizado.');
+    }
+
+    const resultadoDiminuicao = diminuirSaldo(username);
+    const add = adicionarSaldo(username);
+
+    if (resultadoDiminuicao && add) {
+      const nick = req.query.nick || 'User';
+      const discriminator = req.query.discriminator || '0001';
+      const memberCount = req.query.memberCount || '140';
+      const grupoNome = req.query.guildName || 'Server DEV';
+      const avatar = req.query.avatar || 'https://telegra.ph/file/617f4aacdaa5c255405e9.jpg';
+      const background = req.query.background || 'https://telegra.ph/file/22d6c0065a8fad9704c19.jpg';
+
+      const response = await axios.get(`http://us-02.bed.ovh:25643/welcome?username=${nick}&discriminator=${discriminator}&background=${background}&avatar=${avatar}&guildName=${grupoNome}&memberCount=${memberCount}`);
+      const imagem = response.data;
+
+      res.setHeader('Content-Type', 'image/jpeg');
+      res.send(imagem);
+    } else {
+      console.log('Saldo insuficiente.');
+    }
   } catch (error) {
     console.error('Erro ao obter a imagem:', error);
     res.status(500).send('Erro interno do servidor');
-  }
-  } else {
-    console.log('Saldo insuficiente.');
   }
 });
 
 app.get('/goodbye', async (req, res) => {
-const { username, key } = req.query;
-const users = Person
-  const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
-  try {
-const nick = req.query.nick || 'User'
-const discriminator = req.query.discriminator || '0001'
-const memberCount = req.query.memberCount || '140'
-const grupoNome = req.query.guildName || 'Server DEV'
-const avatar = req.query.avatar || 'https://telegra.ph/file/617f4aacdaa5c255405e9.jpg'
-const background = req.query.background || 'https://telegra.ph/file/22d6c0065a8fad9704c19.jpg'
+  const { username, key } = req.query;
 
-    const response = await axios.get(`http://us-02.bed.ovh:25643/goodbye?username=${nick}&discriminator=${discriminator}&background=${background}&avatar=${avatar}&guildName=${grupoNome}&memberCount=${memberCount}`);
-    const imagem = response.data; 
-    res.setHeader('Content-Type', 'image/jpeg'); 
-    res.send(imagem);
+  try {
+    const user = await User.findOne({ username, key });
+
+    if (!user) {
+      return res.status(401).send('Acesso não autorizado.');
+    }
+
+    const resultadoDiminuicao = diminuirSaldo(username);
+    const add = adicionarSaldo(username);
+
+    if (resultadoDiminuicao && add) {
+      const nick = req.query.nick || 'User';
+      const discriminator = req.query.discriminator || '0001';
+      const memberCount = req.query.memberCount || '140';
+      const grupoNome = req.query.guildName || 'Server DEV';
+      const avatar = req.query.avatar || 'https://telegra.ph/file/617f4aacdaa5c255405e9.jpg';
+      const background = req.query.background || 'https://telegra.ph/file/22d6c0065a8fad9704c19.jpg';
+
+      const response = await axios.get(`http://us-02.bed.ovh:25643/goodbye?username=${nick}&discriminator=${discriminator}&background=${background}&avatar=${avatar}&guildName=${grupoNome}&memberCount=${memberCount}`);
+      const imagem = response.data;
+
+      res.setHeader('Content-Type', 'image/jpeg');
+      res.send(imagem);
+    } else {
+      console.log('Saldo insuficiente.');
+    }
   } catch (error) {
     console.error('Erro ao obter a imagem:', error);
     res.status(500).send('Erro interno do servidor');
   }
-  } else {
-    console.log('Saldo insuficiente.');
-  }
 });
-
-
-
 
 app.listen(8000, () => {
     console.log("Server rodando na porta 8000")
