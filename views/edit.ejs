@@ -171,6 +171,12 @@ input[type="checkbox"]:checked + span::before {
   Dar ADM
 </label>
 
+<label class="toggle-switch">
+  <input type="checkbox" id="giveBaned" name="isBaned" <% if (user.isBaned) { %>checked<% } %> value="true">
+  <span class="slider"></span>
+  Dar BAN
+</label>
+
     <button type="submit">Salvar Alterações</button>
   </form>
 
@@ -178,7 +184,13 @@ input[type="checkbox"]:checked + span::before {
   document.addEventListener('DOMContentLoaded', function () {
     const givePremiumCheckbox = document.getElementById('givePremium');
     const giveAdmCheckbox = document.getElementById('giveAdm');
-
+    const giveBanedCheckbox = document.getElementById('giveBaned');
+    
+    giveBanedCheckbox.addEventListener('change', function () {
+      const isBaned = giveBanedCheckbox.checked;
+      console.log('Dar Ban:', isBaned);
+    });
+    
     givePremiumCheckbox.addEventListener('change', function () {
       const isPremium = givePremiumCheckbox.checked;
       console.log('Dar Premium:', isPremium);
