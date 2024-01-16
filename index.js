@@ -4697,7 +4697,7 @@ return res.status(401).send('Acesso não autorizado.');
   const add = adicionarSaldo(username)
   if (resultadoDiminuicao && add) {
 
-    const cyberspace = JSON.parse(fs.readFileSync(__path + '/data/CyberSpace.json'));
+    const cyberspace = JSON.parse(fs.readFileSync(__dirname + '/data/CyberSpace.json'));
     const randcyberspace = cyberspace[Math.floor(Math.random() * cyberspace.length)];
 
     res.json({
@@ -4727,7 +4727,7 @@ return res.status(401).send('Acesso não autorizado.');
   const add = adicionarSaldo(username)
   if (resultadoDiminuicao && add) {
 
-    const gaming = JSON.parse(fs.readFileSync(__path + '/data/GameWallp.json'));
+    const gaming = JSON.parse(fs.readFileSync(__dirname + '/data/GameWallp.json'));
     const randgaming = gaming[Math.floor(Math.random() * gaming.length)];
 
     res.json({
@@ -4757,7 +4757,7 @@ return res.status(401).send('Acesso não autorizado.');
   const add = adicionarSaldo(username)
   if (resultadoDiminuicao && add) {
 
-    const programing = JSON.parse(fs.readFileSync(__path + '/data/Programming.json'));
+    const programing = JSON.parse(fs.readFileSync(__dirname + '/data/Programming.json'));
     const randprograming = programing[Math.floor(Math.random() * programing.length)];
 
     res.json({
@@ -4787,7 +4787,7 @@ return res.status(401).send('Acesso não autorizado.');
   const add = adicionarSaldo(username)
   if (resultadoDiminuicao && add) {
 
-    const teknologi = JSON.parse(fs.readFileSync(__path + '/data/Technology.json'));
+    const teknologi = JSON.parse(fs.readFileSync(__dirname + '/data/Technology.json'));
     const randteknologi = teknologi[Math.floor(Math.random() * teknologi.length)];
 
     res.json({
@@ -4817,7 +4817,7 @@ return res.status(401).send('Acesso não autorizado.');
   const add = adicionarSaldo(username)
   if (resultadoDiminuicao && add) {
 
-    const mountain = JSON.parse(fs.readFileSync(__path + '/data/Mountain.json'));
+    const mountain = JSON.parse(fs.readFileSync(__dirname + '/data/Mountain.json'));
     const randmountain = mountain[Math.floor(Math.random() * mountain.length)];
 
     res.json({
@@ -4849,7 +4849,7 @@ return res.status(401).send('Acesso não autorizado.');
   const add = adicionarSaldo(username)
   if (resultadoDiminuicao && add) {
 
-    const satanic = JSON.parse(fs.readFileSync(__path + '/data/satanic.json'));
+    const satanic = JSON.parse(fs.readFileSync(__dirname + '/data/satanic.json'));
     const randsatanic = satanic[Math.floor(Math.random() * satanic.length)];
 
     res.json({
@@ -4881,7 +4881,7 @@ return res.status(401).send('Acesso não autorizado.');
   const add = adicionarSaldo(username)
   if (resultadoDiminuicao && add) {
 
-    const asuna = JSON.parse(fs.readFileSync(__path + '/data/asuna.json'));
+    const asuna = JSON.parse(fs.readFileSync(__dirname + '/data/asuna.json'));
     const randasuna = asuna[Math.floor(Math.random() * asuna.length)];
 
     res.json({
@@ -4912,7 +4912,7 @@ return res.status(401).send('Acesso não autorizado.');
   const add = adicionarSaldo(username)
   if (resultadoDiminuicao && add) {
 
-    Pubg = JSON.parse(fs.readFileSync(__path + '/data/pubg.json'));
+    Pubg = JSON.parse(fs.readFileSync(__dirname + '/data/pubg.json'));
     const randPubg = Pubg[Math.floor(Math.random() * Pubg.length)]
 
     res.json({
@@ -4942,7 +4942,7 @@ return res.status(401).send('Acesso não autorizado.');
   const add = adicionarSaldo(username)
   if (resultadoDiminuicao && add) {
 
-    Pp = JSON.parse(fs.readFileSync(__path + '/data/profil.json'));
+    Pp = JSON.parse(fs.readFileSync(__dirname + '/data/profil.json'));
     const randPp = Pp[Math.floor(Math.random() * Pp.length)]
 
     res.json({
@@ -4972,7 +4972,7 @@ return res.status(401).send('Acesso não autorizado.');
   const add = adicionarSaldo(username)
   if (resultadoDiminuicao && add) {
 
-    Anjing = JSON.parse(fs.readFileSync(__path + '/data/anjing.json'));
+    Anjing = JSON.parse(fs.readFileSync(__dirname + '/data/anjing.json'));
     const randAnjing = Anjing[Math.floor(Math.random() * Anjing.length)]
 
     res.json({
@@ -5002,10 +5002,10 @@ return res.status(401).send('Acesso não autorizado.');
   const add = adicionarSaldo(username)
   if (resultadoDiminuicao && add) {
 
-    const Aesthetic = JSON.parse(fs.readFileSync(__path + '/data/aesthetic.json'));
+    const Aesthetic = JSON.parse(fs.readFileSync(__dirname + '/data/aesthetic.json'));
     const randAesthetic = Aesthetic[Math.floor(Math.random() * Aesthetic.length)];
     data = await fetch(randAesthetic).then(v => v.buffer());
-    await fs.writeFileSync(__path + '/tmp/aesthetic.jpeg', data)
+    await fs.writeFileSync(__dirname + '/tmp/aesthetic.jpeg', data)
     res.json({
       url: `${randAesthetic}`
     })
