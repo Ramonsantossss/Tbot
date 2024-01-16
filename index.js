@@ -4267,7 +4267,6 @@ app.get('/18/foto_18', async (req, res, next) => {
   }
 })
 
-
 app.get('/welcome', async (req, res) => {
   const { username, key } = req.query;
 
@@ -4290,10 +4289,9 @@ app.get('/welcome', async (req, res) => {
       const background = req.query.background || 'https://telegra.ph/file/22d6c0065a8fad9704c19.jpg';
 
       const response = await axios.get(`http://us-02.bed.ovh:25643/welcome?username=${nick}&discriminator=${discriminator}&background=${background}&avatar=${avatar}&guildName=${grupoNome}&memberCount=${memberCount}`);
-      const imagem = response.data;
+      const imageUrl = response.data.url;
 
-      res.setHeader('Content-Type', 'image/jpeg');
-      res.send(imagem);
+      res.json({ "url": imageUrl });
     } else {
       console.log('Saldo insuficiente.');
     }
@@ -4325,10 +4323,9 @@ app.get('/goodbye', async (req, res) => {
       const background = req.query.background || 'https://telegra.ph/file/22d6c0065a8fad9704c19.jpg';
 
       const response = await axios.get(`http://us-02.bed.ovh:25643/goodbye?username=${nick}&discriminator=${discriminator}&background=${background}&avatar=${avatar}&guildName=${grupoNome}&memberCount=${memberCount}`);
-      const imagem = response.data;
+      const imageUrl = response.data.url;
 
-      res.setHeader('Content-Type', 'image/jpeg');
-      res.send(imagem);
+      res.json({ "url": imageUrl });
     } else {
       console.log('Saldo insuficiente.');
     }
@@ -4337,6 +4334,7 @@ app.get('/goodbye', async (req, res) => {
     res.status(500).send('Erro interno do servidor');
   }
 });
+
 
 app.listen(8000, () => {
     console.log("Server rodando na porta 8000")
