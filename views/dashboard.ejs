@@ -76,6 +76,45 @@
    .margem{
    margin-left: 7px;
    }
+   
+   .status {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      background-color: white;
+      width: 6%; 
+      border-radius: 5px;
+      color: black;
+    }
+
+    
+
+    .vertical-bar {
+      width: 1px;
+      height: 70px;
+      margin: 0;
+      padding: 2px;
+      background-color: red;
+     /* Espaçamento reduzido entre a imagem e a barra */
+     border-radius: 7px;
+    }
+    
+    .vertical-bar2 {
+      width: 1px;
+      height: 70px;
+      margin: 0;
+      padding: 2px;
+      background-color: gold;
+     /* Espaçamento reduzido entre a imagem e a barra */
+     border-radius: 7px;
+    }
+    
+    .current-time {
+      font-size: 19px;
+      margin-right: 0;
+      margin-left: 60%;
+    }
+    
 </style>
 </head>
 <body>
@@ -461,7 +500,6 @@
 </li>
 </ul>
 </li>
-<hr>
 <li>
 <a href="/login" class="dropdown-toggle no-arrow">
 <span class="micon bi bi-power-off"></span>
@@ -487,6 +525,10 @@
 </div>
 </div>
 </div>
+
+<% if (!user.isBaned === true) { %>
+
+<% if (!user.isPremium === true) { %>
 <div class="col-xl-3 col-lg-3 col-md-6 mb-20">
 <div class="card-box height-100-p widget-style3">
 <div class="d-flex flex-wrap">
@@ -502,6 +544,37 @@
 </div>
 </div>
 </div>
+<% } else { %>
+<div class="col-xl-3 col-lg-3 col-md-6 mb-20">
+<div class="card-box height-100-p widget-style3">
+<div class="d-flex flex-wrap">
+<div class="widget-data">
+<div class="status">
+    <div class="vertical-bar2"></div>
+    <p class="current-time"><h4>@<%= user.username %>!<h4></p>
+  </div>
+</div>
+</div>
+</div>
+</div>
+<% } %>
+
+<% } else { %>
+
+<div class="col-xl-3 col-lg-3 col-md-6 mb-20">
+<div class="card-box height-100-p widget-style3">
+<div class="d-flex flex-wrap">
+<div class="widget-data">
+<div class="status">
+    <div class="vertical-bar"></div>
+    <p class="current-time"><h4>Banido(a)!<h4></p>
+  </div>
+</div>
+</div>
+</div>
+</div>
+
+<% } %>
 
 <div class="col-xl-3 col-lg-3 col-md-6 mb-20">
 <div class="card-box height-100-p widget-style3">
