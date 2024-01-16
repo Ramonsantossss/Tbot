@@ -182,6 +182,24 @@ async function saveUsers(users) {
   }
 }
 
+const isUserBanned = async (username) => {
+  try {
+    const user = await User.findOne({ username, isPremium: true });
+
+    return !!user; // Retorna true se o usuário estiver banido, false se não estiver
+  } catch (error) {
+    console.error('Erro ao verificar status de banimento do usuário:', error);
+    return false; // Assume que o usuário não está banido em caso de erro
+  }
+};
+
+
+
+
+// Continue com o restante do código aqui, pois o usuário não está banido (userIsBanned é false)
+// ...
+
+
 /*
 const bot = new TelegramBot(token, { polling: true });
 const master = `
@@ -581,7 +599,7 @@ app.get('/editar/:username', async (req, res) => {
 
 app.post('/edit/:username', async (req, res) => {
   const { username } = req.params;
-  const { password, key, ft, saldo, isPremium, isAdm } = req.body;
+  const { password, key, ft, saldo, isPremium, isAdm, isBaned } = req.body;
 
   try {
     const user = await User.findOne({ username });
@@ -593,6 +611,7 @@ app.post('/edit/:username', async (req, res) => {
     // Validação de entrada
     const isPremiumValue = isPremium === 'true';
     const isAdmValue = isAdm === 'true';
+    const isBanedValue = isBaned === 'true';
 
     // Atualize os valores
     user.password = password || user.password;
@@ -601,6 +620,7 @@ app.post('/edit/:username', async (req, res) => {
     user.saldo = saldo || user.saldo;
     user.isPremium = isPremiumValue;
     user.isAdm = isAdmValue;
+    user.isBaned = isBanedValue;
 
     // Salve as alterações no banco de dados
     await user.save();
@@ -629,9 +649,15 @@ app.get('/nsfw/ahegao', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -653,9 +679,15 @@ app.get('/nsfw/ass', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -677,9 +709,15 @@ app.get('/nsfw/bdsm', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -702,9 +740,15 @@ app.get('/nsfw/blowjob', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -726,9 +770,15 @@ app.get('/nsfw/cuckold', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -750,9 +800,15 @@ app.get('/nsfw/cum', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -774,9 +830,15 @@ app.get('/nsfw/ero', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -798,9 +860,15 @@ app.get('/memes', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -822,9 +890,15 @@ app.get('/nsfw/femdom', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -846,9 +920,15 @@ app.get('/nsfw/foot', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -870,9 +950,15 @@ app.get('/nsfw/gangbang', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -894,9 +980,15 @@ app.get('/nsfw/glasses', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -918,9 +1010,15 @@ app.get('/nsfw/hentai', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -942,9 +1040,15 @@ app.get('/nsfw/gifs', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -966,9 +1070,15 @@ app.get('/nsfw/jahy', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -990,9 +1100,15 @@ app.get('/nsfw/manga', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -1014,9 +1130,15 @@ app.get('/nsfw/masturbation', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -1038,9 +1160,15 @@ app.get('/nsfw/neko', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -1062,9 +1190,15 @@ app.get('/nsfw/orgy', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -1081,14 +1215,22 @@ app.get('/nsfw/orgy', async (req, res, next) => {
   }
 })
 
+  
+
 app.get('/nsfw/panties', async (req, res, next) => {
   const { username, key } = req.query;
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -1110,9 +1252,15 @@ app.get('/nsfw/pussy', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -1134,9 +1282,15 @@ app.get('/nsfw/neko2', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -1158,9 +1312,15 @@ app.get('/nsfw/tentacles', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -1182,9 +1342,15 @@ app.get('/nsfw/thighs', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -1206,9 +1372,15 @@ app.get('/nsfw/yuri', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -1230,9 +1402,15 @@ app.get('/nsfw/zettai', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -1254,9 +1432,15 @@ app.get('/nime/keneki', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -1278,9 +1462,15 @@ app.get('/nime/megumin', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -1302,9 +1492,15 @@ app.get('/nime/yotsuba', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -1326,9 +1522,15 @@ app.get('/nime/shinomiya', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -1350,9 +1552,15 @@ app.get('/nime/yumeko', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -1374,9 +1582,15 @@ app.get('/nime/tejina', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -1398,9 +1612,15 @@ app.get('/nime/chiho', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -1422,9 +1642,15 @@ app.get('/18/video', async (req, res, next) => {
   const { username, key } = req.query;
   const users = Person
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
   if (resultadoDiminuicao && add) {
@@ -1445,9 +1671,15 @@ app.get('/18/travazap', async (req, res, next) => {
   const { username, key } = req.query;
   const users = Person
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
   if (resultadoDiminuicao && add) {
@@ -1464,37 +1696,22 @@ app.get('/18/travazap', async (req, res, next) => {
   }
 })
 
-app.get('/18/foto_18', async (req, res, next) => {
-  const { username, key } = req.query;
-  const users = Person
-  const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
 
-    const tra = require("./data/pack.js")
-    const foto_18 = tra.foto_18
-    const traft = foto_18[Math.floor(Math.random() * foto_18.length)];
-
-    res.json({
-      url: `${traft}`
-    })
-  } else {
-    console.log('Saldo insuficiente.');
-  }
-})
 
 app.get('/nime/toukachan', async (req, res, next) => {
   const { username, key } = req.query;
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -1516,9 +1733,15 @@ app.get('/nime/akira', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -1540,9 +1763,15 @@ app.get('/nime/itori', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -1564,9 +1793,15 @@ app.get('/nime/kurumi', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -1588,9 +1823,15 @@ app.get('/nime/miku', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -1612,9 +1853,15 @@ app.get('/nime/pokemon', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -1636,9 +1883,15 @@ app.get('/nime/ryujin', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -1660,9 +1913,15 @@ app.get('/nime/rose', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -1684,9 +1943,15 @@ app.get('/nime/kaori', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -1708,9 +1973,15 @@ app.get('/nime/shizuka', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -1732,9 +2003,15 @@ app.get('/nime/kaga', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -1756,9 +2033,15 @@ app.get('/nime/kotori', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -1780,9 +2063,15 @@ app.get('/nime/mikasa', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -1804,9 +2093,15 @@ app.get('/nime/akiyama', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -1828,9 +2123,15 @@ app.get('/nime/gremory', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -1852,9 +2153,15 @@ app.get('/nime/isuzu', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -1876,9 +2183,15 @@ app.get('/nime/cosplay', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -1900,9 +2213,15 @@ app.get('/nime/shina', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -1924,9 +2243,15 @@ app.get('/nime/kagura', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -1948,9 +2273,15 @@ app.get('/nime/shinka', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -1972,9 +2303,15 @@ app.get('/nime/eba', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -1996,9 +2333,15 @@ app.get('/nime/deidara', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -2022,9 +2365,15 @@ app.get('/nime/jeni', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -2047,9 +2396,15 @@ app.get('/random/meme', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -2070,9 +2425,15 @@ app.get('/nime/toukachan', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -2094,9 +2455,15 @@ app.get('/nime/akira', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -2118,9 +2485,15 @@ app.get('/nime/itori', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -2142,9 +2515,15 @@ app.get('/nime/kurumi', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -2166,9 +2545,15 @@ app.get('/nime/miku', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -2190,9 +2575,15 @@ app.get('/nime/pokemon', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -2214,9 +2605,15 @@ app.get('/nime/ryujin', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -2238,9 +2635,15 @@ app.get('/nime/rose', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -2262,9 +2665,15 @@ app.get('/nime/kaori', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -2286,9 +2695,15 @@ app.get('/nime/shizuka', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -2310,9 +2725,15 @@ app.get('/nime/kaga', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -2334,9 +2755,15 @@ app.get('/nime/kotori', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -2358,9 +2785,15 @@ app.get('/nime/mikasa', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -2382,9 +2815,15 @@ app.get('/nime/akiyama', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -2406,9 +2845,15 @@ app.get('/nime/gremory', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -2430,9 +2875,15 @@ app.get('/nime/isuzu', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -2454,9 +2905,15 @@ app.get('/nime/cosplay', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -2478,9 +2935,15 @@ app.get('/nime/shina', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -2502,9 +2965,15 @@ app.get('/nime/kagura', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -2526,9 +2995,15 @@ app.get('/nime/shinka', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -2550,9 +3025,15 @@ app.get('/nime/eba', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -2574,9 +3055,15 @@ app.get('/nime/deidara', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -2600,9 +3087,15 @@ app.get('/nime/jeni', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -2625,9 +3118,15 @@ app.get('/random/meme', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -2649,9 +3148,15 @@ app.get('/wallpaper/satanic', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -2675,9 +3180,15 @@ app.get('/nime/itachi', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -2699,9 +3210,15 @@ app.get('/nime/madara', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -2723,9 +3240,15 @@ app.get('/nime/yuki', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -2747,9 +3270,15 @@ app.get('/wallpaper/asuna', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -2771,9 +3300,15 @@ app.get('/nime/ayuzawa', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -2795,9 +3330,15 @@ app.get('/nime/chitoge', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -2819,9 +3360,15 @@ app.get('/nime/emilia', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -2843,9 +3390,15 @@ app.get('/nime/hestia', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -2867,9 +3420,15 @@ app.get('/nime/inori', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -2891,9 +3450,15 @@ app.get('/nime/ana', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -2915,9 +3480,15 @@ app.get('/nime/boruto', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -2939,9 +3510,15 @@ app.get('/nime/erza', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -2963,9 +3540,15 @@ app.get('/nime/kakasih', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -2987,9 +3570,15 @@ app.get('/nime/sagiri', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -3011,9 +3600,15 @@ app.get('/nime/minato', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -3035,9 +3630,15 @@ app.get('/nime/naruto', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -3059,9 +3660,15 @@ app.get('/nime/nezuko', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -3083,9 +3690,15 @@ app.get('/nime/onepiece', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -3107,9 +3720,15 @@ app.get('/nime/rize', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -3131,9 +3750,15 @@ app.get('/nime/sakura', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -3155,9 +3780,15 @@ app.get('/nime/sasuke', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -3179,9 +3810,15 @@ app.get('/nime/tsunade', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -3203,9 +3840,15 @@ app.get('/nime/montor', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -3227,9 +3870,15 @@ app.get('/nime/mobil', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -3252,9 +3901,15 @@ app.get('/nime/anime', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -3277,9 +3932,15 @@ app.get('/nime/wallhp', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -3301,9 +3962,15 @@ app.get('/nime/waifu2', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -3325,9 +3992,15 @@ app.get('/nime/waifu', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -3350,9 +4023,15 @@ app.get('/nime/hekel', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -3374,9 +4053,15 @@ app.get('/nime/kucing', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -3398,9 +4083,15 @@ app.get('/wallpaper/pubg', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -3422,9 +4113,15 @@ app.get('/wallpaper/ppcouple', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -3446,9 +4143,15 @@ app.get('/wallpaper/anjing', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -3470,9 +4173,15 @@ app.get('/nime/doraemon', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -3495,9 +4204,15 @@ app.get('/nime/elaina', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -3521,9 +4236,15 @@ app.get('/nime/loli', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -3547,9 +4268,15 @@ app.get('/nime/yuri', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -3572,9 +4299,15 @@ app.get('/nime/cecan', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -3598,9 +4331,15 @@ app.get('/wallpaper/aesthetic', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -3625,9 +4364,15 @@ app.get('/nime/sagiri', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -3650,9 +4395,15 @@ app.get('/nime/shota', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -3675,9 +4426,15 @@ app.get('/nime/nsfwloli', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -3701,9 +4458,15 @@ app.get('/nime/hinata', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -3727,9 +4490,15 @@ app.get('/download/ytmp3', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -3755,9 +4524,15 @@ app.get('/download/tiktok', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -3780,9 +4555,15 @@ app.get('/download/ytmp4', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -3805,9 +4586,15 @@ app.get("/yt/playmp3", async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -3833,9 +4620,15 @@ app.get("/yt/playmp4", async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -3858,9 +4651,15 @@ app.get('/anime/amv', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -3884,9 +4683,15 @@ app.get('/wallpaper/cyberspace', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -3908,9 +4713,15 @@ app.get('/wallpaper/gaming', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -3932,9 +4743,15 @@ app.get('/wallpaper/programing', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -3956,9 +4773,15 @@ app.get('/wallpaper/wallpapertec', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -3980,9 +4803,15 @@ app.get('/wallpaper/mountain', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -4006,9 +4835,15 @@ app.get('/wallpaper/satanic', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -4032,9 +4867,15 @@ app.get('/wallpaper/asuna', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -4057,9 +4898,15 @@ app.get('/wallpaper/pubg', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -4081,9 +4928,15 @@ app.get('/wallpaper/ppcouple', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -4105,9 +4958,15 @@ app.get('/wallpaper/anjing', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -4129,9 +4988,15 @@ app.get('/wallpaper/aesthetic', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -4155,9 +5020,15 @@ app.get("/download/pinterest", async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -4179,9 +5050,15 @@ app.get('/memes', async (req, res, next) => {
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -4202,9 +5079,15 @@ app.get('/18/video', async (req, res, next) => {
   const { username, key } = req.query;
   const users = Person
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
   if (resultadoDiminuicao && add) {
@@ -4225,9 +5108,15 @@ app.get('/18/travazap', async (req, res, next) => {
   const { username, key } = req.query;
   const users = Person
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
   if (resultadoDiminuicao && add) {
@@ -4248,9 +5137,15 @@ app.get('/18/foto_18', async (req, res, next) => {
   const { username, key } = req.query;
   const users = Person
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.status(401).send('Acesso não autorizado.');
-  }
+
+if (!user) {
+  return res.status(401).send('Acesso não autorizado.');
+}
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
+
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
   if (resultadoDiminuicao && add) {
@@ -4276,6 +5171,10 @@ app.get('/welcome', async (req, res) => {
     if (!user) {
       return res.status(401).send('Acesso não autorizado.');
     }
+
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
 
     const resultadoDiminuicao = diminuirSaldo(username);
     const add = adicionarSaldo(username);
@@ -4311,6 +5210,9 @@ app.get('/goodbye', async (req, res) => {
       return res.status(401).send('Acesso não autorizado.');
     }
 
+if (user.isBaned === true) {
+return res.status(401).send('Acesso não autorizado.');
+}
     const resultadoDiminuicao = diminuirSaldo(username);
     const add = adicionarSaldo(username);
 
