@@ -4269,6 +4269,7 @@ app.get('/18/foto_18', async (req, res, next) => {
 
 
 app.get('/welcome', async (req, res) => {
+const { username, key } = req.query;
 const users = Person
   const user = await User.findOne({ username, key });
   if (!user) {
@@ -4299,6 +4300,7 @@ const background = req.query.background || 'https://telegra.ph/file/22d6c0065a8f
 });
 
 app.get('/goodbye', async (req, res) => {
+const { username, key } = req.query;
 const users = Person
   const user = await User.findOne({ username, key });
   if (!user) {
