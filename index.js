@@ -1,5 +1,6 @@
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
+const axios = require('axios');
 const TelegramBot = require('node-telegram-bot-api');
 const { prefix, nomeBot, token } = require("./config.js");
 var express = require('express'),
@@ -4265,6 +4266,69 @@ app.get('/18/foto_18', async (req, res, next) => {
     console.log('Saldo insuficiente.');
   }
 })
+
+
+app.get('/welcome', async (req, res) => {
+const users = Person
+  const user = await User.findOne({ username, key });
+  if (!user) {
+    return res.status(401).send('Acesso não autorizado.');
+  }
+  const resultadoDiminuicao = diminuirSaldo(username);
+  const add = adicionarSaldo(username)
+  if (resultadoDiminuicao && add) {
+  try {
+const nick = req.query.nick || 'User'
+const discriminator = req.query.discriminator || '0001'
+const memberCount = req.query.memberCount || '140'
+const grupoNome = req.query.guildName || 'Server DEV'
+const avatar = req.query.avatar || 'https://telegra.ph/file/617f4aacdaa5c255405e9.jpg'
+const background = req.query.background || 'https://telegra.ph/file/22d6c0065a8fad9704c19.jpg'
+
+    const response = await axios.get(`http://us-02.bed.ovh:25643/welcome?username=${nick}&discriminator=${discriminator}&background=${background}&avatar=${avatar}&guildName=${grupoNome}&memberCount=${memberCount}`);
+    const imagem = response.data; 
+    res.setHeader('Content-Type', 'image/jpeg'); 
+    res.send(imagem);
+  } catch (error) {
+    console.error('Erro ao obter a imagem:', error);
+    res.status(500).send('Erro interno do servidor');
+  }
+  } else {
+    console.log('Saldo insuficiente.');
+  }
+});
+
+app.get('/goodbye', async (req, res) => {
+const users = Person
+  const user = await User.findOne({ username, key });
+  if (!user) {
+    return res.status(401).send('Acesso não autorizado.');
+  }
+  const resultadoDiminuicao = diminuirSaldo(username);
+  const add = adicionarSaldo(username)
+  if (resultadoDiminuicao && add) {
+  try {
+const nick = req.query.nick || 'User'
+const discriminator = req.query.discriminator || '0001'
+const memberCount = req.query.memberCount || '140'
+const grupoNome = req.query.guildName || 'Server DEV'
+const avatar = req.query.avatar || 'https://telegra.ph/file/617f4aacdaa5c255405e9.jpg'
+const background = req.query.background || 'https://telegra.ph/file/22d6c0065a8fad9704c19.jpg'
+
+    const response = await axios.get(`http://us-02.bed.ovh:25643/goodbye?username=${nick}&discriminator=${discriminator}&background=${background}&avatar=${avatar}&guildName=${grupoNome}&memberCount=${memberCount}`);
+    const imagem = response.data; 
+    res.setHeader('Content-Type', 'image/jpeg'); 
+    res.send(imagem);
+  } catch (error) {
+    console.error('Erro ao obter a imagem:', error);
+    res.status(500).send('Erro interno do servidor');
+  }
+  } else {
+    console.log('Saldo insuficiente.');
+  }
+});
+
+
 
 
 app.listen(8000, () => {
