@@ -180,17 +180,26 @@ input[type="checkbox"]:checked + span::before {
     <button type="submit">Salvar Alterações</button>
   </form>
 
+
+<button type="button" onclick="confirmDelete()">Deletar Usuário</button>
+
 <script>
+  function confirmDelete() {
+    if (confirm('Tem certeza que deseja deletar este usuário?')) {
+      window.location.href = '/deletar/<%= user.username %>'; // Redireciona para a rota de deletar
+    }
+  }
+
   document.addEventListener('DOMContentLoaded', function () {
     const givePremiumCheckbox = document.getElementById('givePremium');
     const giveAdmCheckbox = document.getElementById('giveAdm');
     const giveBanedCheckbox = document.getElementById('giveBaned');
-    
+
     giveBanedCheckbox.addEventListener('change', function () {
       const isBaned = giveBanedCheckbox.checked;
       console.log('Dar Ban:', isBaned);
     });
-    
+
     givePremiumCheckbox.addEventListener('change', function () {
       const isPremium = givePremiumCheckbox.checked;
       console.log('Dar Premium:', isPremium);
@@ -202,11 +211,5 @@ input[type="checkbox"]:checked + span::before {
     });
   });
 </script>
-</body>
-</html>
-
-</body>
-</html>
-
 </body>
 </html>
