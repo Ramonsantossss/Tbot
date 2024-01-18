@@ -159,7 +159,20 @@
         a {
             text-decoration: none;
         }
-
+       .flex {
+        display: flex;
+        }
+        
+        .deletar {
+            display: block;
+            margin: 10px; 
+            padding: 10px 22px;
+            background-color: red;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
     </style>
 </head>
 
@@ -192,7 +205,11 @@
         <span>Saldo: <%= user.saldo %></span>
         <br>
         <center>
-            <a href="/editar/<%= user.username %>"><button>Editar</button></a>
+        <div class="flex">
+        <a href="/deletar/<%= user.username %>"><button class="deletar">Deletar Usuário</button></a>
+        <a href="/editar/<%= user.username %>"><button>Editar</button></a>
+
+         </div>
         </center>
         <br><hr><br>
     <% }) %>
@@ -203,6 +220,13 @@
 
     <script>
 
+
+  function confirmDelete(username) {
+    if (confirm('Tem certeza que deseja deletar este usuário?')) {
+      window.location.href = '/deletar/${username}'; // Redireciona para a rota de deletar
+    }
+  }
+  
         function toggleDarkTheme() {
                         const body = document.querySelector('body');
             const card = document.querySelector('.video-container ');
