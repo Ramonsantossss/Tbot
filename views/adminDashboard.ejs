@@ -195,9 +195,9 @@
   </center>
 </form>
 <br>
-  <h1>Lista de Logins</h1>
-    <div class="video-container">
-<hr><br>
+<h1>Lista de Logins</h1>
+<div class="video-container">
+    <hr><br>
     <% users.forEach((user) => { %>
         <span>Nome de usuário: <%= user.username %></span><br>
         <span>Senha: <%= user.password %></span><br>
@@ -205,28 +205,22 @@
         <span>Saldo: <%= user.saldo %></span>
         <br>
         <center>
-        <div class="flex">
-        <a href="/deletar/<%= user.username %>"><button class="deletar">Deletar Usuário</button></a>
-        <a href="/editar/<%= user.username %>"><button>Editar</button></a>
-
-         </div>
+            <div class="flex">
+                <button class="deletar" onclick="confirmDelete('<%= user.username %>')">Deletar Usuário</button>
+                <a href="/editar/<%= user.username %>"><button>Editar</button></a>
+            </div>
         </center>
         <br><hr><br>
     <% }) %>
-    
-  
-    </div>
+</div>
 
-
-    <script>
-
-
-  function confirmDelete(username) {
-    if (confirm('Tem certeza que deseja deletar este usuário?')) {
-      window.location.href = '/deletar/${username}'; // Redireciona para a rota de deletar
+<script>
+    function confirmDelete(username) {
+        if (confirm('Tem certeza que deseja deletar este usuário?')) {
+            window.location.href = '/deletar/' + username; // Redireciona para a rota de deletar
+        }
     }
-  }
-  
+
         function toggleDarkTheme() {
                         const body = document.querySelector('body');
             const card = document.querySelector('.video-container ');
