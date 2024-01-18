@@ -403,7 +403,7 @@ app.get('/deletar/:username', async (req, res) => {
 
 app.post('/edit/:username', async (req, res) => {
   const { username } = req.params;
-  const { password, key, ft, saldo, isPremium, isAdm, isBaned } = req.body;
+  const { password, key, ft, saldo, total, isPremium, isAdm, isBaned } = req.body;
 
   try {
     const user = await User.findOne({ username });
@@ -425,7 +425,8 @@ app.post('/edit/:username', async (req, res) => {
     user.isPremium = isPremiumValue;
     user.isAdm = isAdmValue;
     user.isBaned = isBanedValue;
-
+    user.total = total || user.total;
+    
     // Salve as alterações no banco de dados
     await user.save();
 
