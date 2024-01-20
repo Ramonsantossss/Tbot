@@ -29,7 +29,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-
+const htmlPath = path.join(__dirname, './views/error.html');  
 const creator = "CM";
 const neoxr = "yntkts";
 const zeks = "administrator";
@@ -162,7 +162,6 @@ async function adicionarSaldo(username) {
   }
 }
 
-// Função auxiliar para ler os dados dos usuários do banco de dados
 async function readUsers() {
   try {
     return await User.find();
@@ -172,7 +171,6 @@ async function readUsers() {
   }
 }
 
-// Função auxiliar para salvar os dados dos usuários no banco de dados
 async function saveUsers(users) {
   try {
     await User.deleteMany(); 
@@ -186,10 +184,10 @@ const isUserBanned = async (username) => {
   try {
     const user = await User.findOne({ username, isPremium: true });
 
-    return !!user; // Retorna true se o usuário estiver banido, false se não estiver
+    return !!user; 
   } catch (error) {
     console.error('Erro ao verificar status de banimento do usuário:', error);
-    return false; // Assume que o usuário não está banido em caso de erro
+    return false;
   }
 };
 
@@ -248,7 +246,8 @@ app.post('/register', async (req, res) => {
     const saldo = 800; // Saldo padrão
     const total = 0;
     const key = keycode;
-
+    const desc = "Ola, estou usando a AniKit"
+    
 const motivo =  `Ola ${username} Seu código de verificação é: ${verificationCode}`
 const texto = "código de verificação"
 
@@ -337,14 +336,14 @@ app.get('/admin', async (req, res) => {
         const users = await User.find();
         return res.render('adminDashboard', { users, user });
       } else {
-        return res.status(403).send('Acesso não autorizado');
+        return res.sendFile(htmlPath);
       }
     } catch (error) {
       console.error('Erro ao acessar usuários:', error);
       return res.status(500).send('Erro interno do servidor. Por favor, tente novamente mais tarde.');
     }
   } else {
-    return res.status(403).send('Acesso não autorizado');
+    return res.sendFile(htmlPath);
   }
 });
 
@@ -456,11 +455,11 @@ app.get('/nsfw/ahegao', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -486,11 +485,11 @@ app.get('/nsfw/ass', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -516,11 +515,11 @@ app.get('/nsfw/bdsm', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -547,11 +546,11 @@ app.get('/nsfw/blowjob', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -577,11 +576,11 @@ app.get('/nsfw/cuckold', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -607,11 +606,11 @@ app.get('/nsfw/cum', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -637,11 +636,11 @@ app.get('/nsfw/ero', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -667,11 +666,11 @@ app.get('/memes', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -697,11 +696,11 @@ app.get('/nsfw/femdom', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -727,11 +726,11 @@ app.get('/nsfw/foot', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -757,11 +756,11 @@ app.get('/nsfw/gangbang', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -787,11 +786,11 @@ app.get('/nsfw/glasses', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -817,11 +816,11 @@ app.get('/nsfw/hentai', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -847,11 +846,11 @@ app.get('/nsfw/gifs', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -877,11 +876,11 @@ app.get('/nsfw/jahy', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -907,11 +906,11 @@ app.get('/nsfw/manga', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -937,11 +936,11 @@ app.get('/nsfw/masturbation', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -967,11 +966,11 @@ app.get('/nsfw/neko', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -997,11 +996,11 @@ app.get('/nsfw/orgy', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -1029,11 +1028,11 @@ app.get('/nsfw/panties', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -1059,11 +1058,11 @@ app.get('/nsfw/pussy', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -1089,11 +1088,11 @@ app.get('/nsfw/neko2', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -1119,11 +1118,11 @@ app.get('/nsfw/tentacles', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -1149,11 +1148,11 @@ app.get('/nsfw/thighs', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -1179,11 +1178,11 @@ app.get('/nsfw/yuri', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -1209,11 +1208,11 @@ app.get('/nsfw/zettai', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -1239,11 +1238,11 @@ app.get('/nime/keneki', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -1269,11 +1268,11 @@ app.get('/nime/megumin', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -1299,11 +1298,11 @@ app.get('/nime/yotsuba', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -1329,11 +1328,11 @@ app.get('/nime/shinomiya', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -1359,11 +1358,11 @@ app.get('/nime/yumeko', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -1389,11 +1388,11 @@ app.get('/nime/tejina', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -1419,11 +1418,11 @@ app.get('/nime/chiho', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -1449,11 +1448,11 @@ app.get('/18/video', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -1478,11 +1477,11 @@ app.get('/18/travazap', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -1510,11 +1509,11 @@ app.get('/nime/toukachan', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -1540,11 +1539,11 @@ app.get('/nime/akira', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -1570,11 +1569,11 @@ app.get('/nime/itori', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -1600,11 +1599,11 @@ app.get('/nime/kurumi', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -1630,11 +1629,11 @@ app.get('/nime/miku', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -1660,11 +1659,11 @@ app.get('/nime/pokemon', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -1690,11 +1689,11 @@ app.get('/nime/ryujin', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -1720,11 +1719,11 @@ app.get('/nime/rose', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -1750,11 +1749,11 @@ app.get('/nime/kaori', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -1780,11 +1779,11 @@ app.get('/nime/shizuka', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -1810,11 +1809,11 @@ app.get('/nime/kaga', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -1840,11 +1839,11 @@ app.get('/nime/kotori', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -1870,11 +1869,11 @@ app.get('/nime/mikasa', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -1900,11 +1899,11 @@ app.get('/nime/akiyama', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -1930,11 +1929,11 @@ app.get('/nime/gremory', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -1960,11 +1959,11 @@ app.get('/nime/isuzu', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -1990,11 +1989,11 @@ app.get('/nime/cosplay', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -2020,11 +2019,11 @@ app.get('/nime/shina', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -2050,11 +2049,11 @@ app.get('/nime/kagura', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -2080,11 +2079,11 @@ app.get('/nime/shinka', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -2110,11 +2109,11 @@ app.get('/nime/eba', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -2140,11 +2139,11 @@ app.get('/nime/deidara', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -2172,11 +2171,11 @@ app.get('/nime/jeni', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -2203,11 +2202,11 @@ app.get('/random/meme', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -2232,11 +2231,11 @@ app.get('/nime/toukachan', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -2262,11 +2261,11 @@ app.get('/nime/akira', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -2292,11 +2291,11 @@ app.get('/nime/itori', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -2322,11 +2321,11 @@ app.get('/nime/kurumi', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -2352,11 +2351,11 @@ app.get('/nime/miku', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -2382,11 +2381,11 @@ app.get('/nime/pokemon', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -2412,11 +2411,11 @@ app.get('/nime/ryujin', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -2442,11 +2441,11 @@ app.get('/nime/rose', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -2472,11 +2471,11 @@ app.get('/nime/kaori', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -2502,11 +2501,11 @@ app.get('/nime/shizuka', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -2532,11 +2531,11 @@ app.get('/nime/kaga', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -2562,11 +2561,11 @@ app.get('/nime/kotori', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -2592,11 +2591,11 @@ app.get('/nime/mikasa', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -2622,11 +2621,11 @@ app.get('/nime/akiyama', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -2652,11 +2651,11 @@ app.get('/nime/gremory', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -2682,11 +2681,11 @@ app.get('/nime/isuzu', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -2712,11 +2711,11 @@ app.get('/nime/cosplay', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -2742,11 +2741,11 @@ app.get('/nime/shina', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -2772,11 +2771,11 @@ app.get('/nime/kagura', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -2802,11 +2801,11 @@ app.get('/nime/shinka', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -2832,11 +2831,11 @@ app.get('/nime/eba', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -2862,11 +2861,11 @@ app.get('/nime/deidara', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -2894,11 +2893,11 @@ app.get('/nime/jeni', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -2925,11 +2924,11 @@ app.get('/random/meme', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -2955,11 +2954,11 @@ app.get('/wallpaper/satanic', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -2987,11 +2986,11 @@ app.get('/nime/itachi', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -3017,11 +3016,11 @@ app.get('/nime/madara', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -3047,11 +3046,11 @@ app.get('/nime/yuki', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -3077,11 +3076,11 @@ app.get('/wallpaper/asuna', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -3107,11 +3106,11 @@ app.get('/nime/ayuzawa', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -3137,11 +3136,11 @@ app.get('/nime/chitoge', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -3167,11 +3166,11 @@ app.get('/nime/emilia', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -3197,11 +3196,11 @@ app.get('/nime/hestia', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -3227,11 +3226,11 @@ app.get('/nime/inori', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -3257,11 +3256,11 @@ app.get('/nime/ana', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -3287,11 +3286,11 @@ app.get('/nime/boruto', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -3317,11 +3316,11 @@ app.get('/nime/erza', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -3347,11 +3346,11 @@ app.get('/nime/kakasih', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -3377,11 +3376,11 @@ app.get('/nime/sagiri', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -3407,11 +3406,11 @@ app.get('/nime/minato', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -3437,11 +3436,11 @@ app.get('/nime/naruto', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -3467,11 +3466,11 @@ app.get('/nime/nezuko', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -3497,11 +3496,11 @@ app.get('/nime/onepiece', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -3527,11 +3526,11 @@ app.get('/nime/rize', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -3557,11 +3556,11 @@ app.get('/nime/sakura', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -3587,11 +3586,11 @@ app.get('/nime/sasuke', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -3617,11 +3616,11 @@ app.get('/nime/tsunade', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -3647,11 +3646,11 @@ app.get('/nime/montor', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -3677,11 +3676,11 @@ app.get('/nime/mobil', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -3708,11 +3707,11 @@ app.get('/nime/anime', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -3739,11 +3738,11 @@ app.get('/nime/wallhp', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -3769,11 +3768,11 @@ app.get('/nime/waifu2', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -3799,11 +3798,11 @@ app.get('/nime/waifu', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -3830,11 +3829,11 @@ app.get('/nime/hekel', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -3860,11 +3859,11 @@ app.get('/nime/kucing', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -3890,11 +3889,11 @@ app.get('/wallpaper/pubg', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -3920,11 +3919,11 @@ app.get('/wallpaper/ppcouple', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -3950,11 +3949,11 @@ app.get('/wallpaper/anjing', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -3980,11 +3979,11 @@ app.get('/nime/doraemon', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -4011,11 +4010,11 @@ app.get('/nime/elaina', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -4043,11 +4042,11 @@ app.get('/nime/loli', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -4075,11 +4074,11 @@ app.get('/nime/yuri', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -4106,11 +4105,11 @@ app.get('/nime/cecan', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -4138,11 +4137,11 @@ app.get('/wallpaper/aesthetic', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -4171,11 +4170,11 @@ app.get('/nime/sagiri', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -4202,11 +4201,11 @@ app.get('/nime/shota', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -4233,11 +4232,11 @@ app.get('/nime/nsfwloli', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -4265,11 +4264,11 @@ app.get('/nime/hinata', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -4297,11 +4296,11 @@ app.get('/download/ytmp3', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -4331,11 +4330,11 @@ app.get('/download/tiktok', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -4362,11 +4361,11 @@ app.get('/download/ytmp4', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -4393,11 +4392,11 @@ app.get("/yt/playmp3", async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -4427,11 +4426,11 @@ app.get("/yt/playmp4", async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -4458,11 +4457,11 @@ app.get('/anime/amv', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -4490,11 +4489,11 @@ app.get('/wallpaper/cyberspace', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -4520,11 +4519,11 @@ app.get('/wallpaper/gaming', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -4550,11 +4549,11 @@ app.get('/wallpaper/programing', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -4580,11 +4579,11 @@ app.get('/wallpaper/wallpapertec', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -4610,11 +4609,11 @@ app.get('/wallpaper/mountain', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -4642,11 +4641,11 @@ app.get('/wallpaper/satanic', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -4674,11 +4673,11 @@ app.get('/wallpaper/asuna', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -4705,11 +4704,11 @@ app.get('/wallpaper/pubg', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -4735,11 +4734,11 @@ app.get('/wallpaper/ppcouple', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -4765,11 +4764,11 @@ app.get('/wallpaper/anjing', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -4795,11 +4794,11 @@ app.get('/wallpaper/aesthetic', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -4827,11 +4826,11 @@ app.get("/download/pinterest", async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -4857,11 +4856,11 @@ app.get('/memes', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
 
@@ -4886,11 +4885,11 @@ app.get('/18/video', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -4915,11 +4914,11 @@ app.get('/18/travazap', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -4944,11 +4943,11 @@ app.get('/18/foto_18', async (req, res, next) => {
   const user = await User.findOne({ username, key });
 
 if (!user) {
-  return res.status(401).send('Acesso não autorizado.');
+  return res.sendFile(htmlPath);
 }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -4974,11 +4973,11 @@ app.get('/welcome', async (req, res) => {
     const user = await User.findOne({ username, key });
 
     if (!user) {
-      return res.status(401).send('Acesso não autorizado.');
+      return res.sendFile(htmlPath);
     }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
 
     const resultadoDiminuicao = diminuirSaldo(username);
@@ -5012,11 +5011,11 @@ app.get('/goodbye', async (req, res) => {
     const user = await User.findOne({ username, key });
 
     if (!user) {
-      return res.status(401).send('Acesso não autorizado.');
+      return res.sendFile(htmlPath);
     }
 
 if (user.isBaned === true) {
-return res.status(401).send('Acesso não autorizado.');
+return res.sendFile(htmlPath);
 }
     const resultadoDiminuicao = diminuirSaldo(username);
     const add = adicionarSaldo(username);
