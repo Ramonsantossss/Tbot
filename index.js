@@ -109,6 +109,10 @@ const userSchema = new mongoose.Schema({
   saldo: { type: Number, default: 0 },
   total: { type: Number, default: 0 },
   ft: { type: String, default: null },
+  yt: { type: String, default: null },
+  zap: { type: String, default: null },
+  insta: { type: String, default: null },
+  wallpaper: { type: String, default: null },
   verificationCode: { type: String },
   isVerified: { type: Boolean, default: false },
   isPremium: { type: Boolean, default: false },
@@ -210,6 +214,27 @@ app.get('/', async (req, res) => {
   }
 });
 
+app.get('/myperfil', async (req, res) => {
+  const user = req.session.user;
+
+  if (user) {
+    const { username, password, verificationCode, isVerified } = user;
+    if (isVerified === true) {
+    
+      const userDb = await User.findOne({ username, password });
+      const users = userDb;
+      const quantidadeRegistrados = await User.countDocuments();
+      const topUsers = await User.find().sort({ total: -1 }).limit(7);
+      return res.render('myperfil', { user, userDb, users, topUsers, quantidade: quantidadeRegistrados });
+      
+    } else {
+      return res.redirect('/verify');
+    }
+  } else {
+    return res.redirect('/login');
+  }
+});
+
 // Adicione isso às suas rotas
 app.get('/search', async (req, res) => {
   const searchTerm = req.query.search || '';
@@ -247,6 +272,10 @@ app.post('/register', async (req, res) => {
     const total = 0;
     const key = keycode;
     const desc = "Ola, estou usando a AniKit"
+    const insta ="@clovermods"
+    const zap = "55759865969696"
+    const yt = "youtube.com/@clovermods"
+    const wallpaper = "https://telegra.ph/file/56fa53ec05377a51311cc.jpg"
     
 const motivo =  `Ola ${username} Seu código de verificação é: ${verificationCode}`
 const texto = "código de verificação"
@@ -262,7 +291,7 @@ function emailsend(texto, motivo) {
 }
 emailsend(texto, motivo)
 
-    const user = new User({ username, password, email, key, saldo, total, ft, verificationCode, isVerified: false, isPremium: false, isAdm: false, isBaned: false });
+    const user = new User({ username, password, email, key, saldo, total, ft, zap, insta, yt, wallpaper, verificationCode, isVerified: false, isPremium: false, isAdm: false, isBaned: false });
     
     await user.save();
     console.log(user)
@@ -437,7 +466,35 @@ app.post('/edit/:username', async (req, res) => {
 });
 
 
+app.post('/editarr/:username', async (req, res) => {
+  const { username } = req.params;
+  const { password, key, ft, insta, wallpaper, zap, yt } = req.body;
 
+  try {
+    const user = await User.findOne({ username });
+
+    if (!user) {
+      return res.status(404).send('Usuário não encontrado.');
+    }
+
+    // Atualize os valores
+    user.password = password || user.password;
+    user.key = key || user.key;
+    user.ft = ft || user.ft;
+    user.yt = yt || user.yt;
+    user.insta = insta || user.insta
+    user.zap = zap || user.zap
+    user.wallpaper = wallpaper || user.wallpaper
+    
+    // Salve as alterações no banco de dados
+    await user.save();
+
+    return res.redirect('/login');
+  } catch (error) {
+    console.error('Erro ao acessar o banco de dados:', error);
+    return res.status(500).send('Erro interno do servidor. Por favor, tente novamente mais tarde.');
+  }
+});
 
 
 app.get('/ver/:username', async (req, res) => {
