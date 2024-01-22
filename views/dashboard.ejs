@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html>
 <head>
-
 <meta charset="utf-8">
 <title>AniKit</title>
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -30,7 +29,18 @@
 <link rel="stylesheet" type="text/css" href="https://ferdiz-afk.github.io/deskapp/src/plugins/datatables/css/dataTables.bootstrap4.min.css">
 <link rel="stylesheet" type="text/css" href="https://ferdiz-afk.github.io/deskapp/src/plugins/datatables/css/responsive.bootstrap4.min.css">
 <link rel="stylesheet" type="text/css" href="https://ferdiz-afk.github.io/deskapp/vendors/styles/style.css">
+<style>
+body {
+background: #310404 url('<%= user.wallpaper %>') no-repeat center center fixed;
+      -webkit-background-size: cover;
+      -moz-background-size: cover;
+      -o-background-size: cover;
+      background-size: cover;
+      font-family: 'Barlow', sans-serif;
+  font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+}
 
+</style>
 <script async src="https://www.googletagmanager.com/gtag/js?id=UA-119386393-1"></script>
 <script>
       window.dataLayer = window.dataLayer || [];
@@ -41,6 +51,8 @@
       gtag('js', new Date());
       gtag('config', 'UA-119386393-1');
     </script>
+    
+
 <style>
      .tutotxt {
     }
@@ -116,61 +128,65 @@
     }
     
 </style>
+
 </head>
 <body>
-<div class="pre-loader">
-<div class="pre-loader-box">
-<div class="loader-logo">
-<img src="https://i.ibb.co/DtFgv3g/giphy.webp" alt>
-</div>
-<div class="loader-progress" id="progress_div">
-<div class="bar" id="bar1"></div>
-</div>
-<div class="percent" id="percent1">0%</div>
-<div class="loading-text"> CARREGANDO... </div>
-</div>
-</div>
+
+
 <div class="header">
 <div class="header-left">
-<div class="menu-icon dw dw-menu"></div>
+<div class="menu-icon bi bi-list"></div>
 
-<% if (user && user.isAdm) { %>
+
 <div class="margem">
 <div class="fas fa-users-cog" data-toggle="header_search"></div>
 </div>
 <div class="header-search">
 <form>
 <div class="form-group mb-0">
+<% if (user.isAdm) { %>
 <hr>
  <a class="verp" href="/admin">Editar Usuários</a>
 <hr> 
 <% } else { %>
 
 <% } %>
-
 <div class="dropdown">
 
 <div class="dropdown-menu dropdown-menu-right">
 <div class="form-group row">
-<label class="col-sm-12 col-md-2 col-form-label">From</label>
+<label class="col-sm-12 col-md-2 col-form-label"
+>From</label
+>
 <div class="col-sm-12 col-md-10">
-<input class="form-control form-control-sm form-control-line" type="text">
+<input
+class="form-control form-control-sm form-control-line"
+type="text"
+/>
 </div>
 </div>
 <div class="form-group row">
 <label class="col-sm-12 col-md-2 col-form-label">To</label>
 <div class="col-sm-12 col-md-10">
-<input class="form-control form-control-sm form-control-line" type="text">
+<input
+class="form-control form-control-sm form-control-line"
+type="text"
+/>
 </div>
 </div>
 <div class="form-group row">
-<label class="col-sm-12 col-md-2 col-form-label">Subject</label>
+<label class="col-sm-12 col-md-2 col-form-label"
+>Subject</label
+>
 <div class="col-sm-12 col-md-10">
-<input class="form-control form-control-sm form-control-line" type="text">
+<input
+class="form-control form-control-sm form-control-line"
+type="text"
+/>
 </div>
 </div>
 <div class="text-right">
-<!--<button class="btn btn-primary">Search</button>-->
+<button class="btn btn-primary">Search</button>
 </div>
 </div>
 </div>
@@ -179,13 +195,87 @@
 </div>
 </div>
 
-</div> 
+
+
+<div class="header-right">
+<div class="dashboard-setting user-notification">
+<div class="dropdown">
+<a
+class="dropdown-toggle no-arrow"
+href="javascript:;"
+data-toggle="right-sidebar"
+>
+<i class="dw dw-settings2"></i>
+</a>
+</div>
+</div>
+<div class="user-notification">
+<div class="dropdown">
+<a
+class="dropdown-toggle no-arrow"
+href="#"
+role="button"
+data-toggle="dropdown"
+>
+<i class="icon-copy dw dw-notification"></i>
+<span class="badge notification-active"></span>
+</a>
+<div class="dropdown-menu dropdown-menu-right">
+<div class="notification-list mx-h-350 customscroll">
+<ul>
+<li>
+<a href="#">
+<img src="https://telegra.ph/file/87fe9fdbf08280460e531.jpg" alt="" />
+<h3>Clover Mods</h3>
+<p>
+Esta gostando? qualquer duvida entre em contato com o suporte!
+</p>
+</a>
+</li>
+</ul>
 </div>
 </div>
 </div>
+</div>
+<div class="user-info-dropdown">
+<div class="dropdown">
+<a
+class="dropdown-toggle"
+href="#"
+role="button"
+data-toggle="dropdown"
+>
+<span class="user-icon">
+<img src="<%= user.ft %>" alt="" />
+</span>
+<span class="user-name"><%= user.username %></span>
+</a>
+<div
+class="dropdown-menu dropdown-menu-right dropdown-menu-icon-list"
+>
+<a class="dropdown-item" href="/myperfil"
+><i class="dw dw-user1"></i> Profile</a
+>
+<a class="dropdown-item" href="login.html"
+><i class="dw dw-logout"></i> Log Out</a
+>
+</div>
+</div>
+</div>
+<div class="github-link">
+<img src="vendors/images/github.svg" alt=""
+/>
+</div>
+</div>
+</div>
+
 <div class="right-sidebar">
 <div class="sidebar-title">
-<h3 class="weight-600 font-16 text-blue"> Layout Settings <span class="btn-block font-weight-400 font-12">User Interface Settings</span>
+<h3 class="weight-600 font-16 text-blue">
+Layout Settings
+<span class="btn-block font-weight-400 font-12"
+>User Interface Settings</span
+>
 </h3>
 <div class="close-sidebar" data-toggle="right-sidebar-close">
 <i class="icon-copy ion-close-round"></i>
@@ -195,80 +285,160 @@
 <div class="right-sidebar-body-content">
 <h4 class="weight-600 font-18 pb-10">Header Background</h4>
 <div class="sidebar-btn-group pb-30 mb-10">
-<a href="javascript:void(0);" class="btn btn-outline-primary header-white active">White</a>
-<a href="javascript:void(0);" class="btn btn-outline-primary header-dark">Dark</a>
+<a
+href="javascript:void(0);"
+class="btn btn-outline-primary header-white active"
+>White</a
+>
+<a
+href="javascript:void(0);"
+class="btn btn-outline-primary header-dark"
+>Dark</a
+>
 </div>
+
 <h4 class="weight-600 font-18 pb-10">Sidebar Background</h4>
 <div class="sidebar-btn-group pb-30 mb-10">
-<a href="javascript:void(0);" class="btn btn-outline-primary sidebar-light ">White</a>
-<a href="javascript:void(0);" class="btn btn-outline-primary sidebar-dark active">Dark</a>
+<a
+href="javascript:void(0);"
+class="btn btn-outline-primary sidebar-light"
+>White</a
+>
+<a
+href="javascript:void(0);"
+class="btn btn-outline-primary sidebar-dark active"
+>Dark</a
+>
 </div>
+
 <h4 class="weight-600 font-18 pb-10">Menu Dropdown Icon</h4>
 <div class="sidebar-radio-group pb-10 mb-10">
 <div class="custom-control custom-radio custom-control-inline">
-<input type="radio" id="sidebaricon-1" name="menu-dropdown-icon" class="custom-control-input" value="icon-style-1" checked>
-<label class="custom-control-label" for="sidebaricon-1">
-<i class="fa fa-angle-down"></i>
-</label>
+<input
+type="radio"
+id="sidebaricon-1"
+name="menu-dropdown-icon"
+class="custom-control-input"
+value="icon-style-1"
+checked=""
+/>
+<label class="custom-control-label" for="sidebaricon-1"
+><i class="fa fa-angle-down"></i
+></label>
 </div>
 <div class="custom-control custom-radio custom-control-inline">
-<input type="radio" id="sidebaricon-2" name="menu-dropdown-icon" class="custom-control-input" value="icon-style-2">
-<label class="custom-control-label" for="sidebaricon-2">
-<i class="ion-plus-round"></i>
-</label>
+<input
+type="radio"
+id="sidebaricon-2"
+name="menu-dropdown-icon"
+class="custom-control-input"
+value="icon-style-2"
+/>
+<label class="custom-control-label" for="sidebaricon-2"
+><i class="ion-plus-round"></i
+></label>
 </div>
 <div class="custom-control custom-radio custom-control-inline">
-<input type="radio" id="sidebaricon-3" name="menu-dropdown-icon" class="custom-control-input" value="icon-style-3">
-<label class="custom-control-label" for="sidebaricon-3">
-<i class="fa fa-angle-double-right"></i>
-</label>
+<input
+type="radio"
+id="sidebaricon-3"
+name="menu-dropdown-icon"
+class="custom-control-input"
+value="icon-style-3"
+/>
+<label class="custom-control-label" for="sidebaricon-3"
+><i class="fa fa-angle-double-right"></i
+></label>
 </div>
 </div>
+
 <h4 class="weight-600 font-18 pb-10">Menu List Icon</h4>
 <div class="sidebar-radio-group pb-30 mb-10">
 <div class="custom-control custom-radio custom-control-inline">
-<input type="radio" id="sidebariconlist-1" name="menu-list-icon" class="custom-control-input" value="icon-list-style-1" checked>
-<label class="custom-control-label" for="sidebariconlist-1">
-<i class="ion-minus-round"></i>
-</label>
+<input
+type="radio"
+id="sidebariconlist-1"
+name="menu-list-icon"
+class="custom-control-input"
+value="icon-list-style-1"
+checked=""
+/>
+<label class="custom-control-label" for="sidebariconlist-1"
+><i class="ion-minus-round"></i
+></label>
 </div>
 <div class="custom-control custom-radio custom-control-inline">
-<input type="radio" id="sidebariconlist-2" name="menu-list-icon" class="custom-control-input" value="icon-list-style-2">
-<label class="custom-control-label" for="sidebariconlist-2">
-<i class="fa fa-circle-o" aria-hidden="true"></i>
-</label>
+<input
+type="radio"
+id="sidebariconlist-2"
+name="menu-list-icon"
+class="custom-control-input"
+value="icon-list-style-2"
+/>
+<label class="custom-control-label" for="sidebariconlist-2"
+><i class="fa fa-circle-o" aria-hidden="true"></i
+></label>
 </div>
 <div class="custom-control custom-radio custom-control-inline">
-<input type="radio" id="sidebariconlist-3" name="menu-list-icon" class="custom-control-input" value="icon-list-style-3">
-<label class="custom-control-label" for="sidebariconlist-3">
-<i class="dw dw-check"></i>
-</label>
+<input
+type="radio"
+id="sidebariconlist-3"
+name="menu-list-icon"
+class="custom-control-input"
+value="icon-list-style-3"
+/>
+<label class="custom-control-label" for="sidebariconlist-3"
+><i class="dw dw-check"></i
+></label>
 </div>
 <div class="custom-control custom-radio custom-control-inline">
-<input type="radio" id="sidebariconlist-4" name="menu-list-icon" class="custom-control-input" value="icon-list-style-4" checked>
-<label class="custom-control-label" for="sidebariconlist-4">
-<i class="icon-copy dw dw-next-2"></i>
-</label>
+<input
+type="radio"
+id="sidebariconlist-4"
+name="menu-list-icon"
+class="custom-control-input"
+value="icon-list-style-4"
+checked=""
+/>
+<label class="custom-control-label" for="sidebariconlist-4"
+><i class="icon-copy dw dw-next-2"></i
+></label>
 </div>
 <div class="custom-control custom-radio custom-control-inline">
-<input type="radio" id="sidebariconlist-5" name="menu-list-icon" class="custom-control-input" value="icon-list-style-5">
-<label class="custom-control-label" for="sidebariconlist-5">
-<i class="dw dw-fast-forward-1"></i>
-</label>
+<input
+type="radio"
+id="sidebariconlist-5"
+name="menu-list-icon"
+class="custom-control-input"
+value="icon-list-style-5"
+/>
+<label class="custom-control-label" for="sidebariconlist-5"
+><i class="dw dw-fast-forward-1"></i
+></label>
 </div>
 <div class="custom-control custom-radio custom-control-inline">
-<input type="radio" id="sidebariconlist-6" name="menu-list-icon" class="custom-control-input" value="icon-list-style-6">
-<label class="custom-control-label" for="sidebariconlist-6">
-<i class="dw dw-next"></i>
-</label>
+<input
+type="radio"
+id="sidebariconlist-6"
+name="menu-list-icon"
+class="custom-control-input"
+value="icon-list-style-6"
+/>
+<label class="custom-control-label" for="sidebariconlist-6"
+><i class="dw dw-next"></i
+></label>
 </div>
 </div>
+
 <div class="reset-options pt-30 text-center">
-<button class="btn btn-danger" id="reset-settings">Reset Settings</button>
+<button class="btn btn-danger" id="reset-settings">
+Reset Settings
+</button>
 </div>
 </div>
 </div>
 </div>
+
 <div class="left-side-bar">
 <div class="brand-logo">
 <a href="#">
@@ -518,14 +688,29 @@
 </div>
 </div>
 </div>
-<div class="main-container">
-<div class="xs-pd-20-10 pd-ltr-20">
-<div class="title pb-20">
-<h2 class="h3 mb-0">PAINEL</h2>
+
+
+<div class="pre-loader">
+<div class="pre-loader-box">
+<div class="loader-logo">
+<img src="https://i.ibb.co/DtFgv3g/giphy.webp" alt>
 </div>
+<div class="loader-progress" id="progress_div">
+<div class="bar" id="bar1"></div>
+</div>
+<div class="percent" id="percent1">0%</div>
+<div class="loading-text"> CARREGANDO... </div>
 </div>
 </div>
 
+
+<div class="mobile-menu-overlay"></div>
+<div class="main-container">
+<div class="xs-pd-20-10 pd-ltr-20">
+<div class="title pb-20">
+<h2 style="color:yellow;" class="h3 mb-0">PAINEL</h2>
+</div>
+<div class="row pb-10">
 <% if (!user.isBaned === true) { %>
 
 <% if (!user.isPremium === true) { %>
@@ -561,6 +746,7 @@
 
 <% } else { %>
 
+
 <div class="col-xl-3 col-lg-3 col-md-6 mb-20">
 <div class="card-box height-100-p widget-style3">
 <div class="d-flex flex-wrap">
@@ -576,176 +762,286 @@
 
 <% } %>
 
-<div class="col-xl-3 col-lg-3 col-md-6 mb-20">
-<div class="card-box height-100-p widget-style3">
-<div class="d-flex flex-wrap">
-<div class="widget-data">
-<div class="weight-700 font-24 text-dark">Saldo</div>
-<div class="font-14 text-secondary weight-500"><%= userDb.saldo %></div>
-</div>
-<div class="widget-icon">
-<div class="icon">
-<i class="icon-copy fa fa-money faa-pulse animated faa-slow" aria-hidden="true"></i>
-</div>
-</div>
-</div>
-</div>
-</div>
 
 <div class="col-xl-3 col-lg-3 col-md-6 mb-20">
 <div class="card-box height-100-p widget-style3">
 <div class="d-flex flex-wrap">
 <div class="widget-data">
-<div class="weight-700 font-24 text-dark">Total Requests</div>
-<div class="font-14 text-secondary weight-500"><%= userDb.total %></div>
-</div>
-<div class="widget-icon">
-<div class="icon">
-<i class="icon-copy fa fa-database faa-pulse animated faa-slow" aria-hidden="true"></i>
-</div>
-</div>
-</div>
-</div>
-</div>
-
-<div class="col-xl-3 col-lg-3 col-md-6 mb-20">
-<div class="card-box height-100-p widget-style3">
-<div class="d-flex flex-wrap">
-<div class="widget-data">
-<div class="weight-700 font-24 text-dark">Apikey</div>
-<div class="font-14 text-secondary weight-500"><%= userDb.key %></div>
-</div>
-<div class="widget-icon">
-<div class="icon">
-<i class="icon-copy fa fa-key faa-pulse animated faa-slow" aria-hidden="true"></i>
-</div>
-</div>
-</div>
-</div>
-</div>
-
-<% if (!user.isAdm === true) { %>
-
-
-<% } else { %>
- <div class="col-xl-3 col-lg-3 col-md-6 mb-20">
-<div class="card-box height-100-p widget-style3">
-<div class="d-flex flex-wrap">
-<div class="widget-data">
-<div class="weight-700 font-24 text-dark">Usuários</div>
+<div class="weight-700 font-16 text-dark"><%= quantidade %></div>
 <div class="font-14 text-secondary weight-500">
-<!-- Inicia codigo Contador -->
-<%= quantidade %>
-<!-- Fim do codigo Contador -->
+Registrados
+</div>
+</div>
+<div class="widget-icon">
+<div class="icon" data-color="#00eccf">
+<i class="icon-copy dw dw-calendar1"></i>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="col-xl-3 col-lg-3 col-md-6 mb-20">
+<div class="card-box height-100-p widget-style3">
+<div class="d-flex flex-wrap">
+<div class="widget-data">
+<div class="weight-700 font-16 text-dark"><%= user.total %></div>
+<div class="font-14 text-secondary weight-500">
+Saldo usado
+</div>
+</div>
+<div class="widget-icon">
+<div class="icon" data-color="#ff5b5b">
+<span class="icon-copy ti-heart"></span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!--<div class="col-xl-3 col-lg-3 col-md-6 mb-20">
+<div class="card-box height-100-p widget-style3">
+<div class="d-flex flex-wrap">
+<div class="widget-data">
+<div class="weight-700 font-24 text-dark">400+</div>
+<div class="font-14 text-secondary weight-500">
+Total Doctor
 </div>
 </div>
 <div class="widget-icon">
 <div class="icon">
-<i class="icon-copy fa fa-users faa-pulse animated faa-slow" aria-hidden="true"></i>
-</div>
-</div>
-</div>
-</div>
-</div>
-<% } %>
-
-
-</div>
-</div>
-<div class="col-xl-3 col-sm-6 grid-margin stretch-card">
-</div>
-</div>              
- <form action="/keyerrada">
-<div class="card card-round mt-5 stretch-card grid-margin">
-<div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-<h4 class="m-0 font-weight-bold text-warning">
 <i
-<h4>Top Usuários:</h4>
-</div>
-<div class="card-body">
-  <div class="tutotxt"><br>
-    <div class="tutotxtt">
-      <center>
-        <% topUsers.sort((a, b)=> b.total - a.total).forEach(function(user) { %><br>
-          <a class="verp" href="/ver/<%= user.username %>">
-            <div class="user-info">
-              <img class="user-photo" src="<%= user.ft %>" alt="Foto do Usuário">
-              <div class="user-name">@<%= user.username %>: Level <%= user.total %>
-              </div>
-            </div>
-          </a>
-          <hr><br>
-          <% }); %>
-
-      </center>
-    </div>
-
-  </div>
+class="icon-copy fa fa-stethoscope"
+aria-hidden="true"
+></i>
 </div>
 </div>
-</form>
-<script>
+</div>
+</div>
+</div>-->
+<div class="col-xl-3 col-lg-3 col-md-6 mb-20">
+<div class="card-box height-100-p widget-style3">
+<div class="d-flex flex-wrap">
+<div class="widget-data">
+<div class="weight-700 font-16 text-dark"><%= user.key %></div>
+<div class="font-14 text-secondary weight-500">Chave/Apikey</div>
+</div>
+<div class="widget-icon">
+<div class="icon" data-color="#09cc06">
+<i class="icon-copy fa fa-key" aria-hidden="true"></i>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
 
-</script>
-<script>
-<div class="row">
+<div class="row pb-10">
+
 <div class="col-md-4 mb-20">
-<a href="#" class="card-box d-block mx-auto pd-20 text-secondary">
-<div class="card-body">
-<strong>LEIA:</strong>
+
+<div class="card-box min-height-200px pd-20" data-bgcolor="#265ed7">
+<div class="d-flex justify-content-between pb-20 text-white">
+<div class="icon h1 text-white">
+<i class="fa fa-stethoscope" aria-hidden="true"></i>
+</div>
+<div class="font-14 text-right">
+<div>ID <%= user._id %></div>
+<div class="font-12">Cartao AniKit</div>
+</div>
+</div>
+<div class="d-flex justify-content-between align-items-end">
+<div class="text-white">
+<div class="font-14">Saldo Restante</div>
+<div class="font-24 weight-500"><%= user.saldo %></div>
+</div>
+<div class="max-width-150">
+<div id="surgery-chart"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
 <div class="row">
-<div class="col-auto">
+<div class="col-lg-4 col-md-6 mb-20">
+<div class="card-box height-100-p pd-20 min-height-200px">
+<div class="d-flex justify-content-between pb-10">
+<div class="h5 mb-0">Top Usuários</div>
+
+</div>
+<div class="user-list">
 <ul>
-<li>• Pro.</li>
-<li>• </li>
+
+<% topUsers.sort((a, b)=> b.total - a.total).forEach(function(user) { %><br>
+<li class="d-flex align-items-center justify-content-between">
+<div class="name-avatar d-flex align-items-center pr-2">
+<div class="avatar mr-2 flex-shrink-0">
+<img
+src="<%= user.ft %>"
+class="border-radius-100 box-shadow"
+width="50"
+height="50"
+alt=""
+/>
+</div>
+<div class="txt">
+<span
+class="badge badge-pill badge-sm"
+data-bgcolor="#e7ebf5"
+data-color="#265ed7"
+><%= user.total %></span
+>
+<div class="font-14 weight-600"><%= user.username %></div>
+<div class="font-12 weight-500" data-color="#b2b1b6">
+Usuário Top
+</div>
+</div>
+</div>
+<div class="cta flex-shrink-0">
+<a href="/ver/<%= user.username %>" class="btn btn-sm btn-outline-primary"
+>Perfil</a
+>
+</div>
+</li>
+
+<% }); %>
 </ul>
 </div>
 </div>
 </div>
+
+<div class="col-lg-4 col-md-6 mb-20">
+
+</div>
+
+<div class="col-lg-4 col-md-12 mb-20">
+<div class="card-box height-100-p pd-20 min-height-200px">
+<div class="max-width-300 mx-auto">
+<img src="https://dropways.github.io/deskapp/vendors/images/upgrade.svg" alt="" />
+</div>
+<div class="text-center">
+<div class="h5 mb-1">Upgrade Pro</div>
+<div
+class="font-14 weight-500 max-width-200 mx-auto pb-20"
+data-color="#a6a6a7"
+>
+Vc podera desfrutar de nivel de nobreza mais alto e de conteudos exclusivos.
+</div>
+<a href="/loja" class="btn btn-primary btn-lg">Upgrade</a>
+</div>
+</div>
+</div>
+</div>
+
+<!--
+
+<div class="title pb-20 pt-20">
+<h2 class="h3 mb-0">Quick Start</h2>
+</div>
+
+<div class="row">
+<div class="col-md-4 mb-20">
+<a href="#" class="card-box d-block mx-auto pd-20 text-secondary">
+<div class="img pb-30">
+<img src="vendors/images/medicine-bro.svg" alt="" />
+</div>
+<div class="content">
+<h3 class="h4">Services</h3>
+<p class="max-width-200">
+We provide superior health care in a compassionate maner
+</p>
+</div>
+</a>
+</div>
+<div class="col-md-4 mb-20">
+<a href="#" class="card-box d-block mx-auto pd-20 text-secondary">
+<div class="img pb-30">
+<img src="vendors/images/remedy-amico.svg" alt="" />
+</div>
+<div class="content">
+<h3 class="h4">Medications</h3>
+<p class="max-width-200">
+Look for prescription and over-the-counter drug information.
+</p>
+</div>
+</a>
+</div>
+<div class="col-md-4 mb-20">
+<a href="#" class="card-box d-block mx-auto pd-20 text-secondary">
+<div class="img pb-30">
+<img src="vendors/images/paper-map-cuate.svg" alt="" />
+</div>
+<div class="content">
+<h3 class="h4">Locations</h3>
+<p class="max-width-200">
+Convenient locations when and where you need them.
+</p>
+</div>
 </a>
 </div>
 </div>
-<div class="footer-wrap pd-20 mb-20 card-box"> Todos direitos reservados BY: <a href="https://t.me/cinco_folhas" target="_blank">CloverMods</a>
+-->
+<div class="footer-wrap pd-20 mb-20 card-box">
+Ani-Kit - Feito com ❤️ por
+<a href="https://youtube.com/@clovermods" target="_blank"
+>Clover</a
+>
 </div>
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script> 
+</div>
+</div>
+<!-- welcome modal start -->
+<div class="welcome-modal">
+<button class="welcome-modal-close">
+<i class="bi bi-x-lg"></i>
+</button>
+<iframe
+class="w-100 border-0"
+src="https://embed.lottiefiles.com/animation/31548"
+></iframe>
+<div class="text-center">
+<h3 class="h5 weight-500 text-center mb-2">
+Comandos Pre Prontos
+<span role="img" aria-label="gratitude">❤️</span>
+</h3>
 
-          
-    </script>
-<script>
-      (function() {
-        let batterySupported = document.getElementById("battery-supported"),
-          batteryLevel = document.getElementById("battery-level"),
-          chargingStatus = document.getElementById("charging-status")
-        let success = function(battery) {
-          if (battery) {
-            function setStatus() {
-              batteryLevel.innerHTML = Math.round(battery.level * 100) + "%";
-              chargingStatus.innerHTML = (battery.charging) ? "⚡⚡" : "discharging";
-              console.log("Set status " + batteryLevel.innerHTML + " " + chargingStatus.innerHTML);
-            }
-            // Set initial status
-            setStatus();
-            // Set events
-            battery.addEventListener("levelchange", setStatus, false);
-            battery.addEventListener("chargingchange", setStatus, false);
-          } else {
-            throw new Error('Battery API not supported on your device/computer');
-          }
-        };
-        let noGood = function(error) {
-          //  batterySupported.innerHTML = error.message;
-        };
-        navigator.getBattery() //returns a promise
-          .then(success)
-        //.catch(noGood);
-      })();
-    </script>
-<script>
-      var loadFile = function(event) {
-        var image = document.getElementById('output');
-        image.src = URL.createObjectURL(event.target.files[0]);
-      };
-    </script>
+</div>
+<div class="text-center mb-1">
+<div>
+<a
+href="https://github.com/trevo-community/cases-api"
+target="_blank"
+class="btn btn-light btn-block btn-sm"
+>
+<span class="text-danger weight-600">DOWNLOAD</span>
+<span class="weight-600"> EM GITHUB</span>
+<i class="fa fa-github"></i>
+</a>
+</div>
+<script
+async
+defer="defer"
+src="https://buttons.github.io/buttons.js"
+></script>
+</div>
+<a
+href="https://github.com/trevo-community/cases-api"
+target="_blank"
+class="btn btn-success btn-sm mb-0 mb-md-3 w-100"
+>
+DOWNLOAD
+<i class="fa fa-download"></i>
+</a>
+<p class="font-14 text-center mb-1 d-none d-md-block">
+
+</p>
+<div class="d-none d-md-flex justify-content-center h1 mb-0 text-danger">
+<i class="fa fa-html5"></i>
+</div>
+</div>
+<button class="welcome-modal-btn">
+<i class="fa fa-download"></i> 
+</button>
+<!-- welcome modal end -->
+<!-- js -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
 <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
@@ -760,5 +1056,15 @@
 <script src="https://ferdiz-afk.github.io/deskapp/src/plugins/datatables/js/dataTables.responsive.min.js"></script>
 <script src="https://ferdiz-afk.github.io/deskapp/src/plugins/datatables/js/responsive.bootstrap4.min.js"></script>
 <script src="https://ferdiz-afk.github.io/deskapp/vendors/scripts/dashboard.js"></script>
+
+<noscript
+><iframe
+src="https://www.googletagmanager.com/ns.html?id=GTM-NXZMQSS"
+height="0"
+width="0"
+style="display: none; visibility: hidden"
+></iframe
+></noscript>
+<!-- End Google Tag Manager (noscript) -->
 </body>
 </html>
