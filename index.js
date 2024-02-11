@@ -4,8 +4,8 @@ const axios = require('axios');
 const TelegramBot = require('node-telegram-bot-api');
 const { prefix, nomeBot, token } = require("./config.js");
 var express = require('express'),
-    cors = require('cors'),
-    secure = require('ssl-express-www');
+  cors = require('cors'),
+  secure = require('ssl-express-www');
 const PORT = 8080
 const { menu, nsfw, sfw } = require('./menu.js')
 const mongoose = require('mongoose');
@@ -18,6 +18,7 @@ const path = require('path');
 const MemoryStore = require('memorystore')(session);
 const fs = require('fs');
 const nodemailer = require("nodemailer");
+const mercadopago = require('mercadopago');
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -29,7 +30,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-const htmlPath = path.join(__dirname, './views/error.html');  
+const htmlPath = path.join(__dirname, './views/error.html');
 const creator = "CM";
 const neoxr = "yntkts";
 const zeks = "administrator";
@@ -66,13 +67,13 @@ app.enable('trust proxy');
 app.set("json spaces", 2)
 app.use(express.urlencoded({ extended: true }));
 app.use(session({
-secret: 'secret',  
-resave: true,
-saveUninitialized: true,
-cookie: { maxAge: 86400000 },
-store: new MemoryStore({
-checkPeriod: 86400000
-}),
+  secret: 'secret',
+  resave: true,
+  saveUninitialized: true,
+  cookie: { maxAge: 86400000 },
+  store: new MemoryStore({
+    checkPeriod: 86400000
+  }),
 }));
 app.use(cors())
 app.use(secure)
@@ -82,7 +83,7 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
-
+const email = 'devscommunityoficial@gmail.com'
 
 //app.use('/', mainrouter);
 //app.use('/api', apirouter);
@@ -98,7 +99,9 @@ app.use(session({
 }));
 
 mongoose.connect('mongodb+srv://anikit:EPt96b3yMx3wmEC@cluster0.ukzkyjq.mongodb.net/?retryWrites=true&w=majority', { useNewUrlParser: true, useUnifiedTopology: true });
-
+mercadopago.configure({
+  access_token: 'APP_USR-8259792445335336-080911-dea2c74872b688a02354a83a497effba-1445374797',
+});
 //mongoose.connect('mongodb+srv://clover:clover@cluster0.6lnnwns.mongodb.net/?retryWrites=true&w=majority', { useNewUrlParser: true, useUnifiedTopology: true });
 
 const userSchema = new mongoose.Schema({
@@ -122,23 +125,23 @@ const userSchema = new mongoose.Schema({
 
 // Criando o modelo do usuário
 const User = mongoose.model('User', userSchema);
-Person = User; 
+Person = User;
 
 
 async function diminuirSaldo(username) {
   try {
     const user = await User.findOne({ username });
     if (!user) {
-      return false; 
+      return false;
     }
     if (user.isPremium || user.isAdm) {
       console.log('Usuário premium ou administrador. Saldo não será diminuído.');
-      return false; 
+      return false;
     }
 
     if (user.saldo > 0) {
       user.saldo--;
-      await user.save(); 
+      await user.save();
       return true; // Saldo diminuído com sucesso
     } else {
       return false; // Saldo insuficiente
@@ -150,18 +153,35 @@ async function diminuirSaldo(username) {
 }
 
 
-
 async function adicionarSaldo(username) {
   try {
     const user = await User.findOne({ username });
     if (!user) {
       return false;
     }
-    user.total += 1; 
-    await user.save(); 
-    return true; 
+
+    user.total += 1;
+    await user.save();
+    return true;
   } catch (error) {
-    console.error('Erro ao adicionar total:', error);
+    console.error('Erro ao adicionar saldo:', error);
+    return false;
+  }
+}
+
+async function adicionarSaldoPix(username, novo) {
+  try {
+    const user = await User.findOne({ username });
+    if (!user) {
+      return false;
+    }
+
+    const transactionAmountMoney = parseFloat(novo);
+    user.saldo += transactionAmountMoney;
+    await user.save();
+    return true;
+  } catch (error) {
+    console.error('Erro ao adicionar saldo:', error);
     return false;
   }
 }
@@ -177,8 +197,8 @@ async function readUsers() {
 
 async function saveUsers(users) {
   try {
-    await User.deleteMany(); 
-    await User.insertMany(users); 
+    await User.deleteMany();
+    await User.insertMany(users);
   } catch (error) {
     console.error('Erro ao salvar os dados no banco de dados:', error);
   }
@@ -188,13 +208,115 @@ const isUserBanned = async (username) => {
   try {
     const user = await User.findOne({ username, isPremium: true });
 
-    return !!user; 
+    return !!user;
   } catch (error) {
     console.error('Erro ao verificar status de banimento do usuário:', error);
     return false;
   }
 };
 
+
+// pagamentos \\
+
+
+app.get('/loja', (req, res) => {
+  
+  const user = req.session.user;
+
+  if (user) {
+    const { username, password, verificationCode, isVerified } = user;
+    if (isVerified === true) {
+      res.sendFile(__dirname + '/views/loja.html');
+    } else {
+      return res.redirect('/verify');
+    }
+  } else {
+    return res.redirect('/login');
+  }
+})
+
+app.get('/pagar', async (req, res) => {
+  const user = req.session.user;
+  if (user) {
+    const { username, password, verificationCode, isVerified } = user;
+    if (isVerified === true) {
+
+      try {
+
+        const { valor } = req.query;
+        const transactionAmount = parseFloat(valor);
+
+        const payment_data = {
+          transaction_amount: transactionAmount,
+          description: `Saldo AniKit`,
+          payment_method_id: 'pix',
+          payer: {
+            email,
+            first_name: 'Nome do Pagador',
+          }
+        };
+
+
+        const data = await mercadopago.payment.create(payment_data);
+        const qrcode = data.body.point_of_interaction.transaction_data.qr_code_base64;
+        const paymentLink = data.body.point_of_interaction.transaction_data.ticket_url;
+        const paymentId = data.body.id;
+        const valorpagar = valor
+        const codigo = data.body.point_of_interaction.transaction_data.qr_code;
+
+        // Renderiza uma página HTML com os dados do pagamento
+        return res.render('info', { username, qrcode, codigo, paymentId, paymentLink, valorpagar });
+
+
+
+      } catch (error) {
+        console.error(error);
+        return res.status(500).json({ error: 'Erro ao iniciar o pagamento' });
+      }
+
+    } else {
+      return res.redirect('/verify');
+    }
+  } else {
+    return res.redirect('/login');
+  }
+});
+
+
+app.get('/payment/:paymentId/:username', async (req, res) => {
+  const paymentId = req.params.paymentId;
+  const username = req.params.username;
+  const timeout = Infinity; // Tempo infinito
+
+  let isPaymentConfirmed = false;
+  const startTime = Date.now();
+
+  while (!isPaymentConfirmed && Date.now() - startTime < timeout) {
+    const res = await mercadopago.payment.get(paymentId);
+    const pagamentoStatus = res.body.status;
+
+    if (pagamentoStatus === 'approved') {
+      console.log('✅ Pagamento aprovado com sucesso!');
+      const novosaldo = 1000;
+      await adicionarSaldoPix(username, novosaldo); // Espera pela conclusão da função adicionarSaldoPix antes de continuar
+      console.log(username, novosaldo);
+      isPaymentConfirmed = true;
+    } else {
+      //console.log('Aguardando pagamento...');
+      await new Promise(resolve => setTimeout(resolve, 10000)); // Verificar a cada 10 segundos
+    }
+  }
+
+  if (!isPaymentConfirmed) {
+    console.log('❗ Tempo de pagamento expirado ou pagamento não confirmado.');
+  }
+
+  res.render('payment', { isPaymentConfirmed });
+});
+
+
+
+//============\\
 app.get('/', async (req, res) => {
   const user = req.session.user;
 
@@ -220,13 +342,13 @@ app.get('/myperfil', async (req, res) => {
   if (user) {
     const { username, password, verificationCode, isVerified } = user;
     if (isVerified === true) {
-    
+
       const userDb = await User.findOne({ username, password });
       const users = userDb;
       const quantidadeRegistrados = await User.countDocuments();
       const topUsers = await User.find().sort({ total: -1 }).limit(7);
       return res.render('myperfil', { user, userDb, users, topUsers, quantidade: quantidadeRegistrados });
-      
+
     } else {
       return res.redirect('/verify');
     }
@@ -272,39 +394,39 @@ app.post('/register', async (req, res) => {
     const total = 0;
     const key = keycode;
     const desc = "Ola, estou usando a AniKit"
-    const insta ="@clovermods"
+    const insta = "@clovermods"
     const zap = "55759865969696"
     const yt = "youtube.com/@clovermods"
     const wallpaper = "https://telegra.ph/file/56fa53ec05377a51311cc.jpg"
-    
-const motivo =  `Ola ${username} Seu código de verificação é: ${verificationCode}`
-const texto = "código de verificação"
 
-function emailsend(texto, motivo) {
-  const mailSent = transporter.sendMail({
-    text: `${motivo}`,
-    subject: `${texto}`,
-    to: [email]
-  });
+    const motivo = `Ola ${username} Seu código de verificação é: ${verificationCode}`
+    const texto = "código de verificação"
 
-  console.log(mailSent);
-}
-emailsend(texto, motivo)
+    function emailsend(texto, motivo) {
+      const mailSent = transporter.sendMail({
+        text: `${motivo}`,
+        subject: `${texto}`,
+        to: [email]
+      });
+
+      console.log(mailSent);
+    }
+    emailsend(texto, motivo)
 
     const user = new User({ username, password, email, key, saldo, total, ft, zap, insta, yt, wallpaper, verificationCode, isVerified: false, isPremium: false, isAdm: false, isBaned: false });
-    
+
     await user.save();
     console.log(user)
     req.session.user = user;
     res.redirect('/verify');
-    
+
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Erro ao registrar usuário.' });
   }
 });
 
-app.get('/verify', async(req, res) => {
+app.get('/verify', async (req, res) => {
   const user = req.session.user;
   if (user && !user.isVerified) {
     // Renderiza a página de verificação
@@ -342,7 +464,7 @@ app.post('/login', async (req, res) => {
     const { username, password } = req.body;
     const user = await User.findOne({ username });
 
-    if (user && ( password, user.password)) {
+    if (user && (password, user.password)) {
       req.session.user = user;
 
       res.redirect('/');
@@ -454,7 +576,7 @@ app.post('/edit/:username', async (req, res) => {
     user.isAdm = isAdmValue;
     user.isBaned = isBanedValue;
     user.total = total || user.total;
-    
+
     // Salve as alterações no banco de dados
     await user.save();
 
@@ -485,7 +607,7 @@ app.post('/editarr/:username', async (req, res) => {
     user.insta = insta || user.insta
     user.zap = zap || user.zap
     user.wallpaper = wallpaper || user.wallpaper
-    
+
     // Salve as alterações no banco de dados
     await user.save();
 
@@ -511,13 +633,13 @@ app.get('/nsfw/ahegao', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -541,13 +663,13 @@ app.get('/nsfw/ass', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -571,13 +693,13 @@ app.get('/nsfw/bdsm', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -602,13 +724,13 @@ app.get('/nsfw/blowjob', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -632,13 +754,13 @@ app.get('/nsfw/cuckold', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -662,13 +784,13 @@ app.get('/nsfw/cum', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -692,13 +814,13 @@ app.get('/nsfw/ero', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -722,13 +844,13 @@ app.get('/memes', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -752,13 +874,13 @@ app.get('/nsfw/femdom', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -782,13 +904,13 @@ app.get('/nsfw/foot', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -812,13 +934,13 @@ app.get('/nsfw/gangbang', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -842,13 +964,13 @@ app.get('/nsfw/glasses', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -872,13 +994,13 @@ app.get('/nsfw/hentai', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -902,13 +1024,13 @@ app.get('/nsfw/gifs', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -932,13 +1054,13 @@ app.get('/nsfw/jahy', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -962,13 +1084,13 @@ app.get('/nsfw/manga', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -992,13 +1114,13 @@ app.get('/nsfw/masturbation', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -1022,13 +1144,13 @@ app.get('/nsfw/neko', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -1052,13 +1174,13 @@ app.get('/nsfw/orgy', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -1076,7 +1198,7 @@ return res.sendFile(htmlPath);
   }
 })
 
-  
+
 
 app.get('/nsfw/panties', async (req, res, next) => {
   const { username, key } = req.query;
@@ -1084,13 +1206,13 @@ app.get('/nsfw/panties', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -1114,13 +1236,13 @@ app.get('/nsfw/pussy', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -1144,13 +1266,13 @@ app.get('/nsfw/neko2', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -1174,13 +1296,13 @@ app.get('/nsfw/tentacles', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -1204,13 +1326,13 @@ app.get('/nsfw/thighs', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -1234,13 +1356,13 @@ app.get('/nsfw/yuri', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -1264,13 +1386,13 @@ app.get('/nsfw/zettai', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -1294,13 +1416,13 @@ app.get('/nime/keneki', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -1324,13 +1446,13 @@ app.get('/nime/megumin', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -1354,13 +1476,13 @@ app.get('/nime/yotsuba', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -1384,13 +1506,13 @@ app.get('/nime/shinomiya', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -1414,13 +1536,13 @@ app.get('/nime/yumeko', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -1444,13 +1566,13 @@ app.get('/nime/tejina', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -1474,13 +1596,13 @@ app.get('/nime/chiho', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -1504,13 +1626,13 @@ app.get('/18/video', async (req, res, next) => {
   const users = Person
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -1533,13 +1655,13 @@ app.get('/18/travazap', async (req, res, next) => {
   const users = Person
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -1565,13 +1687,13 @@ app.get('/nime/toukachan', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -1595,13 +1717,13 @@ app.get('/nime/akira', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -1625,13 +1747,13 @@ app.get('/nime/itori', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -1655,13 +1777,13 @@ app.get('/nime/kurumi', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -1685,13 +1807,13 @@ app.get('/nime/miku', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -1715,13 +1837,13 @@ app.get('/nime/pokemon', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -1745,13 +1867,13 @@ app.get('/nime/ryujin', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -1775,13 +1897,13 @@ app.get('/nime/rose', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -1805,13 +1927,13 @@ app.get('/nime/kaori', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -1835,13 +1957,13 @@ app.get('/nime/shizuka', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -1865,13 +1987,13 @@ app.get('/nime/kaga', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -1895,13 +2017,13 @@ app.get('/nime/kotori', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -1925,13 +2047,13 @@ app.get('/nime/mikasa', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -1955,13 +2077,13 @@ app.get('/nime/akiyama', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -1985,13 +2107,13 @@ app.get('/nime/gremory', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -2015,13 +2137,13 @@ app.get('/nime/isuzu', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -2045,13 +2167,13 @@ app.get('/nime/cosplay', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -2075,13 +2197,13 @@ app.get('/nime/shina', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -2105,13 +2227,13 @@ app.get('/nime/kagura', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -2135,13 +2257,13 @@ app.get('/nime/shinka', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -2165,13 +2287,13 @@ app.get('/nime/eba', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -2195,13 +2317,13 @@ app.get('/nime/deidara', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -2227,13 +2349,13 @@ app.get('/nime/jeni', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -2258,13 +2380,13 @@ app.get('/random/meme', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -2287,13 +2409,13 @@ app.get('/nime/toukachan', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -2317,13 +2439,13 @@ app.get('/nime/akira', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -2347,13 +2469,13 @@ app.get('/nime/itori', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -2377,13 +2499,13 @@ app.get('/nime/kurumi', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -2407,13 +2529,13 @@ app.get('/nime/miku', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -2437,13 +2559,13 @@ app.get('/nime/pokemon', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -2467,13 +2589,13 @@ app.get('/nime/ryujin', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -2497,13 +2619,13 @@ app.get('/nime/rose', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -2527,13 +2649,13 @@ app.get('/nime/kaori', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -2557,13 +2679,13 @@ app.get('/nime/shizuka', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -2587,13 +2709,13 @@ app.get('/nime/kaga', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -2617,13 +2739,13 @@ app.get('/nime/kotori', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -2647,13 +2769,13 @@ app.get('/nime/mikasa', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -2677,13 +2799,13 @@ app.get('/nime/akiyama', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -2707,13 +2829,13 @@ app.get('/nime/gremory', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -2737,13 +2859,13 @@ app.get('/nime/isuzu', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -2767,13 +2889,13 @@ app.get('/nime/cosplay', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -2797,13 +2919,13 @@ app.get('/nime/shina', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -2827,13 +2949,13 @@ app.get('/nime/kagura', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -2857,13 +2979,13 @@ app.get('/nime/shinka', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -2887,13 +3009,13 @@ app.get('/nime/eba', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -2917,13 +3039,13 @@ app.get('/nime/deidara', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -2949,13 +3071,13 @@ app.get('/nime/jeni', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -2980,13 +3102,13 @@ app.get('/random/meme', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -3010,13 +3132,13 @@ app.get('/wallpaper/satanic', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -3042,13 +3164,13 @@ app.get('/nime/itachi', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -3072,13 +3194,13 @@ app.get('/nime/madara', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -3102,13 +3224,13 @@ app.get('/nime/yuki', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -3132,13 +3254,13 @@ app.get('/wallpaper/asuna', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -3162,13 +3284,13 @@ app.get('/nime/ayuzawa', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -3192,13 +3314,13 @@ app.get('/nime/chitoge', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -3222,13 +3344,13 @@ app.get('/nime/emilia', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -3252,13 +3374,13 @@ app.get('/nime/hestia', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -3282,13 +3404,13 @@ app.get('/nime/inori', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -3312,13 +3434,13 @@ app.get('/nime/ana', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -3342,13 +3464,13 @@ app.get('/nime/boruto', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -3372,13 +3494,13 @@ app.get('/nime/erza', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -3402,13 +3524,13 @@ app.get('/nime/kakasih', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -3432,13 +3554,13 @@ app.get('/nime/sagiri', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -3462,13 +3584,13 @@ app.get('/nime/minato', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -3492,13 +3614,13 @@ app.get('/nime/naruto', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -3522,13 +3644,13 @@ app.get('/nime/nezuko', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -3552,13 +3674,13 @@ app.get('/nime/onepiece', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -3582,13 +3704,13 @@ app.get('/nime/rize', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -3612,13 +3734,13 @@ app.get('/nime/sakura', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -3642,13 +3764,13 @@ app.get('/nime/sasuke', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -3672,13 +3794,13 @@ app.get('/nime/tsunade', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -3702,13 +3824,13 @@ app.get('/nime/montor', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -3732,13 +3854,13 @@ app.get('/nime/mobil', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -3763,13 +3885,13 @@ app.get('/nime/anime', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -3794,13 +3916,13 @@ app.get('/nime/wallhp', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -3824,13 +3946,13 @@ app.get('/nime/waifu2', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -3854,13 +3976,13 @@ app.get('/nime/waifu', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -3885,13 +4007,13 @@ app.get('/nime/hekel', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -3915,13 +4037,13 @@ app.get('/nime/kucing', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -3945,13 +4067,13 @@ app.get('/wallpaper/pubg', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -3975,13 +4097,13 @@ app.get('/wallpaper/ppcouple', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -4005,13 +4127,13 @@ app.get('/wallpaper/anjing', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -4035,13 +4157,13 @@ app.get('/nime/doraemon', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -4066,13 +4188,13 @@ app.get('/nime/elaina', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -4098,13 +4220,13 @@ app.get('/nime/loli', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -4130,13 +4252,13 @@ app.get('/nime/yuri', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -4161,13 +4283,13 @@ app.get('/nime/cecan', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -4193,13 +4315,13 @@ app.get('/wallpaper/aesthetic', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -4226,13 +4348,13 @@ app.get('/nime/sagiri', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -4257,13 +4379,13 @@ app.get('/nime/shota', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -4288,13 +4410,13 @@ app.get('/nime/nsfwloli', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -4320,13 +4442,13 @@ app.get('/nime/hinata', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -4347,18 +4469,18 @@ return res.sendFile(htmlPath);
 
 app.get('/download/ytmp3', async (req, res, next) => {
   const url = req.query.url;
-    const { username, key } = req.query;
+  const { username, key } = req.query;
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -4381,18 +4503,18 @@ return res.sendFile(htmlPath);
 
 app.get('/download/tiktok', async (req, res, next) => {
   const url = req.query.url;
-    const { username, key } = req.query;
+  const { username, key } = req.query;
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -4412,18 +4534,18 @@ return res.sendFile(htmlPath);
 
 app.get('/download/ytmp4', async (req, res, next) => {
   const url = req.query.url;
-    const { username, key } = req.query;
+  const { username, key } = req.query;
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -4448,13 +4570,13 @@ app.get("/yt/playmp3", async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -4482,13 +4604,13 @@ app.get("/yt/playmp4", async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -4513,13 +4635,13 @@ app.get('/anime/amv', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -4545,13 +4667,13 @@ app.get('/wallpaper/cyberspace', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -4575,13 +4697,13 @@ app.get('/wallpaper/gaming', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -4605,13 +4727,13 @@ app.get('/wallpaper/programing', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -4635,13 +4757,13 @@ app.get('/wallpaper/wallpapertec', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -4665,13 +4787,13 @@ app.get('/wallpaper/mountain', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -4697,13 +4819,13 @@ app.get('/wallpaper/satanic', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -4729,13 +4851,13 @@ app.get('/wallpaper/asuna', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -4760,13 +4882,13 @@ app.get('/wallpaper/pubg', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -4790,13 +4912,13 @@ app.get('/wallpaper/ppcouple', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -4820,13 +4942,13 @@ app.get('/wallpaper/anjing', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -4850,13 +4972,13 @@ app.get('/wallpaper/aesthetic', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -4877,18 +4999,18 @@ return res.sendFile(htmlPath);
 
 app.get("/download/pinterest", async (req, res, next) => {
   const query = req.query.query;
- const { username, key } = req.query;
+  const { username, key } = req.query;
   const users = Person
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -4896,15 +5018,15 @@ return res.sendFile(htmlPath);
   if (resultadoDiminuicao && add) {
 
     pin.pinterest(query)
-        .then(result => {
-         res.json(result)
-    }).catch((error) => {
+      .then(result => {
+        res.json(result)
+      }).catch((error) => {
         res.json(error);
       });
-     } else {
-        res.json(loghandler.invalidKey)
-     }
-   });
+  } else {
+    res.json(loghandler.invalidKey)
+  }
+});
 
 app.get('/memes', async (req, res, next) => {
   const { username, key } = req.query;
@@ -4912,13 +5034,13 @@ app.get('/memes', async (req, res, next) => {
   // Verifica se o usuário existe e a chave está correta
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
 
   const resultadoDiminuicao = diminuirSaldo(username);
@@ -4941,13 +5063,13 @@ app.get('/18/video', async (req, res, next) => {
   const users = Person
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -4970,13 +5092,13 @@ app.get('/18/travazap', async (req, res, next) => {
   const users = Person
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -4999,13 +5121,13 @@ app.get('/18/foto_18', async (req, res, next) => {
   const users = Person
   const user = await User.findOne({ username, key });
 
-if (!user) {
-  return res.sendFile(htmlPath);
-}
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
 
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
@@ -5033,9 +5155,9 @@ app.get('/welcome', async (req, res) => {
       return res.sendFile(htmlPath);
     }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+    if (user.isBaned === true) {
+      return res.sendFile(htmlPath);
+    }
 
     const resultadoDiminuicao = diminuirSaldo(username);
     const add = adicionarSaldo(username);
@@ -5071,9 +5193,9 @@ app.get('/goodbye', async (req, res) => {
       return res.sendFile(htmlPath);
     }
 
-if (user.isBaned === true) {
-return res.sendFile(htmlPath);
-}
+    if (user.isBaned === true) {
+      return res.sendFile(htmlPath);
+    }
     const resultadoDiminuicao = diminuirSaldo(username);
     const add = adicionarSaldo(username);
 
@@ -5100,7 +5222,7 @@ return res.sendFile(htmlPath);
 
 
 app.listen(8000, () => {
-    console.log("Server rodando na porta 8000")
+  console.log("Server rodando na porta 8000")
 })
 
 module.exports = app

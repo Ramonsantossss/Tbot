@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="refresh" content="1;URL='/payment/<%= paymentId %>/<%= username %>'">
+    <title>add saldo anikit</title>
+</head>
+<style>
+    * {
+        font-family: Verdana, Geneva, Tahoma, sans-serif;
+    }
+
+    img {
+        width: 180px;
+        margin-top: 20px;
+    }
+
+    .container {
+        text-align: center;
+        margin-top: 10px;
+    }
+
+    p {
+        margin: 7px;
+    }
+
+    a {
+        text-align: center;
+    }
+
+    #frase-wrapper {
+        margin-bottom: 20px;
+    }
+
+    #frase-full {
+
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    #botao-leia-mais {
+        padding: 5px 10px;
+        background-color: #007bff;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+    #botao-leia-mais:hover {
+        background-color: #0056b3;
+    }
+
+    #botao-copiar {
+        padding: 5px 10px;
+        background-color: #28a745;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+    #botao-copiar:hover {
+        background-color: #218838;
+    }
+
+
+    .geral {
+        margin: 10px;
+        background-color: bisque;
+        border-radius: 10px;
+    }
+
+    .ppp {
+        padding: 3px;
+        background-color: rgb(255, 208, 150);
+        border-radius: 5px;
+    }
+</style>
+
+<body>
+    <div class="geral">
+        <center>
+            <img src="data:image/png;base64,<%= qrcode %>">
+        </center>
+        <p>ID: <%= paymentId %>
+        </p>
+        <p>Valor: R$ <%= valorpagar %>
+        </p>
+        <p>
+        O saldo sera colocado automaticamente para sua conta, depois que vc pagar vc sera redirecionado(a) para a pagina inicial automaticamente entao NAO SAIA DESSA PAGINA...
+        </p>
+        <div class="container">
+            <div id="frase-wrapper">
+                <p class="ppp" id="frase-full">
+                    <%= codigo %>
+                </p>
+            </div>
+            <button style="display: none;" id="botao-leia-mais">Leia Mais</button>
+            <button id="botao-copiar">Copiar</button>
+        </div>
+        <!--
+            <a href="/payment/<%= paymentId %>/<%= username %>">
+            <h3>VERIFICAR COMPRA</h3>
+        </a>
+        -->
+        
+
+        <br>
+        <!--<a href="<%= paymentLink %>">
+            <h3>pagar pelo site do nercado pago</h3>
+        </a>-->
+        <br><br>
+    </div>
+
+    <script>
+        document.getElementById("botao-leia-mais").addEventListener("click", function () {
+            document.getElementById("frase-short").style.display = "none";
+            document.getElementById("frase-full").style.display = "block";
+            document.getElementById("botao-leia-mais").style.display = "none";
+        });
+
+        document.getElementById("botao-copiar").addEventListener("click", function () {
+            var fraseParaCopiar = document.getElementById("frase-full").innerText;
+            var inputTemporario = document.createElement("textarea");
+            inputTemporario.value = fraseParaCopiar;
+            document.body.appendChild(inputTemporario);
+            inputTemporario.select();
+            document.execCommand("copy");
+            document.body.removeChild(inputTemporario);
+            document.getElementById("botao-copiar").innerText = "Copiado!";
+        });
+
+    </script>
+</body>
+
+</html>
