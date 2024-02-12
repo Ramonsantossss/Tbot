@@ -390,7 +390,7 @@ app.post('/register', async (req, res) => {
     const keycode = Math.floor(100000 + Math.random() * 900000).toString();
 
     const ft = "https://telegra.ph/file/f932f56e19397b0c7c448.jpg"; // URL padrão da foto
-    const saldo = 800; // Saldo padrão
+    const saldo = 200; // Saldo padrão
     const total = 0;
     const key = keycode;
     const desc = "Ola, estou usando a AniKit"
