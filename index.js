@@ -127,6 +127,25 @@ const userSchema = new mongoose.Schema({
 const User = mongoose.model('User', userSchema);
 Person = User;
 
+const {
+  playStoreSearch,
+  memesDroid,
+  gruposZap,
+  animeFireDownload,
+  animesFireSearch,
+  animesFireEps,
+  ultimasNoticias,
+  randomGrupos,
+  xvideosDownloader,
+  xvideosSearch,
+  fraseAmor,
+  iFunny,
+  frasesPensador,
+  wallpaper2,
+  hentai,
+  styletext,
+} = require("./data/scraper.js");
+
 
 async function diminuirSaldo(username) {
   try {
@@ -5231,6 +5250,385 @@ app.post('/login', async (req, res) => {
       res.status(500).send('Erro interno do servidor');
     }
   });
+
+
+
+
+  
+// Rota para playStoreSearch
+app.get('/play-store-search', async (req, res) => {
+  const { username, key } = req.query;
+    const users = Person
+    const user = await User.findOne({ username, key });
+    if (!user) {
+      return res.sendFile(htmlPath);
+    }
+    if (user.isBaned === true) {
+      return res.sendFile(htmlPath);
+    }
+    const resultadoDiminuicao = diminuirSaldo(username);
+    const add = adicionarSaldo(username)
+    if (resultadoDiminuicao && add) {
+
+  const appName = req.query.appName;
+  const result = await playStoreSearch(appName);
+  res.json(result);
+
+} else {
+  console.log('Saldo insuficiente.');
+}
+});
+
+// Rota para memesDroid
+app.get('/memes-droid', async (req, res) => {
+  const { username, key } = req.query;
+    const users = Person
+    const user = await User.findOne({ username, key });
+    if (!user) {
+      return res.sendFile(htmlPath);
+    }
+    if (user.isBaned === true) {
+      return res.sendFile(htmlPath);
+    }
+    const resultadoDiminuicao = diminuirSaldo(username);
+    const add = adicionarSaldo(username)
+    if (resultadoDiminuicao && add) {
+
+  const result = await memesDroid();
+  res.json(result);
+
+} else {
+  console.log('Saldo insuficiente.');
+}
+});
+
+// Rota para gruposZap
+app.get('/grupos-zap', async (req, res) => {
+  const { username, key } = req.query;
+    const users = Person
+    const user = await User.findOne({ username, key });
+    if (!user) {
+      return res.sendFile(htmlPath);
+    }
+    if (user.isBaned === true) {
+      return res.sendFile(htmlPath);
+    }
+    const resultadoDiminuicao = diminuirSaldo(username);
+    const add = adicionarSaldo(username)
+    if (resultadoDiminuicao && add) {
+
+  const result = await gruposZap();
+  res.json(result);
+
+} else {
+  console.log('Saldo insuficiente.');
+}
+});
+
+// Rota para animeFireDownload
+app.get('/anime-fire-download', async (req, res) => {
+  const { username, key } = req.query;
+    const users = Person
+    const user = await User.findOne({ username, key });
+    if (!user) {
+      return res.sendFile(htmlPath);
+    }
+    if (user.isBaned === true) {
+      return res.sendFile(htmlPath);
+    }
+    const resultadoDiminuicao = diminuirSaldo(username);
+    const add = adicionarSaldo(username)
+    if (resultadoDiminuicao && add) {
+
+  const url = req.query.url;
+  const result = await animeFireDownload(url);
+  res.json(result);
+
+} else {
+  console.log('Saldo insuficiente.');
+}
+});
+
+// Rota para animesFireSearch
+app.get('/animes-fire-search', async (req, res) => {
+  const { username, key } = req.query;
+    const users = Person
+    const user = await User.findOne({ username, key });
+    if (!user) {
+      return res.sendFile(htmlPath);
+    }
+    if (user.isBaned === true) {
+      return res.sendFile(htmlPath);
+    }
+    const resultadoDiminuicao = diminuirSaldo(username);
+    const add = adicionarSaldo(username)
+    if (resultadoDiminuicao && add) {
+
+  const query = req.query.q;
+  const result = await animesFireSearch(query);
+  res.json(result);
+
+} else {
+  console.log('Saldo insuficiente.');
+}
+});
+
+// Rota para animesFireEps
+app.get('/animes-fire-eps', async (req, res) => {
+  const { username, key } = req.query;
+    const users = Person
+    const user = await User.findOne({ username, key });
+    if (!user) {
+      return res.sendFile(htmlPath);
+    }
+    if (user.isBaned === true) {
+      return res.sendFile(htmlPath);
+    }
+    const resultadoDiminuicao = diminuirSaldo(username);
+    const add = adicionarSaldo(username)
+    if (resultadoDiminuicao && add) {
+
+  const url = req.query.url;
+  const result = await animesFireEps(url);
+  res.json(result);
+
+} else {
+  console.log('Saldo insuficiente.');
+}
+});
+
+// Rota para ultimasNoticias
+app.get('/ultimas-noticias', async (req, res) => {
+  const { username, key } = req.query;
+    const users = Person
+    const user = await User.findOne({ username, key });
+    if (!user) {
+      return res.sendFile(htmlPath);
+    }
+    if (user.isBaned === true) {
+      return res.sendFile(htmlPath);
+    }
+    const resultadoDiminuicao = diminuirSaldo(username);
+    const add = adicionarSaldo(username)
+    if (resultadoDiminuicao && add) {
+
+  const result = await ultimasNoticias();
+  res.json(result);
+
+} else {
+  console.log('Saldo insuficiente.');
+}
+});
+
+// Rota para randomGrupos
+app.get('/random-grupos', async (req, res) => {
+  const { username, key } = req.query;
+    const users = Person
+    const user = await User.findOne({ username, key });
+    if (!user) {
+      return res.sendFile(htmlPath);
+    }
+    if (user.isBaned === true) {
+      return res.sendFile(htmlPath);
+    }
+    const resultadoDiminuicao = diminuirSaldo(username);
+    const add = adicionarSaldo(username)
+    if (resultadoDiminuicao && add) {
+
+  const result = await randomGrupos();
+  res.json(result);
+
+} else {
+  console.log('Saldo insuficiente.');
+}
+});
+
+// Rota para xvideosDownloader
+app.get('/xvideos-downloader', async (req, res) => {
+  const { username, key } = req.query;
+    const users = Person
+    const user = await User.findOne({ username, key });
+    if (!user) {
+      return res.sendFile(htmlPath);
+    }
+    if (user.isBaned === true) {
+      return res.sendFile(htmlPath);
+    }
+    const resultadoDiminuicao = diminuirSaldo(username);
+    const add = adicionarSaldo(username)
+    if (resultadoDiminuicao && add) {
+
+  const url = req.query.url;
+  const result = await xvideosDownloader(url);
+  res.json(result);
+
+} else {
+  console.log('Saldo insuficiente.');
+}
+});
+
+// Rota para xvideosSearch
+app.get('/xvideos-search', async (req, res) => {
+  const { username, key } = req.query;
+    const users = Person
+    const user = await User.findOne({ username, key });
+    if (!user) {
+      return res.sendFile(htmlPath);
+    }
+    if (user.isBaned === true) {
+      return res.sendFile(htmlPath);
+    }
+    const resultadoDiminuicao = diminuirSaldo(username);
+    const add = adicionarSaldo(username)
+    if (resultadoDiminuicao && add) {
+
+  const query = req.query.q;
+  const result = await xvideosSearch(query);
+  res.json(result);
+
+} else {
+  console.log('Saldo insuficiente.');
+}
+});
+
+// Rota para fraseAmor
+app.get('/frase-amor', async (req, res) => {
+  const { username, key } = req.query;
+    const users = Person
+    const user = await User.findOne({ username, key });
+    if (!user) {
+      return res.sendFile(htmlPath);
+    }
+    if (user.isBaned === true) {
+      return res.sendFile(htmlPath);
+    }
+    const resultadoDiminuicao = diminuirSaldo(username);
+    const add = adicionarSaldo(username)
+    if (resultadoDiminuicao && add) {
+
+  const result = await fraseAmor();
+  res.json(result);
+
+} else {
+  console.log('Saldo insuficiente.');
+}
+});
+
+// Rota para iFunny
+app.get('/ifunny', async (req, res) => {
+  const { username, key } = req.query;
+    const users = Person
+    const user = await User.findOne({ username, key });
+    if (!user) {
+      return res.sendFile(htmlPath);
+    }
+    if (user.isBaned === true) {
+      return res.sendFile(htmlPath);
+    }
+    const resultadoDiminuicao = diminuirSaldo(username);
+    const add = adicionarSaldo(username)
+    if (resultadoDiminuicao && add) {
+
+  const result = await iFunny();
+  res.json(result);
+
+} else {
+  console.log('Saldo insuficiente.');
+}
+});
+
+// Rota para frasesPensador
+app.get('/frases-pensador', async (req, res) => {
+  const { username, key } = req.query;
+    const users = Person
+    const user = await User.findOne({ username, key });
+    if (!user) {
+      return res.sendFile(htmlPath);
+    }
+    if (user.isBaned === true) {
+      return res.sendFile(htmlPath);
+    }
+    const resultadoDiminuicao = diminuirSaldo(username);
+    const add = adicionarSaldo(username)
+    if (resultadoDiminuicao && add) {
+
+  const result = await frasesPensador();
+  res.json(result);
+
+} else {
+  console.log('Saldo insuficiente.');
+}
+});
+
+// Rota para wallpaper2
+app.get('/wallpaper2', async (req, res) => {
+  const { username, key } = req.query;
+    const users = Person
+    const user = await User.findOne({ username, key });
+    if (!user) {
+      return res.sendFile(htmlPath);
+    }
+    if (user.isBaned === true) {
+      return res.sendFile(htmlPath);
+    }
+    const resultadoDiminuicao = diminuirSaldo(username);
+    const add = adicionarSaldo(username)
+    if (resultadoDiminuicao && add) {
+
+  const result = await wallpaper2();
+  res.json(result);
+
+} else {
+  console.log('Saldo insuficiente.');
+}
+});
+
+// Rota para hentai
+app.get('/hentai', async (req, res) => {
+  const { username, key } = req.query;
+    const users = Person
+    const user = await User.findOne({ username, key });
+    if (!user) {
+      return res.sendFile(htmlPath);
+    }
+    if (user.isBaned === true) {
+      return res.sendFile(htmlPath);
+    }
+    const resultadoDiminuicao = diminuirSaldo(username);
+    const add = adicionarSaldo(username)
+    if (resultadoDiminuicao && add) {
+
+  const result = await hentai();
+  res.json(result);
+
+} else {
+  console.log('Saldo insuficiente.');
+}
+});
+
+// Rota para styletext
+app.get('/styletext', async (req, res) => {
+  const { username, key } = req.query;
+    const users = Person
+    const user = await User.findOne({ username, key });
+    if (!user) {
+      return res.sendFile(htmlPath);
+    }
+    if (user.isBaned === true) {
+      return res.sendFile(htmlPath);
+    }
+    const resultadoDiminuicao = diminuirSaldo(username);
+    const add = adicionarSaldo(username)
+    if (resultadoDiminuicao && add) {
+
+  const text = req.query.text;
+  const result = await styletext(text);
+  res.json(result);
+
+} else {
+  console.log('Saldo insuficiente.');
+}
+});
 
 
   app.listen(8000, () => {
