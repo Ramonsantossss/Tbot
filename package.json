@@ -4,7 +4,9 @@
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
-    "axios": "^0.21.1",
+    "axios": "^1.4.0",
+    "canvas": "^2.11.2",
+    "knights-canvas": "^1.1.0",
     "base-64": "^1.0.0",
     "base32": "0.0.6",
     "bcrypt": "^5.1.1",
