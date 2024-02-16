@@ -5185,7 +5185,19 @@ app.get('/18/foto_18', async (req, res, next) => {
 
 
 app.get('/welcome', async (req, res) => {
-  const username = req.query.username || 'clover';
+  const { username, key } = req.query;
+  const users = Person
+  const user = await User.findOne({ username, key });
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
+  const resultadoDiminuicao = diminuirSaldo(username);
+  const add = adicionarSaldo(username)
+  if (resultadoDiminuicao && add) {
+  const nick = req.query.nick || 'clover';
   const guildName = req.query.guildName || 'clover grupo';
   const guildIcon = req.query.guildIcon || 'https://telegra.ph/file/87fe9fdbf08280460e531.jpg';
   const memberCount = req.query.memberCount || '120';
@@ -5200,7 +5212,7 @@ app.get('/welcome', async (req, res) => {
 
     // Generate welcome image
     const image = await new knights.Welcome()
-      .setUsername(username)
+      .setUsername(nick)
       .setGuildName(guildName)
       .setGuildIcon('./guildIcon.jpg')
       .setMemberCount(memberCount)
@@ -5222,9 +5234,25 @@ app.get('/welcome', async (req, res) => {
     fs.unlinkSync('avatar.jpg');
     fs.unlinkSync('background.jpg');
   }
+} else {
+  console.log('Saldo insuficiente.');
+}
 });
 app.get('/goodbye', async (req, res) => {
-  const username = req.query.username || "clover";
+  const { username, key } = req.query;
+  const users = Person
+  const user = await User.findOne({ username, key });
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
+  const resultadoDiminuicao = diminuirSaldo(username);
+  const add = adicionarSaldo(username)
+  if (resultadoDiminuicao && add) {
+
+  const nick = req.query.nick || "clover";
   const guildName = req.query.guildName || "clover grupo";
   const guildIcon = req.query.guildIcon || "https://telegra.ph/file/87fe9fdbf08280460e531.jpg";
   const memberCount = req.query.memberCount || "120";
@@ -5239,7 +5267,7 @@ app.get('/goodbye', async (req, res) => {
 
     // Generate leave image
     const image = await new knights.Goodbye()
-      .setUsername(username)
+      .setUsername(nick)
       .setGuildName(guildName)
       .setGuildIcon('./guildIcon.jpg')
       .setMemberCount(memberCount)
@@ -5261,6 +5289,9 @@ app.get('/goodbye', async (req, res) => {
     fs.unlinkSync('avatar.jpg');
     fs.unlinkSync('background.jpg');
   }
+} else {
+  console.log('Saldo insuficiente.');
+}
 });
 
 app.get('/levelup', async (req, res) => {
