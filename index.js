@@ -5225,7 +5225,7 @@ app.get('/welcome', async (req, res) => {
 });
 app.get('/goodbye', async (req, res) => {
   const username = req.query.username || "clover";
-  const guildName = req.query.guildName || "GURUBOTS";
+  const guildName = req.query.guildName || "clover grupo";
   const guildIcon = req.query.guildIcon || "https://telegra.ph/file/87fe9fdbf08280460e531.jpg";
   const memberCount = req.query.memberCount || "120";
   const avatar = req.query.avatar || "https://i.pinimg.com/originals/6a/6b/26/6a6b2619c79441b69fd716053613c6ec.png";
