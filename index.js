@@ -5185,8 +5185,8 @@ app.get('/18/foto_18', async (req, res, next) => {
 
 
 app.get('/welcome', async (req, res) => {
-  const username = req.query.username || 'Guru322';
-  const guildName = req.query.guildName || 'GURUBOTS';
+  const username = req.query.username || 'clover';
+  const guildName = req.query.guildName || 'clover grupo';
   const guildIcon = req.query.guildIcon || 'https://telegra.ph/file/87fe9fdbf08280460e531.jpg';
   const memberCount = req.query.memberCount || '120';
   const avatar = req.query.avatar || 'https://i.ibb.co/1s8T3sY/48f7ce63c7aa.jpg';
