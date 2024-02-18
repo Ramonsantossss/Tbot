@@ -1,6 +1,7 @@
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 const axios = require('axios');
+const { create, create2 } = require('./data/attp.js');
 //const TelegramBot = require('node-telegram-bot-api');
 const { prefix, nomeBot, token } = require("./config.js");
 var express = require('express'),
@@ -5197,46 +5198,46 @@ app.get('/welcome', async (req, res) => {
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
   if (resultadoDiminuicao && add) {
-  const nick = req.query.nick || 'clover';
-  const guildName = req.query.guildName || 'clover grupo';
-  const guildIcon = req.query.guildIcon || 'https://telegra.ph/file/87fe9fdbf08280460e531.jpg';
-  const memberCount = req.query.memberCount || '120';
-  const avatar = req.query.avatar || 'https://i.ibb.co/1s8T3sY/48f7ce63c7aa.jpg';
-  const background = req.query.background || 'https://i.ibb.co/4YBNyvP/images-76.jpg';
+    const nick = req.query.nick || 'clover';
+    const guildName = req.query.guildName || 'clover grupo';
+    const guildIcon = req.query.guildIcon || 'https://telegra.ph/file/87fe9fdbf08280460e531.jpg';
+    const memberCount = req.query.memberCount || '120';
+    const avatar = req.query.avatar || 'https://i.ibb.co/1s8T3sY/48f7ce63c7aa.jpg';
+    const background = req.query.background || 'https://i.ibb.co/4YBNyvP/images-76.jpg';
 
-  try {
-    // Download images
-    await downloadImage(guildIcon, 'guildIcon.jpg');
-    await downloadImage(avatar, 'avatar.jpg');
-    await downloadImage(background, 'background.jpg');
+    try {
+      // Download images
+      await downloadImage(guildIcon, 'guildIcon.jpg');
+      await downloadImage(avatar, 'avatar.jpg');
+      await downloadImage(background, 'background.jpg');
 
-    // Generate welcome image
-    const image = await new knights.Welcome()
-      .setUsername(nick)
-      .setGuildName(guildName)
-      .setGuildIcon('./guildIcon.jpg')
-      .setMemberCount(memberCount)
-      .setAvatar('./avatar.jpg')
-      .setBackground('./background.jpg')
-      .toAttachment();
+      // Generate welcome image
+      const image = await new knights.Welcome()
+        .setUsername(nick)
+        .setGuildName(guildName)
+        .setGuildIcon('./guildIcon.jpg')
+        .setMemberCount(memberCount)
+        .setAvatar('./avatar.jpg')
+        .setBackground('./background.jpg')
+        .toAttachment();
 
-    const data = image.toBuffer();
-    const filename = `welcome-${username}.png`;
-    fs.writeFileSync(filename, data);
+      const data = image.toBuffer();
+      const filename = `welcome-${username}.png`;
+      fs.writeFileSync(filename, data);
 
-    res.sendFile(__dirname + '/' + filename);
-  } catch (error) {
-    console.error('Error generating welcome image:', error);
-    res.status(500).send('Internal Server Error');
-  } finally {
-    // Delete downloaded images
-    fs.unlinkSync('guildIcon.jpg');
-    fs.unlinkSync('avatar.jpg');
-    fs.unlinkSync('background.jpg');
+      res.sendFile(__dirname + '/' + filename);
+    } catch (error) {
+      console.error('Error generating welcome image:', error);
+      res.status(500).send('Internal Server Error');
+    } finally {
+      // Delete downloaded images
+      fs.unlinkSync('guildIcon.jpg');
+      fs.unlinkSync('avatar.jpg');
+      fs.unlinkSync('background.jpg');
+    }
+  } else {
+    console.log('Saldo insuficiente.');
   }
-} else {
-  console.log('Saldo insuficiente.');
-}
 });
 app.get('/goodbye', async (req, res) => {
   const { username, key } = req.query;
@@ -5252,46 +5253,156 @@ app.get('/goodbye', async (req, res) => {
   const add = adicionarSaldo(username)
   if (resultadoDiminuicao && add) {
 
-  const nick = req.query.nick || "clover";
-  const guildName = req.query.guildName || "clover grupo";
-  const guildIcon = req.query.guildIcon || "https://telegra.ph/file/87fe9fdbf08280460e531.jpg";
-  const memberCount = req.query.memberCount || "120";
-  const avatar = req.query.avatar || "https://i.pinimg.com/originals/6a/6b/26/6a6b2619c79441b69fd716053613c6ec.png";
-  const background = req.query.background || "https://telegra.ph/file/e28fabcd7e856b4bcef0a.jpg";
+    const nick = req.query.nick || "clover";
+    const guildName = req.query.guildName || "clover grupo";
+    const guildIcon = req.query.guildIcon || "https://telegra.ph/file/87fe9fdbf08280460e531.jpg";
+    const memberCount = req.query.memberCount || "120";
+    const avatar = req.query.avatar || "https://i.pinimg.com/originals/6a/6b/26/6a6b2619c79441b69fd716053613c6ec.png";
+    const background = req.query.background || "https://telegra.ph/file/e28fabcd7e856b4bcef0a.jpg";
 
-  try {
-    // Download images
-    await downloadImage(guildIcon, 'guildIcon.jpg');
-    await downloadImage(avatar, 'avatar.jpg');
-    await downloadImage(background, 'background.jpg');
+    try {
+      // Download images
+      await downloadImage(guildIcon, 'guildIcon.jpg');
+      await downloadImage(avatar, 'avatar.jpg');
+      await downloadImage(background, 'background.jpg');
 
-    // Generate leave image
-    const image = await new knights.Goodbye()
-      .setUsername(nick)
-      .setGuildName(guildName)
-      .setGuildIcon('./guildIcon.jpg')
-      .setMemberCount(memberCount)
-      .setAvatar('./avatar.jpg')
-      .setBackground('./background.jpg')
-      .toAttachment();
+      // Generate leave image
+      const image = await new knights.Goodbye()
+        .setUsername(nick)
+        .setGuildName(guildName)
+        .setGuildIcon('./guildIcon.jpg')
+        .setMemberCount(memberCount)
+        .setAvatar('./avatar.jpg')
+        .setBackground('./background.jpg')
+        .toAttachment();
 
-    const data = image.toBuffer();
-    const filename = `leave-${username}.png`;
-    fs.writeFileSync(filename, data);
+      const data = image.toBuffer();
+      const filename = `leave-${username}.png`;
+      fs.writeFileSync(filename, data);
 
-    res.sendFile(__dirname + '/' + filename);
-  } catch (error) {
-    console.error('Error generating leave image:', error);
-    res.status(500).send('Internal Server Error');
-  } finally {
-    // Delete downloaded images
-    fs.unlinkSync('guildIcon.jpg');
-    fs.unlinkSync('avatar.jpg');
-    fs.unlinkSync('background.jpg');
+      res.sendFile(__dirname + '/' + filename);
+    } catch (error) {
+      console.error('Error generating leave image:', error);
+      res.status(500).send('Internal Server Error');
+    } finally {
+      // Delete downloaded images
+      fs.unlinkSync('guildIcon.jpg');
+      fs.unlinkSync('avatar.jpg');
+      fs.unlinkSync('background.jpg');
+    }
+  } else {
+    console.log('Saldo insuficiente.');
   }
-} else {
-  console.log('Saldo insuficiente.');
-}
+});
+
+app.get('/welcome2', async (req, res) => {
+  const { username, key } = req.query;
+  const users = Person
+  const user = await User.findOne({ username, key });
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
+  const resultadoDiminuicao = diminuirSaldo(username);
+  const add = adicionarSaldo(username)
+  if (resultadoDiminuicao && add) {
+    const nick = req.query.nick || 'clover';
+    const guildName = req.query.guildName || 'clover grupo';
+    const guildIcon = req.query.guildIcon || 'https://telegra.ph/file/87fe9fdbf08280460e531.jpg';
+    const memberCount = req.query.memberCount || '120';
+    const avatar = req.query.avatar || 'https://i.ibb.co/1s8T3sY/48f7ce63c7aa.jpg';
+    const background = req.query.background || 'https://i.ibb.co/4YBNyvP/images-76.jpg';
+
+    try {
+      // Download images
+      await downloadImage(guildIcon, 'guildIcon.jpg');
+      await downloadImage(avatar, 'avatar.jpg');
+      await downloadImage(background, 'background.jpg');
+
+      // Generate welcome image
+      const image = await new knights.Welcome2()
+        .setUsername(nick)
+        .setGuildName(guildName)
+        .setGuildIcon('./guildIcon.jpg')
+        .setMemberCount(memberCount)
+        .setAvatar('./avatar.jpg')
+        .setBackground('./background.jpg')
+        .toAttachment();
+
+      const data = image.toBuffer();
+      const filename = `welcome-${username}.png`;
+      fs.writeFileSync(filename, data);
+
+      res.sendFile(__dirname + '/' + filename);
+    } catch (error) {
+      console.error('Error generating welcome image:', error);
+      res.status(500).send('Internal Server Error');
+    } finally {
+      // Delete downloaded images
+      fs.unlinkSync('guildIcon.jpg');
+      fs.unlinkSync('avatar.jpg');
+      fs.unlinkSync('background.jpg');
+    }
+  } else {
+    console.log('Saldo insuficiente.');
+  }
+});
+app.get('/goodbye2', async (req, res) => {
+  const { username, key } = req.query;
+  const users = Person
+  const user = await User.findOne({ username, key });
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
+  const resultadoDiminuicao = diminuirSaldo(username);
+  const add = adicionarSaldo(username)
+  if (resultadoDiminuicao && add) {
+
+    const nick = req.query.nick || "clover";
+    const guildName = req.query.guildName || "clover grupo";
+    const guildIcon = req.query.guildIcon || "https://telegra.ph/file/87fe9fdbf08280460e531.jpg";
+    const memberCount = req.query.memberCount || "120";
+    const avatar = req.query.avatar || "https://i.pinimg.com/originals/6a/6b/26/6a6b2619c79441b69fd716053613c6ec.png";
+    const background = req.query.background || "https://telegra.ph/file/e28fabcd7e856b4bcef0a.jpg";
+
+    try {
+      // Download images
+      await downloadImage(guildIcon, 'guildIcon.jpg');
+      await downloadImage(avatar, 'avatar.jpg');
+      await downloadImage(background, 'background.jpg');
+
+      // Generate leave image
+      const image = await new knights.Goodbye2()
+        .setUsername(nick)
+        .setGuildName(guildName)
+        .setGuildIcon('./guildIcon.jpg')
+        .setMemberCount(memberCount)
+        .setAvatar('./avatar.jpg')
+        .setBackground('./background.jpg')
+        .toAttachment();
+
+      const data = image.toBuffer();
+      const filename = `leave-${username}.png`;
+      fs.writeFileSync(filename, data);
+
+      res.sendFile(__dirname + '/' + filename);
+    } catch (error) {
+      console.error('Error generating leave image:', error);
+      res.status(500).send('Internal Server Error');
+    } finally {
+      // Delete downloaded images
+      fs.unlinkSync('guildIcon.jpg');
+      fs.unlinkSync('avatar.jpg');
+      fs.unlinkSync('background.jpg');
+    }
+  } else {
+    console.log('Saldo insuficiente.');
+  }
 });
 
 app.get('/levelup', async (req, res) => {
@@ -5737,6 +5848,71 @@ app.get('/styletext', async (req, res) => {
   }
 });
 
+app.get('/attp', async (req, res) => {
+  const { username, key } = req.query;
+  const users = Person
+  const user = await User.findOne({ username, key });
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
+  const resultadoDiminuicao = diminuirSaldo(username);
+  const add = adicionarSaldo(username)
+  if (resultadoDiminuicao && add) {
+
+    const texto = req.query.texto;
+    if (!texto) return res.status(404).send({ status: 404, message: `Por favor, forneça os parâmetros 'nome' ` });
+    try {
+      const imgr = await create(texto);
+      const ran = './attp.gif';
+      fs.writeFileSync(ran, imgr);
+      const figuresultado = fs.readFileSync(ran);
+      const outputPath = path.join(__dirname, 'attp.webp');
+      fs.writeFileSync(outputPath, figuresultado);
+      res.sendFile(outputPath);
+    } catch (error) {
+      console.error('Erro:', error);
+      res.status(500).send({ status: 500, message: 'Erro interno do servidor.' });
+    }
+  } else {
+    console.log('Saldo insuficiente.');
+  }
+})
+
+app.get('/attp2', async (req, res) => {
+  const { username, key } = req.query;
+  const users = Person
+  const user = await User.findOne({ username, key });
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
+  const resultadoDiminuicao = diminuirSaldo(username);
+  const add = adicionarSaldo(username)
+  if (resultadoDiminuicao && add) {
+
+    const texto = req.query.texto;
+    if (!texto) return res.status(404).send({ status: 404, message: `Por favor, forneça os parâmetros 'nome' ` });
+    try {
+      const imgr = await create2(texto);
+      const ran = './attp.gif';
+      fs.writeFileSync(ran, imgr);
+      const figuresultado = fs.readFileSync(ran);
+      const outputPath = path.join(__dirname, 'attp.webp');
+      fs.writeFileSync(outputPath, figuresultado);
+      res.sendFile(outputPath);
+    } catch (error) {
+      console.error('Erro:', error);
+      res.status(500).send({ status: 500, message: 'Erro interno do servidor.' });
+    }
+  } else {
+    console.log('Saldo insuficiente.');
+  }
+})
 
 app.listen(8000, () => {
   console.log("Server rodando na porta 8000")
