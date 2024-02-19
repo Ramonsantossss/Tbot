@@ -5323,13 +5323,13 @@ app.get('/welcome2', async (req, res) => {
 
       // Generate welcome image
       const image = await new knights.Welcome2()
-        .setUsername(nick)
-        .setGuildName(guildName)
-        .setGuildIcon('./guildIcon.jpg')
-        .setMemberCount(memberCount)
-        .setAvatar('./avatar.jpg')
-        .setBackground('./background.jpg')
-        .toAttachment();
+      .setUsername(nick)
+      .setGuildName(guildName)
+      .setGuildIcon(Buffer.from('', 'utf-8')) // Empty buffer for guild icon
+      .setMemberCount(memberCount)
+      .setAvatar(avatar)
+      .setBackground(background)
+      .toAttachment();
 
       const data = image.toBuffer();
       const filename = `welcome-${username}.png`;
@@ -5848,6 +5848,7 @@ app.get('/styletext', async (req, res) => {
   }
 });
 
+
 app.get('/attp', async (req, res) => {
   const { username, key } = req.query;
   const users = Person
@@ -5913,6 +5914,84 @@ app.get('/attp2', async (req, res) => {
     console.log('Saldo insuficiente.');
   }
 })
+
+
+
+
+
+const { createCanvas, loadImage } = require('canvas');
+const GIFEncoder = require('gifencoder');
+const wordwrap = require('word-wrap');
+const text2png = require('text2png');
+
+const createATTP = async (text) => {
+    const canvasWidth = 512;
+    const canvasHeight = 512;
+    const encoder = new GIFEncoder(canvasWidth, canvasHeight);
+    encoder.start();
+    encoder.setRepeat(0);
+    encoder.setDelay(100);
+    encoder.setQuality(10);
+
+    const canvas = createCanvas(canvasWidth, canvasHeight);
+    const ctx = canvas.getContext('2d');
+
+    const colors = [
+        { r: 255, g: 0, b: 0 },    // red
+        { r: 0, g: 255, b: 0 },    // lime
+        { r: 255, g: 255, b: 0 },  // yellow
+        { r: 255, g: 0, b: 255 },  // magenta
+        { r: 0, g: 255, b: 255 }   // cyan
+    ];
+
+    for (let i = 0; i < colors.length; i++) {
+        const { r, g, b } = colors[i];
+
+        const textImage = text2png(wordwrap(text, { width: 50 }), {
+            font: '40px sans-serif',
+            color: `rgb(${r}, ${g}, ${b})`, // Usar cores RGB diretamente
+            strokeWidth: 0, // Remover bordas
+            strokeColor: 'transparent', // Cor das bordas transparente
+            textAlign: 'center',
+            lineSpacing: 10,
+            padding: 80,
+            backgroundColor: 'transparent', // Fundo transparente
+            output: 'dataURL'
+        });
+
+        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+        const image = await loadImage(textImage);
+        ctx.drawImage(image, 0, 0, canvasWidth, canvasHeight);
+
+        encoder.addFrame(ctx);
+    }
+
+    encoder.finish();
+
+    return encoder.out.getData();
+};
+
+// Restante do código para criar a rota e iniciar o servidor...
+
+app.get('/teste', async (req, res) => {
+    const { text } = req.query;
+    if (!text) {
+        return res.status(400).json({ error: 'O parâmetro "text" é obrigatório.' });
+    }
+
+    try {
+        const attpData = await createATTP(text);
+        res.set('Content-Type', 'image/gif');
+        res.send(attpData);
+    } catch (error) {
+        console.error('Erro ao criar o efeito ATTP:', error);
+        res.status(500).json({ error: 'Ocorreu um erro ao processar a solicitação.' });
+    }
+});
+
+
+
 
 app.listen(8000, () => {
   console.log("Server rodando na porta 8000")
