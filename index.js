@@ -5851,7 +5851,7 @@ app.get('/styletext', async (req, res) => {
 });
 
 
-app.get('/attp1', async (req, res, next) => {
+app.get('/attp', async (req, res, next) => {
   const { username, key } = req.query;
   const users = Person
   const user = await User.findOne({ username, key });
@@ -5904,7 +5904,7 @@ canvasGif(
 			ctx.fillText(text, x, y)
 		}
 		
-		drawStroked(text,290,300)
+		drawStroked(texto,290,300)
 
 	},
 	{
@@ -5913,7 +5913,7 @@ canvasGif(
 		repeat: 0, // how many times the GIF should repeat, default: 0 (runs forever)
 		algorithm: 'neuquant', // the algorithm the encoder should use, default: 'neuquant',
 		optimiser: false, // whether the encoder should use the in-built optimiser, default: false,
-		fps: 6, // the amount of frames to render per second, default: 60
+		fps: 22, // the amount of frames to render per second, default: 60
 		quality: 1, // the quality of the gif, a value between 1 and 100, default: 100
 	}
 ).then((buffer) =>{
