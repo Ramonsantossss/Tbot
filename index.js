@@ -5926,6 +5926,82 @@ res.send(buffer)
 }
 });
 
+app.get('/attp2', async (req, res, next) => {
+  const { username, key } = req.query;
+  const users = Person
+  const user = await User.findOne({ username, key });
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
+  const resultadoDiminuicao = diminuirSaldo(username);
+  const add = adicionarSaldo(username)
+  if (resultadoDiminuicao && add) {
+
+	var texto = req.query.texto
+	if (!texto ) return res.json({ status : false, message : "[!] masukan parameter texto"})
+
+const file = "./attp.gif"
+
+let length = texto.length
+		
+var font = 90
+if (length>12){ font = 68}
+if (length>15){ font = 58}
+if (length>18){ font = 55}
+if (length>19){ font = 50}
+if (length>22){ font = 48}
+if (length>24){ font = 38}
+if (length>27){ font = 35}
+if (length>30){ font = 30}
+if (length>35){ font = 26}
+if (length>39){ font = 25}
+if (length>40){ font = 20}
+if (length>49){ font = 10}
+Canvas.registerFont('./SF-Pro.ttf', { family: 'SF-Pro' })
+canvasGif(
+	file,
+	(ctx, width, height, totalFrames, currentFrame) => {
+
+		var couler = ["#ff0000","#ffe100","#33ff00","#00ffcc","#0033ff","#9500ff","#ff00ff"]
+		let jadi = couler[Math.floor(Math.random() * couler.length)]
+	
+	
+		function drawStroked(text, x, y) {
+			ctx.font = `${font}px SF-Pro`
+			ctx.strokeStyle = 'black'
+			ctx.lineWidth = 3
+			ctx.textAlign = 'center'
+			ctx.strokeText(text, x, y)
+			ctx.fillStyle = jadi
+			ctx.fillText(text, x, y)
+		}
+		
+		drawStroked(texto,290,300)
+
+	},
+	{
+		coalesce: false, // whether the gif should be coalesced first (requires graphicsmagick), default: false
+		delay: 0, // the delay between each frame in ms, default: 0
+		repeat: 0, // how many times the GIF should repeat, default: 0 (runs forever)
+		algorithm: 'neuquant', // the algorithm the encoder should use, default: 'neuquant',
+		optimiser: false, // whether the encoder should use the in-built optimiser, default: false,
+		fps: 22, // the amount of frames to render per second, default: 60
+		quality: 1, // the quality of the gif, a value between 1 and 100, default: 100
+	}
+).then((buffer) =>{
+res.set({'Content-Type': 'gif'})
+res.send(buffer)
+
+})
+} else {
+  console.log('Saldo insuficiente.');
+}
+});
+
+
 app.listen(8000, () => {
   console.log("Server rodando na porta 8000")
 })
