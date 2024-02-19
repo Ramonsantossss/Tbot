@@ -1,9 +1,7 @@
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
-const { createCanvas, loadImage } = require('canvas');
-const GIFEncoder = require('gifencoder');
-const wordwrap = require('word-wrap');
-const text2png = require('text2png');
+const canvasGif = require('canvas-gif')
+const Canvas = require('canvas')
 const axios = require('axios');
 const { create, create2 } = require('./data/attp.js');
 //const TelegramBot = require('node-telegram-bot-api');
@@ -5853,64 +5851,7 @@ app.get('/styletext', async (req, res) => {
 });
 
 
-const createATTP = async (text) => {
-    const canvasWidth = 512;
-    const canvasHeight = 512;
-    const encoder = new GIFEncoder(canvasWidth, canvasHeight);
-    encoder.start();
-    encoder.setRepeat(0);
-    encoder.setDelay(100);
-    encoder.setQuality(10);
-
-    const canvas = createCanvas(canvasWidth, canvasHeight);
-    const ctx = canvas.getContext('2d');
-
-    const colors = [
-        { r: 255, g: 0, b: 0 },    // red
-        { r: 0, g: 255, b: 0 },    // lime
-        { r: 255, g: 255, b: 0 },  // yellow
-        { r: 255, g: 0, b: 255 },  // magenta
-        { r: 0, g: 255, b: 255 }   // cyan
-    ];
-
-    for (let i = 0; i < colors.length; i++) {
-        const { r, g, b } = colors[i];
-
-        const textImage = text2png(wordwrap(text, { width: 50 }), {
-            font: '40px sans-serif',
-            color: `rgb(${r}, ${g}, ${b})`, // Usar cores RGB diretamente
-            strokeWidth: 0, // Remover bordas
-            strokeColor: 'transparent', // Cor das bordas transparente
-            textAlign: 'center',
-            lineSpacing: 10,
-            padding: 80,
-            backgroundColor: 'transparent', // Fundo transparente
-            output: 'dataURL'
-        });
-
-        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-
-        const image = await loadImage(textImage);
-        ctx.drawImage(image, 0, 0, canvasWidth, canvasHeight);
-
-        encoder.addFrame(ctx);
-    }
-
-    encoder.finish();
-
-    return encoder.out.getData();
-};
-
-// Restante do código para criar a rota e iniciar o servidor...
-
-
-// Restante do código para criar a rota e iniciar o servidor...
-
-
-// Restante do código para criar a rota e iniciar o servidor...
-
-
-app.get('/attp', async (req, res) => {
+app.get('/attp1', async (req, res, next) => {
   const { username, key } = req.query;
   const users = Person
   const user = await User.findOne({ username, key });
@@ -5923,58 +5864,67 @@ app.get('/attp', async (req, res) => {
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
   if (resultadoDiminuicao && add) {
-    const { texto } = req.query;
-    if (!texto) {
-        return res.status(400).json({ error: 'O parâmetro "texto" é obrigatório.' });
-    }
 
-    try {
-        const attpData = await createATTP(texto);
-        res.set('Content-Type', 'image/gif');
-        res.send(attpData);
-    } catch (error) {
-        console.error('Erro ao criar o efeito ATTP:', error);
-        res.status(500).json({ error: 'Ocorreu um erro ao processar a solicitação.' });
-    }
-  } else {
-    console.log('Saldo insuficiente.');
-  }
-});
+	var texto = req.query.texto
+	if (!texto ) return res.json({ status : false, message : "[!] masukan parameter texto"})
 
+const file = "./attp.gif"
 
-app.get('/attp2', async (req, res) => {
-  const { username, key } = req.query;
-  const users = Person
-  const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.sendFile(htmlPath);
-  }
-  if (user.isBaned === true) {
-    return res.sendFile(htmlPath);
-  }
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
-  const { texto } = req.query;
-  if (!texto) {
-      return res.status(400).json({ error: 'O parâmetro "texto" é obrigatório.' });
-  }
+let length = texto.length
+		
+var font = 90
+if (length>12){ font = 68}
+if (length>15){ font = 58}
+if (length>18){ font = 55}
+if (length>19){ font = 50}
+if (length>22){ font = 48}
+if (length>24){ font = 38}
+if (length>27){ font = 35}
+if (length>30){ font = 30}
+if (length>35){ font = 26}
+if (length>39){ font = 25}
+if (length>40){ font = 20}
+if (length>49){ font = 10}
+Canvas.registerFont('./SF-Pro.ttf', { family: 'SF-Pro' })
+canvasGif(
+	file,
+	(ctx, width, height, totalFrames, currentFrame) => {
 
-  try {
-      const attpData = await createATTP(texto);
-      res.set('Content-Type', 'image/gif');
-      res.send(attpData);
-  } catch (error) {
-      console.error('Erro ao criar o efeito ATTP:', error);
-      res.status(500).json({ error: 'Ocorreu um erro ao processar a solicitação.' });
-  }
+		var couler = ["#ff0000","#ffe100","#33ff00","#00ffcc","#0033ff","#9500ff","#ff00ff"]
+		let jadi = couler[Math.floor(Math.random() * couler.length)]
+	
+	
+		function drawStroked(text, x, y) {
+			ctx.font = `${font}px SF-Pro`
+			ctx.strokeStyle = 'black'
+			ctx.lineWidth = 3
+			ctx.textAlign = 'center'
+			ctx.strokeText(text, x, y)
+			ctx.fillStyle = jadi
+			ctx.fillText(text, x, y)
+		}
+		
+		drawStroked(text,290,300)
+
+	},
+	{
+		coalesce: false, // whether the gif should be coalesced first (requires graphicsmagick), default: false
+		delay: 0, // the delay between each frame in ms, default: 0
+		repeat: 0, // how many times the GIF should repeat, default: 0 (runs forever)
+		algorithm: 'neuquant', // the algorithm the encoder should use, default: 'neuquant',
+		optimiser: false, // whether the encoder should use the in-built optimiser, default: false,
+		fps: 6, // the amount of frames to render per second, default: 60
+		quality: 1, // the quality of the gif, a value between 1 and 100, default: 100
+	}
+).then((buffer) =>{
+res.set({'Content-Type': 'gif'})
+res.send(buffer)
+
+})
 } else {
   console.log('Saldo insuficiente.');
 }
 });
-
-
-
 
 app.listen(8000, () => {
   console.log("Server rodando na porta 8000")
