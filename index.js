@@ -5854,51 +5854,45 @@ app.get('/styletext', async (req, res) => {
 
 
 const createATTP = async (text) => {
-    const canvasWidth = 512;
-    const canvasHeight = 512;
-    const encoder = new GIFEncoder(canvasWidth, canvasHeight);
-    encoder.start();
-    encoder.setRepeat(0);
-    encoder.setDelay(100);
-    encoder.setQuality(10);
+  const canvasWidth = 512;
+  const canvasHeight = 512;
+  const encoder = new GIFEncoder(canvasWidth, canvasHeight);
+  encoder.start();
+  encoder.setRepeat(0);
+  encoder.setDelay(100);
+  encoder.setQuality(10);
 
-    const canvas = createCanvas(canvasWidth, canvasHeight);
-    const ctx = canvas.getContext('2d');
+  const canvas = createCanvas(canvasWidth, canvasHeight);
+  const ctx = canvas.getContext('2d');
 
-    const colors = [
-        { r: 255, g: 0, b: 0 },    // red
-        { r: 0, g: 255, b: 0 },    // lime
-        { r: 255, g: 255, b: 0 },  // yellow
-        { r: 255, g: 0, b: 255 },  // magenta
-        { r: 0, g: 255, b: 255 }   // cyan
-    ];
+  const colors = ['red', 'lime', 'blue']; // Adicionamos azul para obter uma troca de cores RGB completa
 
-    for (let i = 0; i < colors.length; i++) {
-        const { r, g, b } = colors[i];
+  for (let i = 0; i < colors.length; i++) {
+      const color = colors[i];
 
-        const textImage = text2png(wordwrap(text, { width: 50 }), {
-            font: '40px sans-serif',
-            color: `rgb(${r}, ${g}, ${b})`, // Usar cores RGB diretamente
-            strokeWidth: 0, // Remover bordas
-            strokeColor: 'transparent', // Cor das bordas transparente
-            textAlign: 'center',
-            lineSpacing: 10,
-            padding: 80,
-            backgroundColor: 'transparent', // Fundo transparente
-            output: 'dataURL'
-        });
+      const textImage = text2png(wordwrap(text, { width: 50 }), {
+          font: 'bold 40px Arial', // Altera a fonte para Arial e negrito
+          color, // Define a cor com base na lista de cores
+          strokeWidth: 0,
+          strokeColor: 'transparent',
+          textAlign: 'center',
+          lineSpacing: 10,
+          padding: 80,
+          backgroundColor: 'transparent', // Define o fundo como transparente
+          output: 'dataURL'
+      });
 
-        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+      ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
-        const image = await loadImage(textImage);
-        ctx.drawImage(image, 0, 0, canvasWidth, canvasHeight);
+      const image = await loadImage(textImage);
+      ctx.drawImage(image, 0, 0, canvasWidth, canvasHeight);
 
-        encoder.addFrame(ctx);
-    }
+      encoder.addFrame(ctx);
+  }
 
-    encoder.finish();
+  encoder.finish();
 
-    return encoder.out.getData();
+  return encoder.out.getData();
 };
 
 // Restante do código para criar a rota e iniciar o servidor...
