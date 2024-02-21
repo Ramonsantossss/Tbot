@@ -1,5 +1,6 @@
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
+const { createCanvas, loadImage } = require('canvas');
 const canvasGif = require('canvas-gif')
 const Canvas = require('canvas')
 const axios = require('axios');
@@ -5328,13 +5329,13 @@ app.get('/welcome2', async (req, res) => {
 
       // Generate welcome image
       const image = await new knights.Welcome2()
-      .setUsername(nick)
-      .setGuildName(guildName)
-      .setGuildIcon(Buffer.from('', 'utf-8')) // Empty buffer for guild icon
-      .setMemberCount(memberCount)
-      .setAvatar(avatar)
-      .setBackground(background)
-      .toAttachment();
+        .setUsername(nick)
+        .setGuildName(guildName)
+        .setGuildIcon(Buffer.from('', 'utf-8')) // Empty buffer for guild icon
+        .setMemberCount(memberCount)
+        .setAvatar(avatar)
+        .setBackground(background)
+        .toAttachment();
 
       const data = image.toBuffer();
       const filename = `welcome-${username}.png`;
@@ -5868,65 +5869,65 @@ app.get('/attp', async (req, res, next) => {
   const add = adicionarSaldo(username)
   if (resultadoDiminuicao && add) {
 
-	var texto = req.query.texto
-	if (!texto ) return res.json({ status : false, message : "[!] masukan parameter texto"})
+    var texto = req.query.texto
+    if (!texto) return res.json({ status: false, message: "[!] masukan parameter texto" })
 
-const file = "./attp.gif"
+    const file = "./attp.gif"
 
-let length = texto.length
-		
-var font = 90
-if (length>12){ font = 68}
-if (length>15){ font = 58}
-if (length>18){ font = 55}
-if (length>19){ font = 50}
-if (length>22){ font = 48}
-if (length>24){ font = 38}
-if (length>27){ font = 35}
-if (length>30){ font = 30}
-if (length>35){ font = 26}
-if (length>39){ font = 25}
-if (length>40){ font = 20}
-if (length>49){ font = 10}
-Canvas.registerFont('./SF-Pro.ttf', { family: 'SF-Pro' })
-canvasGif(
-	file,
-	(ctx, width, height, totalFrames, currentFrame) => {
+    let length = texto.length
 
-		var couler = ["#ff0000","#ffe100","#33ff00","#00ffcc","#0033ff","#9500ff","#ff00ff"]
-		let jadi = couler[Math.floor(Math.random() * couler.length)]
-	
-	
-		function drawStroked(text, x, y) {
-			ctx.font = `${font}px SF-Pro`
-			ctx.strokeStyle = 'black'
-			ctx.lineWidth = 3
-			ctx.textAlign = 'center'
-			ctx.strokeText(text, x, y)
-			ctx.fillStyle = jadi
-			ctx.fillText(text, x, y)
-		}
-		
-		drawStroked(texto,290,300)
+    var font = 90
+    if (length > 12) { font = 68 }
+    if (length > 15) { font = 58 }
+    if (length > 18) { font = 55 }
+    if (length > 19) { font = 50 }
+    if (length > 22) { font = 48 }
+    if (length > 24) { font = 38 }
+    if (length > 27) { font = 35 }
+    if (length > 30) { font = 30 }
+    if (length > 35) { font = 26 }
+    if (length > 39) { font = 25 }
+    if (length > 40) { font = 20 }
+    if (length > 49) { font = 10 }
+    Canvas.registerFont('./SF-Pro.ttf', { family: 'SF-Pro' })
+    canvasGif(
+      file,
+      (ctx, width, height, totalFrames, currentFrame) => {
 
-	},
-	{
-		coalesce: false, // whether the gif should be coalesced first (requires graphicsmagick), default: false
-		delay: 0, // the delay between each frame in ms, default: 0
-		repeat: 0, // how many times the GIF should repeat, default: 0 (runs forever)
-		algorithm: 'neuquant', // the algorithm the encoder should use, default: 'neuquant',
-		optimiser: false, // whether the encoder should use the in-built optimiser, default: false,
-		fps: 22, // the amount of frames to render per second, default: 60
-		quality: 1, // the quality of the gif, a value between 1 and 100, default: 100
-	}
-).then((buffer) =>{
-res.set({'Content-Type': 'gif'})
-res.send(buffer)
+        var couler = ["#ff0000", "#ffe100", "#33ff00", "#00ffcc", "#0033ff", "#9500ff", "#ff00ff"]
+        let jadi = couler[Math.floor(Math.random() * couler.length)]
 
-})
-} else {
-  console.log('Saldo insuficiente.');
-}
+
+        function drawStroked(text, x, y) {
+          ctx.font = `${font}px SF-Pro`
+          ctx.strokeStyle = 'black'
+          ctx.lineWidth = 3
+          ctx.textAlign = 'center'
+          ctx.strokeText(text, x, y)
+          ctx.fillStyle = jadi
+          ctx.fillText(text, x, y)
+        }
+
+        drawStroked(texto, 290, 300)
+
+      },
+      {
+        coalesce: false, // whether the gif should be coalesced first (requires graphicsmagick), default: false
+        delay: 0, // the delay between each frame in ms, default: 0
+        repeat: 0, // how many times the GIF should repeat, default: 0 (runs forever)
+        algorithm: 'neuquant', // the algorithm the encoder should use, default: 'neuquant',
+        optimiser: false, // whether the encoder should use the in-built optimiser, default: false,
+        fps: 22, // the amount of frames to render per second, default: 60
+        quality: 1, // the quality of the gif, a value between 1 and 100, default: 100
+      }
+    ).then((buffer) => {
+      res.set({ 'Content-Type': 'gif' })
+      res.send(buffer)
+
+    })
+  } else {
+    console.log('Saldo insuficiente.');
+  }
 });
 
 app.get('/attp2', async (req, res, next) => {
@@ -5943,66 +5944,186 @@ app.get('/attp2', async (req, res, next) => {
   const add = adicionarSaldo(username)
   if (resultadoDiminuicao && add) {
 
-	var texto = req.query.texto
-	if (!texto ) return res.json({ status : false, message : "[!] masukan parameter texto"})
+    var texto = req.query.texto
+    if (!texto) return res.json({ status: false, message: "[!] masukan parameter texto" })
 
-const file = "./attp.gif"
+    const file = "./attp.gif"
 
-let length = texto.length
-		
-var font = 90
-if (length>12){ font = 68}
-if (length>15){ font = 58}
-if (length>18){ font = 55}
-if (length>19){ font = 50}
-if (length>22){ font = 48}
-if (length>24){ font = 38}
-if (length>27){ font = 35}
-if (length>30){ font = 30}
-if (length>35){ font = 26}
-if (length>39){ font = 25}
-if (length>40){ font = 20}
-if (length>49){ font = 10}
-Canvas.registerFont('./SF-Pro.ttf', { family: 'SF-Pro' })
-canvasGif(
-	file,
-	(ctx, width, height, totalFrames, currentFrame) => {
+    let length = texto.length
 
-		var couler = ["#ff0000","#ffe100","#33ff00","#00ffcc","#0033ff","#9500ff","#ff00ff"]
-		let jadi = couler[Math.floor(Math.random() * couler.length)]
-	
-	
-		function drawStroked(text, x, y) {
-			ctx.font = `${font}px SF-Pro`
-			ctx.strokeStyle = 'black'
-			ctx.lineWidth = 3
-			ctx.textAlign = 'center'
-			ctx.strokeText(text, x, y)
-			ctx.fillStyle = jadi
-			ctx.fillText(text, x, y)
-		}
-		
-		drawStroked(texto,290,300)
+    var font = 90
+    if (length > 12) { font = 68 }
+    if (length > 15) { font = 58 }
+    if (length > 18) { font = 55 }
+    if (length > 19) { font = 50 }
+    if (length > 22) { font = 48 }
+    if (length > 24) { font = 38 }
+    if (length > 27) { font = 35 }
+    if (length > 30) { font = 30 }
+    if (length > 35) { font = 26 }
+    if (length > 39) { font = 25 }
+    if (length > 40) { font = 20 }
+    if (length > 49) { font = 10 }
+    Canvas.registerFont('./SF-Pro.ttf', { family: 'SF-Pro' })
+    canvasGif(
+      file,
+      (ctx, width, height, totalFrames, currentFrame) => {
 
-	},
-	{
-		coalesce: false, // whether the gif should be coalesced first (requires graphicsmagick), default: false
-		delay: 0, // the delay between each frame in ms, default: 0
-		repeat: 0, // how many times the GIF should repeat, default: 0 (runs forever)
-		algorithm: 'neuquant', // the algorithm the encoder should use, default: 'neuquant',
-		optimiser: false, // whether the encoder should use the in-built optimiser, default: false,
-		fps: 22, // the amount of frames to render per second, default: 60
-		quality: 1, // the quality of the gif, a value between 1 and 100, default: 100
-	}
-).then((buffer) =>{
-res.set({'Content-Type': 'gif'})
-res.send(buffer)
+        var couler = ["#ff0000", "#ffe100", "#33ff00", "#00ffcc", "#0033ff", "#9500ff", "#ff00ff"]
+        let jadi = couler[Math.floor(Math.random() * couler.length)]
 
-})
+
+        function drawStroked(text, x, y) {
+          ctx.font = `${font}px SF-Pro`
+          ctx.strokeStyle = 'black'
+          ctx.lineWidth = 3
+          ctx.textAlign = 'center'
+          ctx.strokeText(text, x, y)
+          ctx.fillStyle = jadi
+          ctx.fillText(text, x, y)
+        }
+
+        drawStroked(texto, 290, 300)
+
+      },
+      {
+        coalesce: false, // whether the gif should be coalesced first (requires graphicsmagick), default: false
+        delay: 0, // the delay between each frame in ms, default: 0
+        repeat: 0, // how many times the GIF should repeat, default: 0 (runs forever)
+        algorithm: 'neuquant', // the algorithm the encoder should use, default: 'neuquant',
+        optimiser: false, // whether the encoder should use the in-built optimiser, default: false,
+        fps: 22, // the amount of frames to render per second, default: 60
+        quality: 1, // the quality of the gif, a value between 1 and 100, default: 100
+      }
+    ).then((buffer) => {
+      res.set({ 'Content-Type': 'gif' })
+      res.send(buffer)
+
+    })
+  } else {
+    console.log('Saldo insuficiente.');
+  }
+});
+
+
+
+// 
+app.get('/cardgame', async (req, res) => {
+  const { username, key } = req.query;
+  const users = Person
+  const user = await User.findOne({ username, key });
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
+  const resultadoDiminuicao = diminuirSaldo(username);
+  const add = adicionarSaldo(username)
+  if (resultadoDiminuicao && add) {
+  const { foto, atk, def, legenda, nick } = req.query
+  try {
+    // Tamanho da thumbnail
+    const width = 400;
+    const height = 580;
+
+    // Criar o canvas
+    const canvas = createCanvas(width, height);
+    const ctx = canvas.getContext('2d');
+
+    // Carregar a imagem de fundo a partir do link fornecido (ou use uma imagem padrão se nenhum link for fornecido)
+    const backgroundImageURL = req.query.background || 'https://telegra.ph/file/08ded60bd97d0550f722c.png';
+    const backgroundImage = await loadImage(backgroundImageURL);
+    const fotoimage = await loadImage(foto || 'https://i.pinimg.com/550x/1a/46/23/1a4623024e77ca419b01f00c12cd245d.jpg');
+
+    ctx.drawImage(backgroundImage, 0, 0, width, height);
+    ctx.drawImage(fotoimage, 46, 121, 300, 300);
+
+    ctx.fillStyle = '#000000'; // preto
+    ctx.font = '20px Arial';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#000000'; // vermelho
+    ctx.fillText(nick || 'Clover Mods', 100, 55);
+    ctx.fillStyle = '#000000'; // preto
+    ctx.font = '19px Arial';
+    const lines = (legenda || 'Um mago de grande poder... \nporem tem medo de baratas ;-;').split('\n');
+    lines.forEach((line, index) => {
+    ctx.fillText(line, 40, 470 + index * 25);
+    });
+    ctx.fillStyle = '#000000'; // preto
+    ctx.font = '18px Arial';
+    ctx.fillText(atk || '2500', 240, 537);
+    ctx.fillStyle = '#000000'; // preto
+    ctx.font = '18px Arial';
+    ctx.fillText(def || '2500', 320, 537);
+
+    // Enviar a imagem como resposta
+    res.set('Content-Type', 'image/png');
+    canvas.createPNGStream().pipe(res);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Erro ao gerar a thumbnail.');
+  }
 } else {
   console.log('Saldo insuficiente.');
 }
 });
+
+
+// Rota para retornar a imagem
+app.get('/teste', async (req, res) => {
+  try {
+    // Tamanho da thumbnail
+    const width = 1920;
+    const height = 1077;
+
+    // Criar o canvas
+    const canvas = createCanvas(width, height);
+    const ctx = canvas.getContext('2d');
+
+    // Carregar a imagem de fundo a partir do link fornecido (ou use uma imagem padrão se nenhum link for fornecido)
+    const backgroundImageURL = req.query.background || 'https://telegra.ph/file/4d53a1c47a45e47961e27.jpg';
+    const backgroundImage = await loadImage(backgroundImageURL);
+    const espadaimage = await loadImage('https://magic-island.weebly.com/uploads/1/9/3/3/19337587/448104667.png')
+    const escudoimage = await loadImage('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT4mcDkWR_6vrNmdl9xAvdxMmaUTRZSuNZ2slVtiHHpE5Ri0zdlt_6iY_kfyE6KB5iLOGY&usqp=CAU')
+    const itemimage = await loadImage('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ-kG3UInEhf1mSSBkCEFy8IiXqyry7FhVo_Q&usqp=CAU')
+
+    // Desenhar a imagem de fundo
+    ctx.drawImage(backgroundImage, 0, 0, width, height);
+    ctx.drawImage(espadaimage, 502, 380, 170, 170);
+    ctx.drawImage(escudoimage, 52, 380, 170, 170)
+    ctx.drawImage(itemimage, 882, 94, 93, 93)
+    // Texto "oi" em branco no centro
+    ctx.fillStyle = '#fff';
+    ctx.font = '20px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+
+    // Enviar a imagem como resposta
+    res.set('Content-Type', 'image/png');
+    canvas.createPNGStream().pipe(res);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Erro ao gerar a thumbnail.');
+  }
+
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 app.listen(8000, () => {
