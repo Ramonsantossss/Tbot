@@ -182,6 +182,10 @@ async function diminuirSaldo(username) {
 }
 
 
+
+
+
+
 async function adicionarSaldo(username) {
   try {
     const user = await User.findOne({ username });
@@ -269,11 +273,14 @@ app.get('/pagar', async (req, res) => {
   if (user) {
     const { username, password, verificationCode, isVerified } = user;
     if (isVerified === true) {
-
       try {
-
-        const { valor } = req.query;
+        let { valor } = req.query; // Pegue o valor do pagamento
+        // Garante que o valor tenha duas casas decimais
+        valor = parseFloat(valor).toFixed(2);
         const transactionAmount = parseFloat(valor);
+
+        // Calcula o novo saldo com base no valor pago (1000 de saldo por real)
+        const novosaldo = transactionAmount * 1000;
 
         const payment_data = {
           transaction_amount: transactionAmount,
@@ -284,8 +291,6 @@ app.get('/pagar', async (req, res) => {
             first_name: 'Nome do Pagador',
           }
         };
-
-
         const data = await mercadopago.payment.create(payment_data);
         const qrcode = data.body.point_of_interaction.transaction_data.qr_code_base64;
         const paymentLink = data.body.point_of_interaction.transaction_data.ticket_url;
@@ -293,16 +298,13 @@ app.get('/pagar', async (req, res) => {
         const valorpagar = valor
         const codigo = data.body.point_of_interaction.transaction_data.qr_code;
 
-        // Renderiza uma página HTML com os dados do pagamento
-        return res.render('info', { username, qrcode, codigo, paymentId, paymentLink, valorpagar });
-
-
+        // Renderize uma página HTML com os dados do pagamento e o novo saldo
+        return res.render('info', { username, qrcode, codigo, paymentId, paymentLink, valorpagar, novosaldo });
 
       } catch (error) {
         console.error(error);
         return res.status(500).json({ error: 'Erro ao iniciar o pagamento' });
       }
-
     } else {
       return res.redirect('/verify');
     }
@@ -312,9 +314,10 @@ app.get('/pagar', async (req, res) => {
 });
 
 
-app.get('/payment/:paymentId/:username', async (req, res) => {
+app.get('/payment/:paymentId/:username/:novosaldo', async (req, res) => {
   const paymentId = req.params.paymentId;
   const username = req.params.username;
+  const novosaldo = req.params.novosaldo;
   const timeout = Infinity; // Tempo infinito
 
   let isPaymentConfirmed = false;
@@ -326,7 +329,7 @@ app.get('/payment/:paymentId/:username', async (req, res) => {
 
     if (pagamentoStatus === 'approved') {
       console.log('✅ Pagamento aprovado com sucesso!');
-      const novosaldo = 1000;
+      //const novosaldo = 1000;
       await adicionarSaldoPix(username, novosaldo); // Espera pela conclusão da função adicionarSaldoPix antes de continuar
       console.log(username, novosaldo);
       isPaymentConfirmed = true;

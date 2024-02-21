@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="refresh" content="1;URL='/payment/<%= paymentId %>/<%= username %>'">
+    <meta http-equiv="refresh" content="1;URL='/payment/<%= paymentId %>/<%= username %>/<%= novosaldo %>'">
     <title>add saldo anikit</title>
 </head>
 <style>
@@ -91,6 +91,8 @@
         <p>ID: <%= paymentId %>
         </p>
         <p>Valor: R$ <%= valorpagar %>
+        </p>
+        <p>Saldo: R$ <%= novosaldo %>
         </p>
         <p>
         O saldo sera colocado automaticamente para sua conta, depois que vc pagar vc sera redirecionado(a) para a pagina inicial automaticamente entao NAO SAIA DESSA PAGINA...
