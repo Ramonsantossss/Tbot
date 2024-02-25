@@ -5301,115 +5301,6 @@ app.get('/goodbye', async (req, res) => {
   }
 });
 
-app.get('/welcome2', async (req, res) => {
-  const { username, key } = req.query;
-  const users = Person
-  const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.sendFile(htmlPath);
-  }
-  if (user.isBaned === true) {
-    return res.sendFile(htmlPath);
-  }
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
-    const nick = req.query.nick || 'clover';
-    const guildName = req.query.guildName || 'clover grupo';
-    const guildIcon = req.query.guildIcon || 'https://telegra.ph/file/87fe9fdbf08280460e531.jpg';
-    const memberCount = req.query.memberCount || '120';
-    const avatar = req.query.avatar || 'https://i.ibb.co/1s8T3sY/48f7ce63c7aa.jpg';
-    const background = req.query.background || 'https://i.ibb.co/4YBNyvP/images-76.jpg';
-
-    try {
-      // Download images
-      await downloadImage(guildIcon, 'guildIcon.jpg');
-      await downloadImage(avatar, 'avatar.jpg');
-      await downloadImage(background, 'background.jpg');
-
-      // Generate welcome image
-      const image = await new knights.Welcome2()
-        .setUsername(nick)
-        .setGuildName(guildName)
-        .setGuildIcon(Buffer.from('', 'utf-8')) // Empty buffer for guild icon
-        .setMemberCount(memberCount)
-        .setAvatar(avatar)
-        .setBackground(background)
-        .toAttachment();
-
-      const data = image.toBuffer();
-      const filename = `welcome-${username}.png`;
-      fs.writeFileSync(filename, data);
-
-      res.sendFile(__dirname + '/' + filename);
-    } catch (error) {
-      console.error('Error generating welcome image:', error);
-      res.status(500).send('Internal Server Error');
-    } finally {
-      // Delete downloaded images
-      fs.unlinkSync('guildIcon.jpg');
-      fs.unlinkSync('avatar.jpg');
-      fs.unlinkSync('background.jpg');
-    }
-  } else {
-    console.log('Saldo insuficiente.');
-  }
-});
-app.get('/goodbye2', async (req, res) => {
-  const { username, key } = req.query;
-  const users = Person
-  const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.sendFile(htmlPath);
-  }
-  if (user.isBaned === true) {
-    return res.sendFile(htmlPath);
-  }
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
-
-    const nick = req.query.nick || "clover";
-    const guildName = req.query.guildName || "clover grupo";
-    const guildIcon = req.query.guildIcon || "https://telegra.ph/file/87fe9fdbf08280460e531.jpg";
-    const memberCount = req.query.memberCount || "120";
-    const avatar = req.query.avatar || "https://i.pinimg.com/originals/6a/6b/26/6a6b2619c79441b69fd716053613c6ec.png";
-    const background = req.query.background || "https://telegra.ph/file/e28fabcd7e856b4bcef0a.jpg";
-
-    try {
-      // Download images
-      await downloadImage(guildIcon, 'guildIcon.jpg');
-      await downloadImage(avatar, 'avatar.jpg');
-      await downloadImage(background, 'background.jpg');
-
-      // Generate leave image
-      const image = await new knights.Goodbye2()
-        .setUsername(nick)
-        .setGuildName(guildName)
-        .setGuildIcon('./guildIcon.jpg')
-        .setMemberCount(memberCount)
-        .setAvatar('./avatar.jpg')
-        .setBackground('./background.jpg')
-        .toAttachment();
-
-      const data = image.toBuffer();
-      const filename = `leave-${username}.png`;
-      fs.writeFileSync(filename, data);
-
-      res.sendFile(__dirname + '/' + filename);
-    } catch (error) {
-      console.error('Error generating leave image:', error);
-      res.status(500).send('Internal Server Error');
-    } finally {
-      // Delete downloaded images
-      fs.unlinkSync('guildIcon.jpg');
-      fs.unlinkSync('avatar.jpg');
-      fs.unlinkSync('background.jpg');
-    }
-  } else {
-    console.log('Saldo insuficiente.');
-  }
-});
 
 app.get('/levelup', async (req, res) => {
   const avatar = req.query.avatar || 'https://i.pinimg.com/originals/6a/6b/26/6a6b2619c79441b69fd716053613c6ec.png';
@@ -5438,44 +5329,59 @@ app.get('/levelup', async (req, res) => {
 });
 
 app.get('/ranking', async (req, res) => {
-  const username = req.query.username || 'clover';
-  const currxp = req.query.currxp || '100';
-  const needxp = req.query.needxp || '1000';
-  const level = req.query.level || '6';
-  const rank = req.query.rank || 'https://i.ibb.co/Wn9cvnv/FABLED.png';
-  const avatar = req.query.avatar || 'https://i.pinimg.com/originals/6a/6b/26/6a6b2619c79441b69fd716053613c6ec.png';
-  const background = req.query.background || 'https://telegra.ph/file/e28fabcd7e856b4bcef0a.jpg';
+  const { username, key } = req.query;
+  const users = Person
+  const user = await User.findOne({ username, key });
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
+  const resultadoDiminuicao = diminuirSaldo(username);
+  const add = adicionarSaldo(username)
+  if (resultadoDiminuicao && add) {
+    const username = req.query.nick || 'clover';
+    const currxp = req.query.currxp || '100';
+    const needxp = req.query.needxp || '1000';
+    const level = req.query.level || '6';
+    const rank = req.query.rank || 'https://i.ibb.co/Wn9cvnv/FABLED.png';
+    const avatar = req.query.avatar || 'https://i.pinimg.com/originals/6a/6b/26/6a6b2619c79441b69fd716053613c6ec.png';
+    const background = req.query.background || 'https://telegra.ph/file/e28fabcd7e856b4bcef0a.jpg';
 
-  try {
-    // Download images
-    await downloadImage(avatar, 'avatar.jpg');
-    await downloadImage(background, 'background.jpg');
-    await downloadImage(rank, 'rank.png');
+    try {
+      // Download images
+      await downloadImage(avatar, 'avatar.jpg');
+      await downloadImage(background, 'background.jpg');
+      await downloadImage(rank, 'rank.png');
 
-    // Generate rank up image
-    const image = await new knights.Rank()
-      .setUsername(username)
-      .setBg('./background.jpg')
-      .setNeedxp(needxp)
-      .setCurrxp(currxp)
-      .setLevel(level)
-      .setRank('./rank.png')
-      .setAvatar('./avatar.jpg')
-      .toAttachment();
+      // Generate rank up image
+      const image = await new knights.Rank()
+        .setUsername(username)
+        .setBg('./background.jpg')
+        .setNeedxp(needxp)
+        .setCurrxp(currxp)
+        .setLevel(level)
+        .setRank('./rank.png')
+        .setAvatar('./avatar.jpg')
+        .toAttachment();
 
-    const data = image.toBuffer();
-    const filename = `rankup-${username}.png`;
-    fs.writeFileSync(filename, data);
+      const data = image.toBuffer();
+      const filename = `rankup-${username}.png`;
+      fs.writeFileSync(filename, data);
 
-    res.sendFile(__dirname + '/' + filename);
-  } catch (error) {
-    console.error('Error generating rank up image:', error);
-    res.status(500).send('Internal Server Error');
-  } finally {
-    // Delete downloaded images
-    fs.unlinkSync('avatar.jpg');
-    fs.unlinkSync('background.jpg');
-    fs.unlinkSync('rank.png');
+      res.sendFile(__dirname + '/' + filename);
+    } catch (error) {
+      console.error('Error generating rank up image:', error);
+      res.status(500).send('Internal Server Error');
+    } finally {
+      // Delete downloaded images
+      fs.unlinkSync('avatar.jpg');
+      fs.unlinkSync('background.jpg');
+      fs.unlinkSync('rank.png');
+    }
+  } else {
+    console.log('Saldo insuficiente.');
   }
 });
 
@@ -6021,53 +5927,274 @@ app.get('/cardgame', async (req, res) => {
   const resultadoDiminuicao = diminuirSaldo(username);
   const add = adicionarSaldo(username)
   if (resultadoDiminuicao && add) {
-  const { foto, atk, def, legenda, nick } = req.query
-  try {
-    // Tamanho da thumbnail
-    const width = 400;
-    const height = 580;
+    const { foto, atk, def, legenda, nick } = req.query
+    try {
+      // Tamanho da thumbnail
+      const width = 400;
+      const height = 580;
 
-    // Criar o canvas
-    const canvas = createCanvas(width, height);
-    const ctx = canvas.getContext('2d');
+      // Criar o canvas
+      const canvas = createCanvas(width, height);
+      const ctx = canvas.getContext('2d');
 
-    // Carregar a imagem de fundo a partir do link fornecido (ou use uma imagem padrão se nenhum link for fornecido)
-    const backgroundImageURL = req.query.background || 'https://telegra.ph/file/08ded60bd97d0550f722c.png';
-    const backgroundImage = await loadImage(backgroundImageURL);
-    const fotoimage = await loadImage(foto || 'https://i.pinimg.com/550x/1a/46/23/1a4623024e77ca419b01f00c12cd245d.jpg');
+      // Carregar a imagem de fundo a partir do link fornecido (ou use uma imagem padrão se nenhum link for fornecido)
+      const backgroundImageURL = req.query.background || 'https://telegra.ph/file/08ded60bd97d0550f722c.png';
+      const backgroundImage = await loadImage(backgroundImageURL);
+      const fotoimage = await loadImage(foto || 'https://i.pinimg.com/550x/1a/46/23/1a4623024e77ca419b01f00c12cd245d.jpg');
 
-    ctx.drawImage(backgroundImage, 0, 0, width, height);
-    ctx.drawImage(fotoimage, 46, 121, 300, 300);
+      ctx.drawImage(backgroundImage, 0, 0, width, height);
+      ctx.drawImage(fotoimage, 46, 121, 300, 300);
 
-    ctx.fillStyle = '#000000'; // preto
-    ctx.font = '20px Arial';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = '#000000'; // vermelho
-    ctx.fillText(nick || 'Clover Mods', 100, 55);
-    ctx.fillStyle = '#000000'; // preto
-    ctx.font = '19px Arial';
-    const lines = (legenda || 'Um mago de grande poder... \nporem tem medo de baratas ;-;').split('\n');
-    lines.forEach((line, index) => {
-    ctx.fillText(line, 40, 470 + index * 25);
-    });
-    ctx.fillStyle = '#000000'; // preto
-    ctx.font = '18px Arial';
-    ctx.fillText(atk || '2500', 240, 537);
-    ctx.fillStyle = '#000000'; // preto
-    ctx.font = '18px Arial';
-    ctx.fillText(def || '2500', 320, 537);
+      ctx.fillStyle = '#000000'; // preto
+      ctx.font = '20px Arial';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#000000'; // vermelho
+      ctx.fillText(nick || 'Clover Mods', 100, 55);
+      ctx.fillStyle = '#000000'; // preto
+      ctx.font = '19px Arial';
+      const lines = (legenda || 'Um mago de grande poder... \nporem tem medo de baratas ;-;').split('\n');
+      lines.forEach((line, index) => {
+        ctx.fillText(line, 40, 470 + index * 25);
+      });
+      ctx.fillStyle = '#000000'; // preto
+      ctx.font = '18px Arial';
+      ctx.fillText(atk || '2500', 240, 537);
+      ctx.fillStyle = '#000000'; // preto
+      ctx.font = '18px Arial';
+      ctx.fillText(def || '2500', 320, 537);
 
-    // Enviar a imagem como resposta
-    res.set('Content-Type', 'image/png');
-    canvas.createPNGStream().pipe(res);
-  } catch (error) {
-    console.error(error);
-    res.status(500).send('Erro ao gerar a thumbnail.');
+      // Enviar a imagem como resposta
+      res.set('Content-Type', 'image/png');
+      canvas.createPNGStream().pipe(res);
+    } catch (error) {
+      console.error(error);
+      res.status(500).send('Erro ao gerar a thumbnail.');
+    }
+  } else {
+    console.log('Saldo insuficiente.');
   }
-} else {
-  console.log('Saldo insuficiente.');
-}
 });
+
+
+
+// Rota da API para gerar a imagem com fundo preto e imagem sobreposta
+// /welcome2?nick=Grupo AniKit&background=https://marketplace.canva.com/EAFKIsxfWjI/1/0/1600w/canva-papel-de-parede-coração-gradiente-bege-rosa-e-azul-eS21LuYsgUs.jpg&perfil=https://telegra.ph/file/87fe9fdbf08280460e531.jpg&grupo=https://telegra.ph/file/87fe9fdbf08280460e531.jpg&numero=#55759865986347
+
+app.get('/welcome2', async (req, res) => {
+  const { username, key } = req.query;
+  const users = Person
+  const user = await User.findOne({ username, key });
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
+  const resultadoDiminuicao = diminuirSaldo(username);
+  const add = adicionarSaldo(username)
+  if (resultadoDiminuicao && add) {
+    try {
+      const width = 1920;
+      const height = 895;
+
+      const canvas = createCanvas(width, height);
+      const ctx = canvas.getContext('2d');
+
+      const backgroundImageURL = req.query.background || 'https://marketplace.canva.com/EAFKIsxfWjI/1/0/1600w/canva-papel-de-parede-coração-gradiente-bege-rosa-e-azul-eS21LuYsgUs.jpg';
+      const backgroundImage = await loadImage(backgroundImageURL);
+
+      ctx.drawImage(backgroundImage, 0, 0, width, height);
+
+      const overlayImagePath = './data/welcome.png';
+      const overlayImage = await loadImage(overlayImagePath);
+
+      ctx.drawImage(overlayImage, 0, 0, width, height);
+
+      const perfilimageURL = req.query.perfil || 'https://telegra.ph/file/87fe9fdbf08280460e531.jpg';
+      const fotoperfilimage = await loadImage(perfilimageURL);
+
+      const grupoimageURL = req.query.grupo || 'https://telegra.ph/file/87fe9fdbf08280460e531.jpg';
+      const fotogrupoimage = await loadImage(grupoimageURL);
+      const nick = req.query.nick;
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '50px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText(nick || 'clover', 1550, 795);
+
+      ctx.fillStyle = 'rgba(0, 0, 255, 0.5)';
+
+      let text = req.query.numero || '#557598659560';
+      let textWidth = ctx.measureText(text).width;
+      ctx.fillRect(650 - textWidth / 2 - 10, 285 - 50, textWidth + 20, 60);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '50px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+
+      ctx.fillText(text, 650, 265);
+
+      const x = 85;
+      const y = 110;
+      const diameter = 290;
+      const radius = diameter / 2;
+      const centerX = x + radius;
+      const centerY = y + radius;
+
+      ctx.save();
+
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+      ctx.closePath();
+      ctx.clip();
+
+      ctx.drawImage(fotoperfilimage, x, y, diameter, diameter);
+
+      ctx.restore();
+
+      const grupoX = 1383;
+      const grupoY = 365;
+      const diamete = 337;
+      const radiu = diamete / 2;
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(grupoX + radiu, grupoY + radiu, radiu, 0, Math.PI * 2);
+      ctx.closePath();
+      ctx.clip();
+
+      ctx.drawImage(fotogrupoimage, grupoX, grupoY, diamete, diamete);
+
+      ctx.restore();
+
+      res.set('Content-Type', 'image/png');
+      canvas.createPNGStream().pipe(res);
+    } catch (error) {
+      console.error(error);
+      res.status(500).send('Erro ao gerar a imagem.');
+    }
+  } else {
+    console.log('Saldo insuficiente.');
+  }
+});
+
+
+app.get('/goodbye2', async (req, res) => {
+  const { username, key } = req.query;
+  const users = Person
+  const user = await User.findOne({ username, key });
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
+  const resultadoDiminuicao = diminuirSaldo(username);
+  const add = adicionarSaldo(username)
+  if (resultadoDiminuicao && add) {
+    try {
+      const width = 1920;
+      const height = 895;
+
+      const canvas = createCanvas(width, height);
+      const ctx = canvas.getContext('2d');
+
+      const backgroundImageURL = req.query.background || 'https://marketplace.canva.com/EAFKIsxfWjI/1/0/1600w/canva-papel-de-parede-coração-gradiente-bege-rosa-e-azul-eS21LuYsgUs.jpg';
+      const backgroundImage = await loadImage(backgroundImageURL);
+
+      ctx.drawImage(backgroundImage, 0, 0, width, height);
+
+      const overlayImagePath = './data/goodbye.png';
+      const overlayImage = await loadImage(overlayImagePath);
+
+      ctx.drawImage(overlayImage, 0, 0, width, height);
+
+      const perfilimageURL = req.query.perfil || 'https://telegra.ph/file/87fe9fdbf08280460e531.jpg';
+      const fotoperfilimage = await loadImage(perfilimageURL);
+
+      const grupoimageURL = req.query.grupo || 'https://telegra.ph/file/87fe9fdbf08280460e531.jpg';
+      const fotogrupoimage = await loadImage(grupoimageURL);
+      const nick = req.query.nick;
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '50px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText(nick || 'clover', 1550, 795);
+
+      ctx.fillStyle = 'rgba(0, 0, 255, 0.5)';
+
+      let text = req.query.numero || '#557598659560';
+      let textWidth = ctx.measureText(text).width;
+      ctx.fillRect(650 - textWidth / 2 - 10, 285 - 50, textWidth + 20, 60);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '50px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+
+      ctx.fillText(text, 650, 265);
+
+      const x = 85;
+      const y = 110;
+      const diameter = 290;
+      const radius = diameter / 2;
+      const centerX = x + radius;
+      const centerY = y + radius;
+
+      ctx.save();
+
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+      ctx.closePath();
+      ctx.clip();
+
+      ctx.drawImage(fotoperfilimage, x, y, diameter, diameter);
+
+      ctx.restore();
+
+      const grupoX = 1383;
+      const grupoY = 365;
+      const diamete = 337;
+      const radiu = diamete / 2;
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(grupoX + radiu, grupoY + radiu, radiu, 0, Math.PI * 2);
+      ctx.closePath();
+      ctx.clip();
+
+      ctx.drawImage(fotogrupoimage, grupoX, grupoY, diamete, diamete);
+
+      ctx.restore();
+
+      res.set('Content-Type', 'image/png');
+      canvas.createPNGStream().pipe(res);
+    } catch (error) {
+      console.error(error);
+      res.status(500).send('Erro ao gerar a imagem.');
+    }
+  } else {
+    console.log('Saldo insuficiente.');
+  }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 // Rota para retornar a imagem
