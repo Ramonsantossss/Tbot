@@ -7,10 +7,8 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta property="og:title" content="REST API FREE">
   <meta property="og:description" content="FEITA POR: @clovermods">
-  <link rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome-animation/0.0.8/font-awesome-animation.min.css" />
-  <link rel="apple-touch-icon" sizes="180x180" href="https://telegra.ph/file/e28fabcd7e856b4bcef0a.jpg">
-
+  
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/boxicons@latest/css/boxicons.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
@@ -259,13 +257,13 @@
         <h4 class="weight-600 font-18 pb-10">Header Background</h4>
         <div class="sidebar-btn-group pb-30 mb-10">
           <a href="javascript:void(0);" class="btn btn-outline-primary header-white active">White</a>
-          <a href="javascript:void(0);" class="btn btn-outline-primary header-dark">Dark</a>
+          <a href="javascript:void(0);" class="btn btn-outline-primary header-dark ">Dark</a>
         </div>
 
         <h4 class="weight-600 font-18 pb-10">Sidebar Background</h4>
         <div class="sidebar-btn-group pb-30 mb-10">
-          <a href="javascript:void(0);" class="btn btn-outline-primary sidebar-light">White</a>
-          <a href="javascript:void(0);" class="btn btn-outline-primary sidebar-dark active">Dark</a>
+          <a href="javascript:void(0);" class="btn btn-outline-primary sidebar-light ">White</a>
+          <a href="javascript:void(0);" class="btn btn-outline-primary sidebar-dark ">Dark</a>
         </div>
 
         <h4 class="weight-600 font-18 pb-10">Menu Dropdown Icon</h4>
@@ -432,6 +430,12 @@
                 <a href="/goodbye?nick=clover&background=https://i.ibb.co/4YBNyvP/images-76.jpg&guildName=clover grupo&guildIcon=https://telegra.ph/file/87fe9fdbf08280460e531.jpg&memberCount=233&avatar=https://i.ibb.co/1s8T3sY/48f7ce63c7aa.jpg0&key=<%= userDb.key %>&username=<%= user.username %>" target="_blank">Goodbye</a>
               </li>
               <li>
+                <a href="/welcome2?key=<%= userDb.key %>&username=<%= user.username %>&nick=Grupo AniKit&background=https://marketplace.canva.com/EAFKIsxfWjI/1/0/1600w/canva-papel-de-parede-coração-gradiente-bege-rosa-e-azul-eS21LuYsgUs.jpg&perfil=https://telegra.ph/file/87fe9fdbf08280460e531.jpg&grupo=https://telegra.ph/file/87fe9fdbf08280460e531.jpg&numero=#55759865986347" target="_blank">Welcome 2</a>
+              </li>
+              <li>
+                <a href="/goodbye2?key=<%= userDb.key %>&username=<%= user.username %>&nick=Grupo AniKit&background=https://marketplace.canva.com/EAFKIsxfWjI/1/0/1600w/canva-papel-de-parede-coração-gradiente-bege-rosa-e-azul-eS21LuYsgUs.jpg&perfil=https://telegra.ph/file/87fe9fdbf08280460e531.jpg&grupo=https://telegra.ph/file/87fe9fdbf08280460e531.jpg&numero=#55759865986347" target="_blank">Goodbye 2</a>
+              </li>
+              <li>
                 <a href="/levelup?avatar=https://i.ibb.co/1s8T3sY/48f7ce63c7aa.jpg0&key=<%= userDb.key %>&username=<%= user.username %>" target="_blank">level up</a>
               </li>
               <li>
@@ -443,7 +447,9 @@
               <li>
                 <a href="/cardgame?foto=https://i.pinimg.com/550x/1a/46/23/1a4623024e77ca419b01f00c12cd245d.jpg&atk=33&def=44&nick=Clover Mods&legenda=Um mago de grande poder&key=<%= userDb.key %>&username=<%= user.username %>&texto=anikit" target="_blank">card game</a>
               </li>
-              
+              <li>
+                <a href="/ranking?nick=clover&currxp=100&needxp=1000&level=2&rank=https://i.ibb.co/Wn9cvnv/FABLED.png&avatar=https://i.pinimg.com/originals/6a/6b/26/6a6b2619c79441b69fd716053613c6ec.png&background=https://telegra.ph/file/e28fabcd7e856b4bcef0a.jpg&key=<%= userDb.key %>&username=<%= user.username %>" target="_blank">ranking</a>
+              </li>
             </ul>
           </li>
 
@@ -690,6 +696,12 @@
         <h2 style="color:yellow;" class="h3 mb-0">PAINEL</h2>
       </div>
       <div class="row pb-10">
+
+
+
+
+  
+
         <% if (!user.isBaned===true) { %>
 
           <% if (!user.isPremium===true) { %>
@@ -748,25 +760,6 @@
                   <% } %>
 
 
-                    <div class="col-xl-3 col-lg-3 col-md-6 mb-20">
-                      <div class="card-box height-100-p widget-style3">
-                        <div class="d-flex flex-wrap">
-                          <div class="widget-data">
-                            <div class="weight-700 font-16 text-dark">
-                              <%= quantidade %>
-                            </div>
-                            <div class="font-14 text-secondary weight-500">
-                              Registrados
-                            </div>
-                          </div>
-                          <div class="widget-icon">
-                            <div class="icon" data-color="#00eccf">
-                              <i class="icon-copy dw dw-calendar1"></i>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
                     <div class="col-xl-3 col-lg-3 col-md-6 mb-20">
                       <div class="card-box height-100-p widget-style3">
                         <div class="d-flex flex-wrap">
