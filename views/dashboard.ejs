@@ -232,7 +232,7 @@
           </a>
           <div class="dropdown-menu dropdown-menu-right dropdown-menu-icon-list">
             <a class="dropdown-item" href="/myperfil"><i class="dw dw-user1"></i> Profile</a>
-            <a class="dropdown-item" href="login.html"><i class="dw dw-logout"></i> Log Out</a>
+            <a class="dropdown-item" href="/login"><i class="dw dw-logout"></i> Log Out</a>
           </div>
         </div>
       </div>
@@ -350,6 +350,13 @@
               <span class="mtext">INICIAL</span>
             </a>
           </li>
+          <li>
+            <a href="/perfil-aleatorio" class="dropdown-toggle no-arrow">
+              <span class="micon bi bi-search"></span>
+              <span class="mtext">Perfil Aleatoeio</span>
+            </a>
+          </li>
+        <hr>
           <!-- Download -->
           <li class="dropdown">
             <a href="javascript:;" class="dropdown-toggle" data-option="off">
@@ -459,14 +466,7 @@
               <span class="mtext">ALEATORIAS</span>
             </a>
             <ul class="submenu">
-              <li>
-                <a class="dropdown-item" target="_blank"
-                  href="/18/video?username=<%= user.username %>&key=<%= user.key %>" target="_blank">Video +18</a>
-              </li>
-              <li>
-                <a class="dropdown-item" target="_blank"
-                  href="/18/foto_18?username=<%= user.username %>&key=<%= user.key %>" target="_blank">Foto +18</a>
-              </li>
+              
               <li>
                 <a class="dropdown-item" target="_blank"
                   href="/18/travazap?username=<%= user.username %>&key=<%= user.key %>" target="_blank">Foto pra
@@ -499,9 +499,6 @@
               </li>
               <li>
                 <a href="/wallpaper2?key=<%= userDb.key %>&username=<%= user.username %>" target="_blank">wallpaper2</a>
-              </li>
-              <li>
-                <a href="/hentai?key=<%= userDb.key %>&username=<%= user.username %>" target="_blank">hentai</a>
               </li>
               <li>
                 <a href="/styletext?text=some_text&key=<%= userDb.key %>&username=<%= user.username %>"
@@ -611,6 +608,17 @@
             <span class="mtext">NSFW</span>
           </a>
           <ul class="submenu">
+            <li>
+              <a class="dropdown-item" target="_blank"
+                href="/18/video?username=<%= user.username %>&key=<%= user.key %>" target="_blank">Video +18</a>
+            </li>
+            <li>
+              <a class="dropdown-item" target="_blank"
+                href="/18/foto_18?username=<%= user.username %>&key=<%= user.key %>" target="_blank">Foto +18</a>
+            </li>
+            <li>
+              <a href="/hentai?key=<%= userDb.key %>&username=<%= user.username %>" target="_blank">hentai</a>
+            </li>
             <li><a href="/nsfw/ahegao?key=<%= userDb.key %>&username=<%= user.username %>">ahegao</a></li>
             <li><a href="/nsfw/ass?key=<%= userDb.key %>&username=<%= user.username %>">ass</a></li>
             <li><a href="/nsfw/bdsm?key=<%= userDb.key %>&username=<%= user.username %>">bdsm</a></li>
@@ -654,12 +662,6 @@
               <a href="https://t.me/cinco_folhas">TELEGRAM</a>
             </li>
           </ul>
-        </li>
-        <li>
-          <a href="/login" class="dropdown-toggle no-arrow">
-            <span class="micon bi bi-power-off"></span>
-            <span class="mtext">SAIR</span>
-          </a>
         </li>
 
         <li>
@@ -825,7 +827,7 @@ aria-hidden="true"
           <div class="card-box min-height-200px pd-20" data-bgcolor="#265ed7">
             <div class="d-flex justify-content-between pb-20 text-white">
               <div class="icon h1 text-white">
-                <i class="fa fa-stethoscope" aria-hidden="true"></i>
+                <i class="fa fa-money" aria-hidden="true"></i>
               </div>
               <div class="font-14 text-right">
                 <div>ID <%= user._id %>
@@ -872,7 +874,11 @@ aria-hidden="true"
                           <%= user.username %>
                         </div>
                         <div class="font-12 weight-500" data-color="#b2b1b6">
-                          Usuário Top
+                        <% if (!user.isPremium) { %>
+                            Comum
+                        <% } else { %>
+                        <div style="color: gold;">USUARIO PREMIUM</div>
+                        <% } %>
                         </div>
                       </div>
                     </div>
@@ -901,12 +907,11 @@ aria-hidden="true"
               <div class="font-14 weight-500 max-width-200 mx-auto pb-20" data-color="#a6a6a7">
                 Vc podera desfrutar de nivel de nobreza mais alto e de conteudos exclusivos.
               </div>
-              <a href="/loja" class="btn btn-primary btn-lg">Upgrade</a>
+              <a href="/loja" class="btn btn-primary btn-lg">LOJA</a>
             </div>
           </div>
         </div>
       </div>
-
       <!--
 
 <div class="title pb-20 pt-20">
@@ -997,7 +1002,7 @@ Convenient locations when and where you need them.
     </div>
   </div>
   <button class="welcome-modal-btn">
-    <i class="fa fa-download"></i>
+    <i class="fa fa-download"> COMANDOS</i>
   </button>
   <!-- welcome modal end -->
   <!-- js -->

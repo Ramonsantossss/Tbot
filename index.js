@@ -22,6 +22,7 @@ const path = require('path');
 const MemoryStore = require('memorystore')(session);
 const fs = require('fs');
 const knights = require('knights-canvas');
+const cron = require('node-cron');
 
 const downloadImage = async (url, filename) => {
   const response = await axios.get(url, { responseType: 'arraybuffer' });
@@ -134,6 +135,32 @@ const userSchema = new mongoose.Schema({
   isBaned: { type: Boolean, default: false },
 });
 
+
+const adicionarSaldoZero = async () => {
+  try {
+    const usuariosSemSaldo = await User.find({ saldo: 0 }); // Procura por usuários com saldo zero
+    if (usuariosSemSaldo.length > 0) {
+      console.log(`Usuários sem saldo encontrado! Adicionando saldo...`);
+      usuariosSemSaldo.forEach(async (usuario) => {
+        await User.updateOne({ _id: usuario._id, saldo: 0 }, { $set: { saldo: 100 } });
+        console.log(`Adicionado 100 de saldo para o usuário: ${usuario.username}`);
+      });
+    } else {
+      console.log('Nenhum usuário sem saldo encontrado.');
+    }
+  } catch (error) {
+    console.error("Erro ao adicionar saldo aos usuários sem saldo:", error);
+  }
+};
+
+// Executa a função todos os dias à meia-noite
+cron.schedule('0 0 * * *', () => {
+  console.log('Executando verificação de saldo...');
+  adicionarSaldoZero();
+});
+
+
+
 // Criando o modelo do usuário
 const User = mongoose.model('User', userSchema);
 Person = User;
@@ -164,8 +191,8 @@ async function diminuirSaldo(username) {
     if (!user) {
       return false;
     }
-    if (user.isPremium || user.isAdm) {
-      console.log('Usuário premium ou administrador. Saldo não será diminuído.');
+    if (user.isAdm) {
+      console.log('Usuário administrador. Saldo não será diminuído.');
       return false;
     }
 
@@ -181,11 +208,6 @@ async function diminuirSaldo(username) {
     return false;
   }
 }
-
-
-
-
-
 
 async function adicionarSaldo(username) {
   try {
@@ -314,6 +336,98 @@ app.get('/pagar', async (req, res) => {
   }
 });
 
+app.get('/cpremium', async (req, res) => {
+  const user = req.session.user;
+  if (user) {
+    const { username, password, verificationCode, isVerified } = user;
+    if (isVerified === true) {
+      try {
+        let { valor } = req.query; // Pegue o valor do pagamento
+        // Garante que o valor tenha duas casas decimais
+        valor = parseFloat(valor).toFixed(2);
+        const transactionAmount = parseFloat(valor);
+
+        // Calcula o novo saldo com base no valor pago (1000 de saldo por real)
+        const novosaldo = 15000;
+
+        const payment_data = {
+          transaction_amount: transactionAmount,
+          description: `Saldo AniKit`,
+          payment_method_id: 'pix',
+          payer: {
+            email,
+            first_name: 'Nome do Pagador',
+          }
+        };
+        const data = await mercadopago.payment.create(payment_data);
+        const qrcode = data.body.point_of_interaction.transaction_data.qr_code_base64;
+        const paymentLink = data.body.point_of_interaction.transaction_data.ticket_url;
+        const paymentId = data.body.id;
+        const valorpagar = valor
+        const codigo = data.body.point_of_interaction.transaction_data.qr_code;
+
+        return res.render('cpremium', { username, qrcode, codigo, paymentId, paymentLink, valorpagar, novosaldo });
+
+      } catch (error) {
+        console.error(error);
+        return res.status(500).json({ error: 'Erro ao iniciar o pagamento' });
+      }
+    } else {
+      return res.redirect('/verify');
+    }
+  } else {
+    return res.redirect('/login');
+  }
+});
+
+
+app.get('/premium/:paymentId/:username/:novosaldo', async (req, res) => {
+  const paymentId = req.params.paymentId;
+  const username = req.params.username;
+  const novosaldo = req.params.novosaldo;
+  const timeout = Infinity; // Tempo infinito
+
+  let isPaymentConfirmed = false;
+  const startTime = Date.now();
+
+  while (!isPaymentConfirmed && Date.now() - startTime < timeout) {
+    const res = await mercadopago.payment.get(paymentId);
+    const pagamentoStatus = res.body.status;
+
+    if (pagamentoStatus === 'approved') {
+      console.log('✅ Pagamento aprovado com sucesso!');
+      //const novosaldo = 1000;
+      await adicionarSaldoPix(username, novosaldo); // Espera pela conclusão da função adicionarSaldoPix antes de continuar
+      console.log(username, novosaldo);
+      try {
+        const usuario = await User.findOne({ username });
+
+        if (!usuario) {
+          console.log('❗ Usuário não encontrado.');
+          return res.status(404).send('Usuário não encontrado.');
+        }
+        usuario.isPremium = true;
+        await usuario.save();
+
+        console.log('✅ Usuário tornou-se premium com sucesso.');
+      } catch (error) {
+        console.error('❗ Erro ao tornar usuário premium:', error);
+        return res.status(500).send('Erro ao tornar usuário premium: ' + error.message);
+      }
+
+      isPaymentConfirmed = true;
+    } else {
+      //console.log('Aguardando pagamento...');
+      await new Promise(resolve => setTimeout(resolve, 10000)); // Verificar a cada 10 segundos
+    }
+  }
+
+  if (!isPaymentConfirmed) {
+    console.log('❗ Tempo de pagamento expirado ou pagamento não confirmado.');
+  }
+
+  res.render('payment', { isPaymentConfirmed });
+});
 
 app.get('/payment/:paymentId/:username/:novosaldo', async (req, res) => {
   const paymentId = req.params.paymentId;
@@ -348,6 +462,21 @@ app.get('/payment/:paymentId/:username/:novosaldo', async (req, res) => {
 });
 
 
+app.put('/tornar-premium/:username', async (req, res) => {
+  const { username } = req.params;
+  try {
+    const usuario = await User.findOne({ username });
+    if (!usuario) {
+      return res.status(404).send('Usuário não encontrado.');
+    }
+    usuario.isPremium = true;
+    await usuario.save();
+    res.status(200).send('Usuário ' + username + ' tornou-se premium com sucesso.');
+  } catch (error) {
+    res.status(500).send('Erro ao tornar usuário premium: ' + error.message);
+  }
+});
+
 
 //============\\
 app.get('/', async (req, res) => {
@@ -368,6 +497,21 @@ app.get('/', async (req, res) => {
     return res.redirect('/login');
   }
 });
+
+
+app.get('/perfil-aleatorio', async (req, res) => {
+  try {
+    const randomUser = await User.aggregate([{ $sample: { size: 1 } }]);
+    if (randomUser.length === 0) {
+      return res.status(404).send('Nenhum perfil encontrado.');
+    }
+    const dados = randomUser[0]
+    res.render('usuario', { dados });
+  } catch (error) {
+    res.status(500).send('Erro ao buscar perfil aleatório: ' + error.message);
+  }
+});
+
 
 app.get('/myperfil', async (req, res) => {
   const user = req.session.user;
@@ -687,9 +831,9 @@ app.get('/nsfw/ahegao', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const ahegao = JSON.parse(fs.readFileSync(__dirname + '/data/ahegao.json'));
     const randahegao = ahegao[Math.floor(Math.random() * ahegao.length)];
@@ -698,7 +842,7 @@ app.get('/nsfw/ahegao', async (req, res, next) => {
       url: `${randahegao}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -717,9 +861,9 @@ app.get('/nsfw/ass', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const ass = JSON.parse(fs.readFileSync(__dirname + '/data/ass.json'));
     const randass = ass[Math.floor(Math.random() * ass.length)];
@@ -728,7 +872,7 @@ app.get('/nsfw/ass', async (req, res, next) => {
       url: `${randass}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -747,9 +891,9 @@ app.get('/nsfw/bdsm', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const bdsm = JSON.parse(fs.readFileSync(__dirname + '/data/bdsm.json'));
     const randbdsm = bdsm[Math.floor(Math.random() * bdsm.length)];
@@ -758,7 +902,7 @@ app.get('/nsfw/bdsm', async (req, res, next) => {
       url: `${randbdsm}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -778,9 +922,9 @@ app.get('/nsfw/blowjob', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const blowjob = JSON.parse(fs.readFileSync(__dirname + '/data/blowjob.json'));
     const randblowjob = blowjob[Math.floor(Math.random() * blowjob.length)];
@@ -789,7 +933,7 @@ app.get('/nsfw/blowjob', async (req, res, next) => {
       url: `${randblowjob}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -808,9 +952,9 @@ app.get('/nsfw/cuckold', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const cuckold = JSON.parse(fs.readFileSync(__dirname + '/data/cuckold.json'));
     const randcuckold = cuckold[Math.floor(Math.random() * cuckold.length)];
@@ -819,7 +963,7 @@ app.get('/nsfw/cuckold', async (req, res, next) => {
       url: `${randcuckold}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -838,9 +982,9 @@ app.get('/nsfw/cum', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const cum = JSON.parse(fs.readFileSync(__dirname + '/data/cum.json'));
     const randcum = cum[Math.floor(Math.random() * cum.length)];
@@ -849,7 +993,7 @@ app.get('/nsfw/cum', async (req, res, next) => {
       url: `${randcum}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -868,9 +1012,9 @@ app.get('/nsfw/ero', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const ero = JSON.parse(fs.readFileSync(__dirname + '/data/ero.json'));
     const randero = ero[Math.floor(Math.random() * ero.length)];
@@ -879,7 +1023,7 @@ app.get('/nsfw/ero', async (req, res, next) => {
       url: `${randero}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -898,9 +1042,9 @@ app.get('/memes', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const meme = JSON.parse(fs.readFileSync(__dirname + '/data/memes-video.json'));
     const randmeme = meme[Math.floor(Math.random() * meme.length)];
@@ -909,7 +1053,7 @@ app.get('/memes', async (req, res, next) => {
       url: `${randmeme}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -928,9 +1072,9 @@ app.get('/nsfw/femdom', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const femdom = JSON.parse(fs.readFileSync(__dirname + '/data/femdom.json'));
     const randfemdom = femdom[Math.floor(Math.random() * femdom.length)];
@@ -939,7 +1083,7 @@ app.get('/nsfw/femdom', async (req, res, next) => {
       url: `${randfemdom}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -958,9 +1102,9 @@ app.get('/nsfw/foot', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const foot = JSON.parse(fs.readFileSync(__dirname + '/data/foot.json'));
     const randfoot = foot[Math.floor(Math.random() * foot.length)];
@@ -969,7 +1113,7 @@ app.get('/nsfw/foot', async (req, res, next) => {
       url: `${randfoot}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -988,9 +1132,9 @@ app.get('/nsfw/gangbang', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const gangbang = JSON.parse(fs.readFileSync(__dirname + '/data/gangbang.json'));
     const randgangbang = gangbang[Math.floor(Math.random() * gangbang.length)];
@@ -999,7 +1143,7 @@ app.get('/nsfw/gangbang', async (req, res, next) => {
       url: `${randgangbang}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -1018,9 +1162,9 @@ app.get('/nsfw/glasses', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const glasses = JSON.parse(fs.readFileSync(__dirname + '/data/glasses.json'));
     const randglasses = glasses[Math.floor(Math.random() * glasses.length)];
@@ -1029,7 +1173,7 @@ app.get('/nsfw/glasses', async (req, res, next) => {
       url: `${randglasses}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -1048,9 +1192,9 @@ app.get('/nsfw/hentai', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const hentai = JSON.parse(fs.readFileSync(__dirname + '/data/hentai.json'));
     const randhentai = hentai[Math.floor(Math.random() * hentai.length)];
@@ -1059,7 +1203,7 @@ app.get('/nsfw/hentai', async (req, res, next) => {
       url: `${randhentai}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -1078,9 +1222,9 @@ app.get('/nsfw/gifs', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const gifs = JSON.parse(fs.readFileSync(__dirname + '/data/gifs.json'));
     const randgifs = gifs[Math.floor(Math.random() * gifs.length)];
@@ -1089,7 +1233,7 @@ app.get('/nsfw/gifs', async (req, res, next) => {
       url: `${randgifs}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -1108,9 +1252,9 @@ app.get('/nsfw/jahy', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const jahy = JSON.parse(fs.readFileSync(__dirname + '/data/jahy.json'));
     const randjahy = jahy[Math.floor(Math.random() * jahy.length)];
@@ -1119,7 +1263,7 @@ app.get('/nsfw/jahy', async (req, res, next) => {
       url: `${randjahy}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -1138,9 +1282,9 @@ app.get('/nsfw/manga', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const manga = JSON.parse(fs.readFileSync(__dirname + '/data/manga.json'));
     const randmanga = manga[Math.floor(Math.random() * manga.length)];
@@ -1149,7 +1293,7 @@ app.get('/nsfw/manga', async (req, res, next) => {
       url: `${randmanga}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -1168,9 +1312,9 @@ app.get('/nsfw/masturbation', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const masturbation = JSON.parse(fs.readFileSync(__dirname + '/data/masturbation.json'));
     const randmasturbation = masturbation[Math.floor(Math.random() * masturbation.length)];
@@ -1179,7 +1323,7 @@ app.get('/nsfw/masturbation', async (req, res, next) => {
       url: `${randmasturbation}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -1198,9 +1342,9 @@ app.get('/nsfw/neko', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const neko = JSON.parse(fs.readFileSync(__dirname + '/data/neko.json'));
     const randneko = neko[Math.floor(Math.random() * neko.length)];
@@ -1209,7 +1353,7 @@ app.get('/nsfw/neko', async (req, res, next) => {
       url: `${randneko}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -1228,9 +1372,9 @@ app.get('/nsfw/orgy', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const orgy = JSON.parse(fs.readFileSync(__dirname + '/data/orgy.json'));
     const randorgy = orgy[Math.floor(Math.random() * orgy.length)];
@@ -1239,7 +1383,7 @@ app.get('/nsfw/orgy', async (req, res, next) => {
       url: `${randorgy}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -1260,9 +1404,9 @@ app.get('/nsfw/panties', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const panties = JSON.parse(fs.readFileSync(__dirname + '/data/panties.json'));
     const randpanties = panties[Math.floor(Math.random() * panties.length)];
@@ -1271,7 +1415,7 @@ app.get('/nsfw/panties', async (req, res, next) => {
       url: `${randpanties}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -1290,9 +1434,9 @@ app.get('/nsfw/pussy', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const pussy = JSON.parse(fs.readFileSync(__dirname + '/data/pussy.json'));
     const randpussy = pussy[Math.floor(Math.random() * pussy.length)];
@@ -1301,7 +1445,7 @@ app.get('/nsfw/pussy', async (req, res, next) => {
       url: `${randpussy}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -1320,9 +1464,9 @@ app.get('/nsfw/neko2', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const neko2 = JSON.parse(fs.readFileSync(__dirname + '/data/neko2.json'));
     const randneko2 = neko2[Math.floor(Math.random() * neko2.length)];
@@ -1331,7 +1475,7 @@ app.get('/nsfw/neko2', async (req, res, next) => {
       url: `${randneko2}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -1350,9 +1494,9 @@ app.get('/nsfw/tentacles', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const tentacles = JSON.parse(fs.readFileSync(__dirname + '/data/tentacles.json'));
     const randtentacles = tentacles[Math.floor(Math.random() * tentacles.length)];
@@ -1361,7 +1505,7 @@ app.get('/nsfw/tentacles', async (req, res, next) => {
       url: `${randtentacles}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -1380,9 +1524,9 @@ app.get('/nsfw/thighs', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const thighs = JSON.parse(fs.readFileSync(__dirname + '/data/thighs.json'));
     const randthighs = thighs[Math.floor(Math.random() * thighs.length)];
@@ -1391,7 +1535,7 @@ app.get('/nsfw/thighs', async (req, res, next) => {
       url: `${randthighs}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -1410,9 +1554,9 @@ app.get('/nsfw/yuri', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const yuri = JSON.parse(fs.readFileSync(__dirname + '/data/yuri.json'));
     const randyuri = yuri[Math.floor(Math.random() * yuri.length)];
@@ -1421,7 +1565,7 @@ app.get('/nsfw/yuri', async (req, res, next) => {
       url: `${randyuri}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -1440,9 +1584,9 @@ app.get('/nsfw/zettai', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const zettai = JSON.parse(fs.readFileSync(__dirname + '/data/zettai.json'));
     const randzettai = zettai[Math.floor(Math.random() * zettai.length)];
@@ -1451,7 +1595,7 @@ app.get('/nsfw/zettai', async (req, res, next) => {
       url: `${randzettai}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -1470,9 +1614,9 @@ app.get('/nime/keneki', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const keneki = JSON.parse(fs.readFileSync(__dirname + '/data/keneki.json'));
     const randkeneki = keneki[Math.floor(Math.random() * keneki.length)];
@@ -1481,7 +1625,7 @@ app.get('/nime/keneki', async (req, res, next) => {
       url: `${randkeneki}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -1500,9 +1644,9 @@ app.get('/nime/megumin', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const megumin = JSON.parse(fs.readFileSync(__dirname + '/data/megumin.json'));
     const randmegumin = megumin[Math.floor(Math.random() * megumin.length)];
@@ -1511,7 +1655,7 @@ app.get('/nime/megumin', async (req, res, next) => {
       url: `${randmegumin}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -1530,9 +1674,9 @@ app.get('/nime/yotsuba', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const yotsuba = JSON.parse(fs.readFileSync(__dirname + '/data/yotsuba.json'));
     const randyotsuba = yotsuba[Math.floor(Math.random() * yotsuba.length)];
@@ -1541,7 +1685,7 @@ app.get('/nime/yotsuba', async (req, res, next) => {
       url: `${randyotsuba}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -1560,9 +1704,9 @@ app.get('/nime/shinomiya', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const shinomiya = JSON.parse(fs.readFileSync(__dirname + '/data/shinomiya.json'));
     const randshinomiya = shinomiya[Math.floor(Math.random() * shinomiya.length)];
@@ -1571,7 +1715,7 @@ app.get('/nime/shinomiya', async (req, res, next) => {
       url: `${randshinomiya}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -1590,9 +1734,9 @@ app.get('/nime/yumeko', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const yumeko = JSON.parse(fs.readFileSync(__dirname + '/data/yumeko.json'));
     const randyumeko = yumeko[Math.floor(Math.random() * yumeko.length)];
@@ -1601,7 +1745,7 @@ app.get('/nime/yumeko', async (req, res, next) => {
       url: `${randyumeko}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -1620,9 +1764,9 @@ app.get('/nime/tejina', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const tejina = JSON.parse(fs.readFileSync(__dirname + '/data/tejina.json'));
     const randtejina = tejina[Math.floor(Math.random() * tejina.length)];
@@ -1631,7 +1775,7 @@ app.get('/nime/tejina', async (req, res, next) => {
       url: `${randtejina}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -1650,9 +1794,9 @@ app.get('/nime/chiho', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const chiho = JSON.parse(fs.readFileSync(__dirname + '/data/chiho.json'));
     const randchiho = chiho[Math.floor(Math.random() * chiho.length)];
@@ -1661,7 +1805,7 @@ app.get('/nime/chiho', async (req, res, next) => {
       url: `${randchiho}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -1679,9 +1823,9 @@ app.get('/18/video', async (req, res, next) => {
     return res.sendFile(htmlPath);
   }
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const vid = require("./data/pack.js")
     const video_18 = vid.video_18
@@ -1691,7 +1835,7 @@ app.get('/18/video', async (req, res, next) => {
       url: `${danvid}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -1708,9 +1852,9 @@ app.get('/18/travazap', async (req, res, next) => {
     return res.sendFile(htmlPath);
   }
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const tra = require("./data/pack.js")
     const travazap = tra.travazap
@@ -1720,7 +1864,7 @@ app.get('/18/travazap', async (req, res, next) => {
       url: `${traft}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -1741,9 +1885,9 @@ app.get('/nime/toukachan', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const toukachan = JSON.parse(fs.readFileSync(__dirname + '/data/toukachan.json'));
     const randtoukachan = toukachan[Math.floor(Math.random() * toukachan.length)];
@@ -1752,7 +1896,7 @@ app.get('/nime/toukachan', async (req, res, next) => {
       url: `${randtoukachan}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -1771,9 +1915,9 @@ app.get('/nime/akira', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const akira = JSON.parse(fs.readFileSync(__dirname + '/data/akira.json'));
     const randakira = akira[Math.floor(Math.random() * akira.length)];
@@ -1782,7 +1926,7 @@ app.get('/nime/akira', async (req, res, next) => {
       url: `${randakira}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -1801,9 +1945,9 @@ app.get('/nime/itori', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const itori = JSON.parse(fs.readFileSync(__dirname + '/data/itori.json'));
     const randitori = itori[Math.floor(Math.random() * itori.length)];
@@ -1812,7 +1956,7 @@ app.get('/nime/itori', async (req, res, next) => {
       url: `${randitori}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -1831,9 +1975,9 @@ app.get('/nime/kurumi', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const kurumi = JSON.parse(fs.readFileSync(__dirname + '/data/kurumi.json'));
     const randkurumi = kurumi[Math.floor(Math.random() * kurumi.length)];
@@ -1842,7 +1986,7 @@ app.get('/nime/kurumi', async (req, res, next) => {
       url: `${randkurumi}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -1861,9 +2005,9 @@ app.get('/nime/miku', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const miku = JSON.parse(fs.readFileSync(__dirname + '/data/miku.json'));
     const randmiku = miku[Math.floor(Math.random() * miku.length)];
@@ -1872,7 +2016,7 @@ app.get('/nime/miku', async (req, res, next) => {
       url: `${randmiku}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -1891,9 +2035,9 @@ app.get('/nime/pokemon', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const pokemon = JSON.parse(fs.readFileSync(__dirname + '/data/pokemon.json'));
     const randpokemon = pokemon[Math.floor(Math.random() * pokemon.length)];
@@ -1902,7 +2046,7 @@ app.get('/nime/pokemon', async (req, res, next) => {
       url: `${randpokemon}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -1921,9 +2065,9 @@ app.get('/nime/ryujin', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const ryujin = JSON.parse(fs.readFileSync(__dirname + '/data/ryujin.json'));
     const randryujin = ryujin[Math.floor(Math.random() * ryujin.length)];
@@ -1932,7 +2076,7 @@ app.get('/nime/ryujin', async (req, res, next) => {
       url: `${randryujin}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -1951,9 +2095,9 @@ app.get('/nime/rose', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const rose = JSON.parse(fs.readFileSync(__dirname + '/data/rose.json'));
     const randrose = rose[Math.floor(Math.random() * rose.length)];
@@ -1962,7 +2106,7 @@ app.get('/nime/rose', async (req, res, next) => {
       url: `${randrose}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -1981,9 +2125,9 @@ app.get('/nime/kaori', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const kaori = JSON.parse(fs.readFileSync(__dirname + '/data/kaori.json'));
     const randkaori = kaori[Math.floor(Math.random() * kaori.length)];
@@ -1992,7 +2136,7 @@ app.get('/nime/kaori', async (req, res, next) => {
       url: `${randkaori}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -2011,9 +2155,9 @@ app.get('/nime/shizuka', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const shizuka = JSON.parse(fs.readFileSync(__dirname + '/data/shizuka.json'));
     const randshizuka = shizuka[Math.floor(Math.random() * shizuka.length)];
@@ -2022,7 +2166,7 @@ app.get('/nime/shizuka', async (req, res, next) => {
       url: `${randshizuka}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -2041,9 +2185,9 @@ app.get('/nime/kaga', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const kaga = JSON.parse(fs.readFileSync(__dirname + '/data/kaga.json'));
     const randkaga = kaga[Math.floor(Math.random() * kaga.length)];
@@ -2052,7 +2196,7 @@ app.get('/nime/kaga', async (req, res, next) => {
       url: `${randkaga}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -2071,9 +2215,9 @@ app.get('/nime/kotori', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const kotori = JSON.parse(fs.readFileSync(__dirname + '/data/kotori.json'));
     const randkotori = kotori[Math.floor(Math.random() * kotori.length)];
@@ -2082,7 +2226,7 @@ app.get('/nime/kotori', async (req, res, next) => {
       url: `${randkotori}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -2101,9 +2245,9 @@ app.get('/nime/mikasa', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const mikasa = JSON.parse(fs.readFileSync(__dirname + '/data/mikasa.json'));
     const randmikasa = mikasa[Math.floor(Math.random() * mikasa.length)];
@@ -2112,7 +2256,7 @@ app.get('/nime/mikasa', async (req, res, next) => {
       url: `${randmikasa}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -2131,9 +2275,9 @@ app.get('/nime/akiyama', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const akiyama = JSON.parse(fs.readFileSync(__dirname + '/data/akiyama.json'));
     const randakiyama = akiyama[Math.floor(Math.random() * akiyama.length)];
@@ -2142,7 +2286,7 @@ app.get('/nime/akiyama', async (req, res, next) => {
       url: `${randakiyama}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -2161,9 +2305,9 @@ app.get('/nime/gremory', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const gremory = JSON.parse(fs.readFileSync(__dirname + '/data/gremory.json'));
     const randgremory = gremory[Math.floor(Math.random() * gremory.length)];
@@ -2172,7 +2316,7 @@ app.get('/nime/gremory', async (req, res, next) => {
       url: `${randgremory}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -2191,9 +2335,9 @@ app.get('/nime/isuzu', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const isuzu = JSON.parse(fs.readFileSync(__dirname + '/data/isuzu.json'));
     const randisuzu = isuzu[Math.floor(Math.random() * isuzu.length)];
@@ -2202,7 +2346,7 @@ app.get('/nime/isuzu', async (req, res, next) => {
       url: `${randisuzu}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -2221,9 +2365,9 @@ app.get('/nime/cosplay', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const cosplay = JSON.parse(fs.readFileSync(__dirname + '/data/cosplay.json'));
     const randcosplay = cosplay[Math.floor(Math.random() * cosplay.length)];
@@ -2232,7 +2376,7 @@ app.get('/nime/cosplay', async (req, res, next) => {
       url: `${randcosplay}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -2251,9 +2395,9 @@ app.get('/nime/shina', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const shina = JSON.parse(fs.readFileSync(__dirname + '/data/shina.json'));
     const randshina = shina[Math.floor(Math.random() * shina.length)];
@@ -2262,7 +2406,7 @@ app.get('/nime/shina', async (req, res, next) => {
       url: `${randshina}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -2281,9 +2425,9 @@ app.get('/nime/kagura', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const kagura = JSON.parse(fs.readFileSync(__dirname + '/data/kagura.json'));
     const randkagura = kagura[Math.floor(Math.random() * kagura.length)];
@@ -2292,7 +2436,7 @@ app.get('/nime/kagura', async (req, res, next) => {
       url: `${randkagura}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -2311,9 +2455,9 @@ app.get('/nime/shinka', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const shinka = JSON.parse(fs.readFileSync(__dirname + '/data/shinka.json'));
     const randshinka = shinka[Math.floor(Math.random() * shinka.length)];
@@ -2322,7 +2466,7 @@ app.get('/nime/shinka', async (req, res, next) => {
       url: `${randshinka}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -2341,9 +2485,9 @@ app.get('/nime/eba', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const eba = JSON.parse(fs.readFileSync(__dirname + '/data/eba.json'));
     const randeba = eba[Math.floor(Math.random() * eba.length)];
@@ -2352,7 +2496,7 @@ app.get('/nime/eba', async (req, res, next) => {
       url: `${randeba}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -2371,9 +2515,9 @@ app.get('/nime/deidara', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const Deidara = JSON.parse(fs.readFileSync(__dirname + '/data/deidara.json'));
     const randDeidara = Deidara[Math.floor(Math.random() * Deidara.length)];
@@ -2382,7 +2526,7 @@ app.get('/nime/deidara', async (req, res, next) => {
       url: `${randDeidara}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -2403,9 +2547,9 @@ app.get('/nime/jeni', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const jeni = JSON.parse(fs.readFileSync(__dirname + '/data/jeni.json'));
     const randjeni = jeni[Math.floor(Math.random() * jeni.length)];
@@ -2414,7 +2558,7 @@ app.get('/nime/jeni', async (req, res, next) => {
       url: `${randjeni}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -2434,9 +2578,9 @@ app.get('/random/meme', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const meme = JSON.parse(fs.readFileSync(__dirname + '/data/meme.json'));
     const randmeme = meme[Math.floor(Math.random() * meme.length)];
@@ -2445,7 +2589,7 @@ app.get('/random/meme', async (req, res, next) => {
       url: `${randmeme}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 app.get('/nime/toukachan', async (req, res, next) => {
@@ -2463,9 +2607,9 @@ app.get('/nime/toukachan', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const toukachan = JSON.parse(fs.readFileSync(__dirname + '/data/toukachan.json'));
     const randtoukachan = toukachan[Math.floor(Math.random() * toukachan.length)];
@@ -2474,7 +2618,7 @@ app.get('/nime/toukachan', async (req, res, next) => {
       url: `${randtoukachan}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -2493,9 +2637,9 @@ app.get('/nime/akira', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const akira = JSON.parse(fs.readFileSync(__dirname + '/data/akira.json'));
     const randakira = akira[Math.floor(Math.random() * akira.length)];
@@ -2504,7 +2648,7 @@ app.get('/nime/akira', async (req, res, next) => {
       url: `${randakira}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -2523,9 +2667,9 @@ app.get('/nime/itori', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const itori = JSON.parse(fs.readFileSync(__dirname + '/data/itori.json'));
     const randitori = itori[Math.floor(Math.random() * itori.length)];
@@ -2534,7 +2678,7 @@ app.get('/nime/itori', async (req, res, next) => {
       url: `${randitori}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -2553,9 +2697,9 @@ app.get('/nime/kurumi', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const kurumi = JSON.parse(fs.readFileSync(__dirname + '/data/kurumi.json'));
     const randkurumi = kurumi[Math.floor(Math.random() * kurumi.length)];
@@ -2564,7 +2708,7 @@ app.get('/nime/kurumi', async (req, res, next) => {
       url: `${randkurumi}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -2583,9 +2727,9 @@ app.get('/nime/miku', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const miku = JSON.parse(fs.readFileSync(__dirname + '/data/miku.json'));
     const randmiku = miku[Math.floor(Math.random() * miku.length)];
@@ -2594,7 +2738,7 @@ app.get('/nime/miku', async (req, res, next) => {
       url: `${randmiku}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -2613,9 +2757,9 @@ app.get('/nime/pokemon', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const pokemon = JSON.parse(fs.readFileSync(__dirname + '/data/pokemon.json'));
     const randpokemon = pokemon[Math.floor(Math.random() * pokemon.length)];
@@ -2624,7 +2768,7 @@ app.get('/nime/pokemon', async (req, res, next) => {
       url: `${randpokemon}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -2643,9 +2787,9 @@ app.get('/nime/ryujin', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const ryujin = JSON.parse(fs.readFileSync(__dirname + '/data/ryujin.json'));
     const randryujin = ryujin[Math.floor(Math.random() * ryujin.length)];
@@ -2654,7 +2798,7 @@ app.get('/nime/ryujin', async (req, res, next) => {
       url: `${randryujin}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -2673,9 +2817,9 @@ app.get('/nime/rose', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const rose = JSON.parse(fs.readFileSync(__dirname + '/data/rose.json'));
     const randrose = rose[Math.floor(Math.random() * rose.length)];
@@ -2684,7 +2828,7 @@ app.get('/nime/rose', async (req, res, next) => {
       url: `${randrose}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -2703,9 +2847,9 @@ app.get('/nime/kaori', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const kaori = JSON.parse(fs.readFileSync(__dirname + '/data/kaori.json'));
     const randkaori = kaori[Math.floor(Math.random() * kaori.length)];
@@ -2714,7 +2858,7 @@ app.get('/nime/kaori', async (req, res, next) => {
       url: `${randkaori}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -2733,9 +2877,9 @@ app.get('/nime/shizuka', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const shizuka = JSON.parse(fs.readFileSync(__dirname + '/data/shizuka.json'));
     const randshizuka = shizuka[Math.floor(Math.random() * shizuka.length)];
@@ -2744,7 +2888,7 @@ app.get('/nime/shizuka', async (req, res, next) => {
       url: `${randshizuka}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -2763,9 +2907,9 @@ app.get('/nime/kaga', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const kaga = JSON.parse(fs.readFileSync(__dirname + '/data/kaga.json'));
     const randkaga = kaga[Math.floor(Math.random() * kaga.length)];
@@ -2774,7 +2918,7 @@ app.get('/nime/kaga', async (req, res, next) => {
       url: `${randkaga}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -2793,9 +2937,9 @@ app.get('/nime/kotori', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const kotori = JSON.parse(fs.readFileSync(__dirname + '/data/kotori.json'));
     const randkotori = kotori[Math.floor(Math.random() * kotori.length)];
@@ -2804,7 +2948,7 @@ app.get('/nime/kotori', async (req, res, next) => {
       url: `${randkotori}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -2823,9 +2967,9 @@ app.get('/nime/mikasa', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const mikasa = JSON.parse(fs.readFileSync(__dirname + '/data/mikasa.json'));
     const randmikasa = mikasa[Math.floor(Math.random() * mikasa.length)];
@@ -2834,7 +2978,7 @@ app.get('/nime/mikasa', async (req, res, next) => {
       url: `${randmikasa}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -2853,9 +2997,9 @@ app.get('/nime/akiyama', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const akiyama = JSON.parse(fs.readFileSync(__dirname + '/data/akiyama.json'));
     const randakiyama = akiyama[Math.floor(Math.random() * akiyama.length)];
@@ -2864,7 +3008,7 @@ app.get('/nime/akiyama', async (req, res, next) => {
       url: `${randakiyama}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -2883,9 +3027,9 @@ app.get('/nime/gremory', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const gremory = JSON.parse(fs.readFileSync('./data/gremory.json'));
     const randgremory = gremory[Math.floor(Math.random() * gremory.length)];
@@ -2894,7 +3038,7 @@ app.get('/nime/gremory', async (req, res, next) => {
       url: `${randgremory}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -2913,9 +3057,9 @@ app.get('/nime/isuzu', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const isuzu = JSON.parse(fs.readFileSync(__dirname + '/data/isuzu.json'));
     const randisuzu = isuzu[Math.floor(Math.random() * isuzu.length)];
@@ -2924,7 +3068,7 @@ app.get('/nime/isuzu', async (req, res, next) => {
       url: `${randisuzu}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -2943,9 +3087,9 @@ app.get('/nime/cosplay', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const cosplay = JSON.parse(fs.readFileSync(__dirname + '/data/cosplay.json'));
     const randcosplay = cosplay[Math.floor(Math.random() * cosplay.length)];
@@ -2954,7 +3098,7 @@ app.get('/nime/cosplay', async (req, res, next) => {
       url: `${randcosplay}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -2973,9 +3117,9 @@ app.get('/nime/shina', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const shina = JSON.parse(fs.readFileSync(__dirname + '/data/shina.json'));
     const randshina = shina[Math.floor(Math.random() * shina.length)];
@@ -2984,7 +3128,7 @@ app.get('/nime/shina', async (req, res, next) => {
       url: `${randshina}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -3003,9 +3147,9 @@ app.get('/nime/kagura', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const kagura = JSON.parse(fs.readFileSync(__dirname + '/data/kagura.json'));
     const randkagura = kagura[Math.floor(Math.random() * kagura.length)];
@@ -3014,7 +3158,7 @@ app.get('/nime/kagura', async (req, res, next) => {
       url: `${randkagura}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -3033,9 +3177,9 @@ app.get('/nime/shinka', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const shinka = JSON.parse(fs.readFileSync(__dirname + '/data/shinka.json'));
     const randshinka = shinka[Math.floor(Math.random() * shinka.length)];
@@ -3044,7 +3188,7 @@ app.get('/nime/shinka', async (req, res, next) => {
       url: `${randshinka}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -3063,9 +3207,9 @@ app.get('/nime/eba', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const eba = JSON.parse(fs.readFileSync(__dirname + '/data/eba.json'));
     const randeba = eba[Math.floor(Math.random() * eba.length)];
@@ -3074,7 +3218,7 @@ app.get('/nime/eba', async (req, res, next) => {
       url: `${randeba}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -3093,9 +3237,9 @@ app.get('/nime/deidara', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const Deidara = JSON.parse(fs.readFileSync(__dirname + '/data/deidara.json'));
     const randDeidara = Deidara[Math.floor(Math.random() * Deidara.length)];
@@ -3104,7 +3248,7 @@ app.get('/nime/deidara', async (req, res, next) => {
       url: `${randDeidara}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -3125,9 +3269,9 @@ app.get('/nime/jeni', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const jeni = JSON.parse(fs.readFileSync(__dirname + '/data/jeni.json'));
     const randjeni = jeni[Math.floor(Math.random() * jeni.length)];
@@ -3136,7 +3280,7 @@ app.get('/nime/jeni', async (req, res, next) => {
       url: `${randjeni}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -3156,9 +3300,9 @@ app.get('/random/meme', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const meme = JSON.parse(fs.readFileSync(__dirname + '/data/meme.json'));
     const randmeme = meme[Math.floor(Math.random() * meme.length)];
@@ -3167,7 +3311,7 @@ app.get('/random/meme', async (req, res, next) => {
       url: `${randmeme}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -3186,9 +3330,9 @@ app.get('/wallpaper/satanic', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const satanic = JSON.parse(fs.readFileSync(__dirname + '/data/satanic.json'));
     const randsatanic = satanic[Math.floor(Math.random() * satanic.length)];
@@ -3197,7 +3341,7 @@ app.get('/wallpaper/satanic', async (req, res, next) => {
       url: `${randsatanic}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -3218,9 +3362,9 @@ app.get('/nime/itachi', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const Itachi = JSON.parse(fs.readFileSync(__dirname + '/data/itachi.json'));
     const randItachi = Itachi[Math.floor(Math.random() * Itachi.length)];
@@ -3229,7 +3373,7 @@ app.get('/nime/itachi', async (req, res, next) => {
       url: `${randItachi}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -3248,9 +3392,9 @@ app.get('/nime/madara', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const Madara = JSON.parse(fs.readFileSync(__dirname + '/data/madara.json'));
     const randMadara = Madara[Math.floor(Math.random() * Madara.length)];
@@ -3259,7 +3403,7 @@ app.get('/nime/madara', async (req, res, next) => {
       url: `${randMadara}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -3278,9 +3422,9 @@ app.get('/nime/yuki', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const Yuki = JSON.parse(fs.readFileSync(__dirname + '/data/yuki.json'));
     const randYuki = Yuki[Math.floor(Math.random() * Yuki.length)];
@@ -3289,7 +3433,7 @@ app.get('/nime/yuki', async (req, res, next) => {
       url: `${randYuki}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -3308,9 +3452,9 @@ app.get('/wallpaper/asuna', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const asuna = JSON.parse(fs.readFileSync(__dirname + '/data/asuna.json'));
     const randasuna = asuna[Math.floor(Math.random() * asuna.length)];
@@ -3319,7 +3463,7 @@ app.get('/wallpaper/asuna', async (req, res, next) => {
       url: `${randasuna}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -3338,9 +3482,9 @@ app.get('/nime/ayuzawa', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const ayuzawa = JSON.parse(fs.readFileSync(__dirname + '/data/ayuzawa.json'));
     const randayuzawa = ayuzawa[Math.floor(Math.random() * ayuzawa.length)];
@@ -3349,7 +3493,7 @@ app.get('/nime/ayuzawa', async (req, res, next) => {
       url: `${randayuzawa}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -3368,9 +3512,9 @@ app.get('/nime/chitoge', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const chitoge = JSON.parse(fs.readFileSync(__dirname + '/data/chitoge.json'));
     const randchitoge = chitoge[Math.floor(Math.random() * chitoge.length)];
@@ -3379,7 +3523,7 @@ app.get('/nime/chitoge', async (req, res, next) => {
       url: `${randchitoge}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -3398,9 +3542,9 @@ app.get('/nime/emilia', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const emilia = JSON.parse(fs.readFileSync(__dirname + '/data/emilia.json'));
     const randemilia = emilia[Math.floor(Math.random() * emilia.length)];
@@ -3409,7 +3553,7 @@ app.get('/nime/emilia', async (req, res, next) => {
       url: `${randemilia}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -3428,9 +3572,9 @@ app.get('/nime/hestia', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const hestia = JSON.parse(fs.readFileSync(__dirname + '/data/hestia.json'));
     const randhestia = hestia[Math.floor(Math.random() * hestia.length)];
@@ -3439,7 +3583,7 @@ app.get('/nime/hestia', async (req, res, next) => {
       url: `${randhestia}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -3458,9 +3602,9 @@ app.get('/nime/inori', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const inori = JSON.parse(fs.readFileSync(__dirname + '/data/inori.json'));
     const randinori = inori[Math.floor(Math.random() * inori.length)];
@@ -3469,7 +3613,7 @@ app.get('/nime/inori', async (req, res, next) => {
       url: `${randinori}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -3488,9 +3632,9 @@ app.get('/nime/ana', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const ana = JSON.parse(fs.readFileSync(__dirname + '/data/ana.json'));
     const randana = ana[Math.floor(Math.random() * ana.length)];
@@ -3499,7 +3643,7 @@ app.get('/nime/ana', async (req, res, next) => {
       url: `${randana}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -3518,9 +3662,9 @@ app.get('/nime/boruto', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const Boruto = JSON.parse(fs.readFileSync(__dirname + '/data/boruto.json'));
     const randBoruto = Boruto[Math.floor(Math.random() * Boruto.length)];
@@ -3529,7 +3673,7 @@ app.get('/nime/boruto', async (req, res, next) => {
       url: `${randBoruto}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -3548,9 +3692,9 @@ app.get('/nime/erza', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const Erza = JSON.parse(fs.readFileSync(__dirname + '/data/erza.json'));
     const randErza = Erza[Math.floor(Math.random() * Erza.length)];
@@ -3559,7 +3703,7 @@ app.get('/nime/erza', async (req, res, next) => {
       url: `${randErza}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -3578,9 +3722,9 @@ app.get('/nime/kakasih', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const Kakasih = JSON.parse(fs.readFileSync(__dirname + '/data/kakasih.json'));
     const randKakasih = Kakasih[Math.floor(Math.random() * Kakasih.length)];
@@ -3589,7 +3733,7 @@ app.get('/nime/kakasih', async (req, res, next) => {
       url: `${randKakasih}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -3608,9 +3752,9 @@ app.get('/nime/sagiri', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const Sagiri = JSON.parse(fs.readFileSync(__dirname + '/data/sagiri.json'));
     const randSagiri = Sagiri[Math.floor(Math.random() * Sagiri.length)];
@@ -3619,7 +3763,7 @@ app.get('/nime/sagiri', async (req, res, next) => {
       url: `${randSagiri}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -3638,9 +3782,9 @@ app.get('/nime/minato', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const Minato = JSON.parse(fs.readFileSync(__dirname + '/data/minato.json'));
     const randMinato = Minato[Math.floor(Math.random() * Minato.length)];
@@ -3649,7 +3793,7 @@ app.get('/nime/minato', async (req, res, next) => {
       url: `${randMinato}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -3668,9 +3812,9 @@ app.get('/nime/naruto', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const Naruto = JSON.parse(fs.readFileSync(__dirname + '/data/naruto.json'));
     const randNaruto = Naruto[Math.floor(Math.random() * Naruto.length)];
@@ -3679,7 +3823,7 @@ app.get('/nime/naruto', async (req, res, next) => {
       url: `${randNaruto}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -3698,9 +3842,9 @@ app.get('/nime/nezuko', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const Nezuko = JSON.parse(fs.readFileSync(__dirname + '/data/nezuko.json'));
     const randNezuko = Nezuko[Math.floor(Math.random() * Nezuko.length)];
@@ -3709,7 +3853,7 @@ app.get('/nime/nezuko', async (req, res, next) => {
       url: `${randNezuko}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -3728,9 +3872,9 @@ app.get('/nime/onepiece', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const Pic = JSON.parse(fs.readFileSync(__dirname + '/data/onepiece.json'));
     const randPic = Pic[Math.floor(Math.random() * Pic.length)];
@@ -3739,7 +3883,7 @@ app.get('/nime/onepiece', async (req, res, next) => {
       url: `${randPic}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -3758,9 +3902,9 @@ app.get('/nime/rize', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const Rize = JSON.parse(fs.readFileSync(__dirname + '/data/rize.json'));
     const randRize = Rize[Math.floor(Math.random() * Rize.length)];
@@ -3769,7 +3913,7 @@ app.get('/nime/rize', async (req, res, next) => {
       url: `${randRize}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -3788,9 +3932,9 @@ app.get('/nime/sakura', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const Sakura = JSON.parse(fs.readFileSync(__dirname + '/data/sakura.json'));
     const randSakura = Sakura[Math.floor(Math.random() * Sakura.length)];
@@ -3799,7 +3943,7 @@ app.get('/nime/sakura', async (req, res, next) => {
       url: `${randSakura}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -3818,9 +3962,9 @@ app.get('/nime/sasuke', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const Sasuke = JSON.parse(fs.readFileSync(__dirname + '/data/sasuke.json'));
     const randSasuke = Sasuke[Math.floor(Math.random() * Sasuke.length)];
@@ -3829,7 +3973,7 @@ app.get('/nime/sasuke', async (req, res, next) => {
       url: `${randSasuke}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -3848,9 +3992,9 @@ app.get('/nime/tsunade', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const Su = JSON.parse(fs.readFileSync(__dirname + '/data/tsunade.json'));
     const randSu = Su[Math.floor(Math.random() * Su.length)];
@@ -3859,7 +4003,7 @@ app.get('/nime/tsunade', async (req, res, next) => {
       url: `${randSu}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -3878,9 +4022,9 @@ app.get('/nime/montor', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const Mon = JSON.parse(fs.readFileSync(__dirname + '/data/montor.json'));
     const randMon = Mon[Math.floor(Math.random() * Mon.length)];
@@ -3889,7 +4033,7 @@ app.get('/nime/montor', async (req, res, next) => {
       url: `${randMon}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 // ain
@@ -3908,9 +4052,9 @@ app.get('/nime/mobil', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const Mob = JSON.parse(fs.readFileSync(__dirname + '/data/mobil.json'));
     const randMob = Mob[Math.floor(Math.random() * Mob.length)];
@@ -3919,7 +4063,7 @@ app.get('/nime/mobil', async (req, res, next) => {
       url: `${randMob}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -3939,9 +4083,9 @@ app.get('/nime/anime', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const Wai23 = JSON.parse(fs.readFileSync(__dirname + '/data/wallhp2.json'));
     const randWai23 = Wai23[Math.floor(Math.random() * Wai23.length)];
@@ -3950,7 +4094,7 @@ app.get('/nime/anime', async (req, res, next) => {
       url: `${randWai23}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -3970,9 +4114,9 @@ app.get('/nime/wallhp', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const Wai22 = JSON.parse(fs.readFileSync(__dirname + '/data/wallhp.json'));
     const randWai22 = Wai22[Math.floor(Math.random() * Wai22.length)];
@@ -3981,7 +4125,7 @@ app.get('/nime/wallhp', async (req, res, next) => {
       url: `${randWai22}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -4000,9 +4144,9 @@ app.get('/nime/waifu2', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const Wai2 = JSON.parse(fs.readFileSync(__dirname + '/data/waifu2.json'));
     const randWai2 = Wai2[Math.floor(Math.random() * Wai2.length)];
@@ -4011,7 +4155,7 @@ app.get('/nime/waifu2', async (req, res, next) => {
       url: `${randWai2}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -4030,9 +4174,9 @@ app.get('/nime/waifu', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const Wai = JSON.parse(fs.readFileSync(__dirname + '/data/waifu.json'));
     const randWai = Wai[Math.floor(Math.random() * Wai.length)];
@@ -4041,7 +4185,7 @@ app.get('/nime/waifu', async (req, res, next) => {
       url: `${randWai}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -4061,9 +4205,9 @@ app.get('/nime/hekel', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     Hekel = JSON.parse(fs.readFileSync(__dirname + '/data/hekel.json'));
     const randHekel = Hekel[Math.floor(Math.random() * Hekel.length)]
@@ -4072,7 +4216,7 @@ app.get('/nime/hekel', async (req, res, next) => {
       url: `${randHekel}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -4091,9 +4235,9 @@ app.get('/nime/kucing', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     Kucing = JSON.parse(fs.readFileSync(__dirname + '/data/kucing.json'));
     const randKucing = Kucing[Math.floor(Math.random() * Kucing.length)]
@@ -4102,7 +4246,7 @@ app.get('/nime/kucing', async (req, res, next) => {
       url: `${randKucing}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -4121,9 +4265,9 @@ app.get('/wallpaper/pubg', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     Pubg = JSON.parse(fs.readFileSync(__dirname + '/data/pubg.json'));
     const randPubg = Pubg[Math.floor(Math.random() * Pubg.length)]
@@ -4132,7 +4276,7 @@ app.get('/wallpaper/pubg', async (req, res, next) => {
       url: `${randPubg}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -4151,9 +4295,9 @@ app.get('/wallpaper/ppcouple', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     Pp = JSON.parse(fs.readFileSync(__dirname + '/data/profil.json'));
     const randPp = Pp[Math.floor(Math.random() * Pp.length)]
@@ -4162,7 +4306,7 @@ app.get('/wallpaper/ppcouple', async (req, res, next) => {
       url: `${randPp}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -4181,9 +4325,9 @@ app.get('/wallpaper/anjing', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     Anjing = JSON.parse(fs.readFileSync(__dirname + '/data/anjing.json'));
     const randAnjing = Anjing[Math.floor(Math.random() * Anjing.length)]
@@ -4192,7 +4336,7 @@ app.get('/wallpaper/anjing', async (req, res, next) => {
       url: `${randAnjing}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -4211,9 +4355,9 @@ app.get('/nime/doraemon', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     Dora = JSON.parse(fs.readFileSync(__dirname + '/data/doraemon.json'));
     const randDora = Dora[Math.floor(Math.random() * Dora.length)]
@@ -4222,7 +4366,7 @@ app.get('/nime/doraemon', async (req, res, next) => {
       url: `${randDora}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -4242,9 +4386,9 @@ app.get('/nime/elaina', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const Elaina = JSON.parse(fs.readFileSync(__dirname + '/data/elaina.json'))
     const randElaina = Elaina[Math.floor(Math.random() * Elaina.length)]
@@ -4254,7 +4398,7 @@ app.get('/nime/elaina', async (req, res, next) => {
       url: `${randElaina}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -4274,9 +4418,9 @@ app.get('/nime/loli', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const Loli = JSON.parse(fs.readFileSync(__dirname + '/data/loli.json'))
     const randLoli = Loli[Math.floor(Math.random() * Loli.length)]
@@ -4286,7 +4430,7 @@ app.get('/nime/loli', async (req, res, next) => {
       url: `${randLoli}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -4306,9 +4450,9 @@ app.get('/nime/yuri', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const Yuri = JSON.parse(fs.readFileSync(__dirname + '/data/yuri.json'))
     const randYuri = Yuri[Math.floor(Math.random() * Yuri.length)]
@@ -4317,7 +4461,7 @@ app.get('/nime/yuri', async (req, res, next) => {
       url: `${randYuri}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -4337,9 +4481,9 @@ app.get('/nime/cecan', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const cecan = JSON.parse(fs.readFileSync(__dirname + '/data/cecan.json'));
     const randCecan = cecan[Math.floor(Math.random() * cecan.length)];
@@ -4349,7 +4493,7 @@ app.get('/nime/cecan', async (req, res, next) => {
       url: `${randCecan}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -4369,9 +4513,9 @@ app.get('/wallpaper/aesthetic', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const Aesthetic = JSON.parse(fs.readFileSync(__dirname + '/data/aesthetic.json'));
     const randAesthetic = Aesthetic[Math.floor(Math.random() * Aesthetic.length)];
@@ -4381,7 +4525,7 @@ app.get('/wallpaper/aesthetic', async (req, res, next) => {
       url: `${randAesthetic}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -4402,9 +4546,9 @@ app.get('/nime/sagiri', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const Sagiri = JSON.parse(fs.readFileSync(__dirname + '/data/sagiri.json'));
     const randSagiri = Sagiri[Math.floor(Math.random() * Sagiri.length)];
@@ -4414,7 +4558,7 @@ app.get('/nime/sagiri', async (req, res, next) => {
       url: `${randSagiri}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -4433,9 +4577,9 @@ app.get('/nime/shota', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const Shota = JSON.parse(fs.readFileSync(__dirname + '/data/shota.json'));
     const randShota = Shota[Math.floor(Math.random() * Shota.length)];
@@ -4445,7 +4589,7 @@ app.get('/nime/shota', async (req, res, next) => {
       url: `${randShota}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -4464,9 +4608,9 @@ app.get('/nime/nsfwloli', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const Lol = JSON.parse(fs.readFileSync(__dirname + '/data/nsfwloli.json'));
     const randLol = Lol[Math.floor(Math.random() * Lol.length)];
@@ -4476,7 +4620,7 @@ app.get('/nime/nsfwloli', async (req, res, next) => {
       url: `${randLol}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -4496,9 +4640,9 @@ app.get('/nime/hinata', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const Hinata = JSON.parse(fs.readFileSync(__dirname + '/data/hinata.json'));
     const randHin = Hinata[Math.floor(Math.random() * Hinata.length)];
@@ -4508,7 +4652,7 @@ app.get('/nime/hinata', async (req, res, next) => {
       url: `${randHin}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -4528,9 +4672,9 @@ app.get('/download/ytmp3', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
     ytDonlodMp3(url)
       .then((result) => {
         res.json(result);
@@ -4562,9 +4706,9 @@ app.get('/download/tiktok', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
     TiktokDownload(url)
       .then((result) => {
         res.json(result);
@@ -4593,9 +4737,9 @@ app.get('/download/ytmp4', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
     ytDonlodMp4(url)
       .then((result) => {
         res.json(result);
@@ -4624,9 +4768,9 @@ app.get("/yt/playmp3", async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
     ytPlayMp3(query)
       .then((result) => {
         res.json(result);
@@ -4658,9 +4802,9 @@ app.get("/yt/playmp4", async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
     ytPlayMp4(query)
       .then((result) => {
         res.json(result);
@@ -4689,9 +4833,9 @@ app.get('/anime/amv', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
     const amv = JSON.parse(fs.readFileSync(path + '/data/amv.json'));
     const randomAmv = amv[Math.floor(Math.random() * amv.length)];
 
@@ -4721,9 +4865,9 @@ app.get('/wallpaper/cyberspace', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const cyberspace = JSON.parse(fs.readFileSync(__dirname + '/data/CyberSpace.json'));
     const randcyberspace = cyberspace[Math.floor(Math.random() * cyberspace.length)];
@@ -4751,9 +4895,9 @@ app.get('/wallpaper/gaming', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const gaming = JSON.parse(fs.readFileSync(__dirname + '/data/GameWallp.json'));
     const randgaming = gaming[Math.floor(Math.random() * gaming.length)];
@@ -4781,9 +4925,9 @@ app.get('/wallpaper/programing', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const programing = JSON.parse(fs.readFileSync(__dirname + '/data/Programming.json'));
     const randprograming = programing[Math.floor(Math.random() * programing.length)];
@@ -4811,9 +4955,9 @@ app.get('/wallpaper/wallpapertec', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const teknologi = JSON.parse(fs.readFileSync(__dirname + '/data/Technology.json'));
     const randteknologi = teknologi[Math.floor(Math.random() * teknologi.length)];
@@ -4841,9 +4985,9 @@ app.get('/wallpaper/mountain', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const mountain = JSON.parse(fs.readFileSync(__dirname + '/data/Mountain.json'));
     const randmountain = mountain[Math.floor(Math.random() * mountain.length)];
@@ -4873,9 +5017,9 @@ app.get('/wallpaper/satanic', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const satanic = JSON.parse(fs.readFileSync(__dirname + '/data/satanic.json'));
     const randsatanic = satanic[Math.floor(Math.random() * satanic.length)];
@@ -4905,9 +5049,9 @@ app.get('/wallpaper/asuna', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const asuna = JSON.parse(fs.readFileSync(__dirname + '/data/asuna.json'));
     const randasuna = asuna[Math.floor(Math.random() * asuna.length)];
@@ -4936,9 +5080,9 @@ app.get('/wallpaper/pubg', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     Pubg = JSON.parse(fs.readFileSync(__dirname + '/data/pubg.json'));
     const randPubg = Pubg[Math.floor(Math.random() * Pubg.length)]
@@ -4966,9 +5110,9 @@ app.get('/wallpaper/ppcouple', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     Pp = JSON.parse(fs.readFileSync(__dirname + '/data/profil.json'));
     const randPp = Pp[Math.floor(Math.random() * Pp.length)]
@@ -4996,9 +5140,9 @@ app.get('/wallpaper/anjing', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     Anjing = JSON.parse(fs.readFileSync(__dirname + '/data/anjing.json'));
     const randAnjing = Anjing[Math.floor(Math.random() * Anjing.length)]
@@ -5026,9 +5170,9 @@ app.get('/wallpaper/aesthetic', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const Aesthetic = JSON.parse(fs.readFileSync(__dirname + '/data/aesthetic.json'));
     const randAesthetic = Aesthetic[Math.floor(Math.random() * Aesthetic.length)];
@@ -5058,9 +5202,9 @@ app.get("/download/pinterest", async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     pin.pinterest(query)
       .then(result => {
@@ -5088,9 +5232,9 @@ app.get('/memes', async (req, res, next) => {
   }
 
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const meme = JSON.parse(fs.readFileSync(__dirname + '/data/memes-video.json'));
     const randmeme = meme[Math.floor(Math.random() * meme.length)];
@@ -5099,7 +5243,7 @@ app.get('/memes', async (req, res, next) => {
       url: `${randmeme}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -5116,9 +5260,9 @@ app.get('/18/video', async (req, res, next) => {
     return res.sendFile(htmlPath);
   }
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const vid = require("./data/pack.js")
     const video_18 = vid.video_18
@@ -5128,7 +5272,7 @@ app.get('/18/video', async (req, res, next) => {
       url: `${danvid}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -5145,9 +5289,9 @@ app.get('/18/travazap', async (req, res, next) => {
     return res.sendFile(htmlPath);
   }
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const tra = require("./data/pack.js")
     const travazap = tra.travazap
@@ -5157,7 +5301,7 @@ app.get('/18/travazap', async (req, res, next) => {
       url: `${traft}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -5174,9 +5318,9 @@ app.get('/18/foto_18', async (req, res, next) => {
     return res.sendFile(htmlPath);
   }
 
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const tra = require("./data/pack.js")
     const foto_18 = tra.foto_18
@@ -5186,7 +5330,7 @@ app.get('/18/foto_18', async (req, res, next) => {
       url: `${traft}`
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 })
 
@@ -5201,9 +5345,9 @@ app.get('/welcome', async (req, res) => {
   if (user.isBaned === true) {
     return res.sendFile(htmlPath);
   }
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
     const nick = req.query.nick || 'clover';
     const guildName = req.query.guildName || 'clover grupo';
     const guildIcon = req.query.guildIcon || 'https://telegra.ph/file/87fe9fdbf08280460e531.jpg';
@@ -5242,7 +5386,7 @@ app.get('/welcome', async (req, res) => {
       fs.unlinkSync('background.jpg');
     }
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 });
 app.get('/goodbye', async (req, res) => {
@@ -5255,9 +5399,9 @@ app.get('/goodbye', async (req, res) => {
   if (user.isBaned === true) {
     return res.sendFile(htmlPath);
   }
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const nick = req.query.nick || "clover";
     const guildName = req.query.guildName || "clover grupo";
@@ -5297,7 +5441,7 @@ app.get('/goodbye', async (req, res) => {
       fs.unlinkSync('background.jpg');
     }
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 });
 
@@ -5338,9 +5482,9 @@ app.get('/ranking', async (req, res) => {
   if (user.isBaned === true) {
     return res.sendFile(htmlPath);
   }
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
     const username = req.query.nick || 'clover';
     const currxp = req.query.currxp || '100';
     const needxp = req.query.needxp || '1000';
@@ -5381,7 +5525,7 @@ app.get('/ranking', async (req, res) => {
       fs.unlinkSync('rank.png');
     }
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 });
 
@@ -5396,16 +5540,16 @@ app.get('/play-store-search', async (req, res) => {
   if (user.isBaned === true) {
     return res.sendFile(htmlPath);
   }
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const appName = req.query.appName;
     const result = await playStoreSearch(appName);
     res.json(result);
 
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 });
 
@@ -5420,15 +5564,15 @@ app.get('/memes-droid', async (req, res) => {
   if (user.isBaned === true) {
     return res.sendFile(htmlPath);
   }
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const result = await memesDroid();
     res.json(result);
 
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 });
 
@@ -5443,15 +5587,15 @@ app.get('/grupos-zap', async (req, res) => {
   if (user.isBaned === true) {
     return res.sendFile(htmlPath);
   }
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const result = await gruposZap();
     res.json(result);
 
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 });
 
@@ -5466,16 +5610,16 @@ app.get('/anime-fire-download', async (req, res) => {
   if (user.isBaned === true) {
     return res.sendFile(htmlPath);
   }
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const url = req.query.url;
     const result = await animeFireDownload(url);
     res.json(result);
 
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 });
 
@@ -5490,16 +5634,16 @@ app.get('/animes-fire-search', async (req, res) => {
   if (user.isBaned === true) {
     return res.sendFile(htmlPath);
   }
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const query = req.query.q;
     const result = await animesFireSearch(query);
     res.json(result);
 
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 });
 
@@ -5514,16 +5658,16 @@ app.get('/animes-fire-eps', async (req, res) => {
   if (user.isBaned === true) {
     return res.sendFile(htmlPath);
   }
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const url = req.query.url;
     const result = await animesFireEps(url);
     res.json(result);
 
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 });
 
@@ -5538,15 +5682,15 @@ app.get('/ultimas-noticias', async (req, res) => {
   if (user.isBaned === true) {
     return res.sendFile(htmlPath);
   }
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const result = await ultimasNoticias();
     res.json(result);
 
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 });
 
@@ -5561,15 +5705,15 @@ app.get('/random-grupos', async (req, res) => {
   if (user.isBaned === true) {
     return res.sendFile(htmlPath);
   }
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const result = await randomGrupos();
     res.json(result);
 
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 });
 
@@ -5584,16 +5728,16 @@ app.get('/xvideos-downloader', async (req, res) => {
   if (user.isBaned === true) {
     return res.sendFile(htmlPath);
   }
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const url = req.query.url;
     const result = await xvideosDownloader(url);
     res.json(result);
 
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 });
 
@@ -5608,16 +5752,16 @@ app.get('/xvideos-search', async (req, res) => {
   if (user.isBaned === true) {
     return res.sendFile(htmlPath);
   }
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const query = req.query.q;
     const result = await xvideosSearch(query);
     res.json(result);
 
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 });
 
@@ -5632,15 +5776,15 @@ app.get('/frase-amor', async (req, res) => {
   if (user.isBaned === true) {
     return res.sendFile(htmlPath);
   }
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const result = await fraseAmor();
     res.json(result);
 
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 });
 
@@ -5655,15 +5799,15 @@ app.get('/ifunny', async (req, res) => {
   if (user.isBaned === true) {
     return res.sendFile(htmlPath);
   }
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const result = await iFunny();
     res.json(result);
 
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 });
 
@@ -5678,15 +5822,15 @@ app.get('/frases-pensador', async (req, res) => {
   if (user.isBaned === true) {
     return res.sendFile(htmlPath);
   }
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const result = await frasesPensador();
     res.json(result);
 
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 });
 
@@ -5701,15 +5845,15 @@ app.get('/wallpaper2', async (req, res) => {
   if (user.isBaned === true) {
     return res.sendFile(htmlPath);
   }
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const result = await wallpaper2();
     res.json(result);
 
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 });
 
@@ -5724,15 +5868,15 @@ app.get('/hentai', async (req, res) => {
   if (user.isBaned === true) {
     return res.sendFile(htmlPath);
   }
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const result = await hentai();
     res.json(result);
 
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 });
 
@@ -5747,16 +5891,16 @@ app.get('/styletext', async (req, res) => {
   if (user.isBaned === true) {
     return res.sendFile(htmlPath);
   }
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     const text = req.query.text;
     const result = await styletext(text);
     res.json(result);
 
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 });
 
@@ -5771,9 +5915,9 @@ app.get('/attp', async (req, res, next) => {
   if (user.isBaned === true) {
     return res.sendFile(htmlPath);
   }
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     var texto = req.query.texto
     if (!texto) return res.json({ status: false, message: "[!] masukan parameter texto" })
@@ -5832,7 +5976,7 @@ app.get('/attp', async (req, res, next) => {
 
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 });
 
@@ -5846,9 +5990,9 @@ app.get('/attp2', async (req, res, next) => {
   if (user.isBaned === true) {
     return res.sendFile(htmlPath);
   }
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
 
     var texto = req.query.texto
     if (!texto) return res.json({ status: false, message: "[!] masukan parameter texto" })
@@ -5907,7 +6051,7 @@ app.get('/attp2', async (req, res, next) => {
 
     })
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 });
 
@@ -5924,9 +6068,9 @@ app.get('/cardgame', async (req, res) => {
   if (user.isBaned === true) {
     return res.sendFile(htmlPath);
   }
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
     const { foto, atk, def, legenda, nick } = req.query
     try {
       // Tamanho da thumbnail
@@ -5971,7 +6115,7 @@ app.get('/cardgame', async (req, res) => {
       res.status(500).send('Erro ao gerar a thumbnail.');
     }
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 });
 
@@ -5990,9 +6134,9 @@ app.get('/welcome2', async (req, res) => {
   if (user.isBaned === true) {
     return res.sendFile(htmlPath);
   }
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
     try {
       const width = 1920;
       const height = 895;
@@ -6076,7 +6220,7 @@ app.get('/welcome2', async (req, res) => {
       res.status(500).send('Erro ao gerar a imagem.');
     }
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 });
 
@@ -6091,9 +6235,9 @@ app.get('/goodbye2', async (req, res) => {
   if (user.isBaned === true) {
     return res.sendFile(htmlPath);
   }
-  const resultadoDiminuicao = diminuirSaldo(username);
-  const add = adicionarSaldo(username)
-  if (resultadoDiminuicao && add) {
+  diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
     try {
       const width = 1920;
       const height = 895;
@@ -6177,7 +6321,7 @@ app.get('/goodbye2', async (req, res) => {
       res.status(500).send('Erro ao gerar a imagem.');
     }
   } else {
-    console.log('Saldo insuficiente.');
+    return res.sendFile(htmlPath);
   }
 });
 

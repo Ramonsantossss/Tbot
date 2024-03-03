@@ -133,10 +133,14 @@
               </div>
               </br>
               <h5 class="text-center h5 mb-0">
-                <%= dados.username %>
+              <%= dados.username %>
               </h5>
               <p class="text-center text-muted font-14">
-
+              <% if (!dados.isPremium) { %>
+                  Comum
+              <% } else { %>
+              <div style="color: gold;">USUARIO PREMIUM</div>
+              <% } %>
               </p>
               <div class="profile-info">
                 <h5 class="mb-20 h5 text-blue">Informações e contatos</h5>
