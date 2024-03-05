@@ -22,7 +22,6 @@ const path = require('path');
 const MemoryStore = require('memorystore')(session);
 const fs = require('fs');
 const knights = require('knights-canvas');
-const cron = require('node-cron');
 
 const downloadImage = async (url, filename) => {
   const response = await axios.get(url, { responseType: 'arraybuffer' });
@@ -115,7 +114,7 @@ mercadopago.configure({
   access_token: 'APP_USR-8259792445335336-080911-dea2c74872b688a02354a83a497effba-1445374797',
 });
 //mongoose.connect('mongodb+srv://clover:clover@cluster0.6lnnwns.mongodb.net/?retryWrites=true&w=majority', { useNewUrlParser: true, useUnifiedTopology: true });
-
+const Schema = mongoose.Schema;
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true },
   password: { type: String, required: true },
@@ -130,39 +129,28 @@ const userSchema = new mongoose.Schema({
   wallpaper: { type: String, default: null },
   verificationCode: { type: String },
   isVerified: { type: Boolean, default: false },
-  isPremium: { type: Boolean, default: false },
+  premiumExpiraEm: Date,
+  isPremium: Boolean,
   isAdm: { type: Boolean, default: false },
   isBaned: { type: Boolean, default: false },
 });
 
 
-const adicionarSaldoZero = async () => {
-  try {
-    const usuariosSemSaldo = await User.find({ saldo: 0 }); // Procura por usuários com saldo zero
-    if (usuariosSemSaldo.length > 0) {
-      console.log(`Usuários sem saldo encontrado! Adicionando saldo...`);
-      usuariosSemSaldo.forEach(async (usuario) => {
-        await User.updateOne({ _id: usuario._id, saldo: 0 }, { $set: { saldo: 100 } });
-        console.log(`Adicionado 100 de saldo para o usuário: ${usuario.username}`);
-      });
-    } else {
-      console.log('Nenhum usuário sem saldo encontrado.');
-    }
-  } catch (error) {
-    console.error("Erro ao adicionar saldo aos usuários sem saldo:", error);
-  }
-};
+const User = mongoose.model('User', userSchema);
+const Usuario = User;
+module.exports = User;
 
-// Executa a função todos os dias à meia-noite
-cron.schedule('0 0 * * *', () => {
-  console.log('Executando verificação de saldo...');
-  adicionarSaldoZero();
-});
+const schedule = require('node-schedule');
+
+
+
+// Exemplo: Irá executar a função a cada 3 segundos
+
 
 
 
 // Criando o modelo do usuário
-const User = mongoose.model('User', userSchema);
+//const User = mongoose.model('User', userSchema);
 Person = User;
 
 const {
@@ -185,29 +173,40 @@ const {
 } = require("./data/scraper.js");
 
 
+// Função para diminuir o saldo do usuário
 async function diminuirSaldo(username) {
   try {
-    const user = await User.findOne({ username });
-    if (!user) {
-      return false;
-    }
-    if (user.isAdm) {
-      console.log('Usuário administrador. Saldo não será diminuído.');
-      return false;
-    }
+      const usuario = await Usuario.findOne({ nome: username });
+      if (!usuario) {
+          console.log('Usuário não encontrado.');
+          return false;
+      }
 
-    if (user.saldo > 0) {
-      user.saldo--;
-      await user.save();
+      if (usuario.isPremium) {
+          console.log('Usuário premium. Saldo não será diminuído.');
+          return false;
+      }
+
+      if (usuario.saldo < 1) {
+          console.log('Saldo insuficiente para diminuir.');
+          return false; // Saldo insuficiente
+      }
+
+      usuario.saldo--;
+      await usuario.save();
+      console.log('Saldo diminuído com sucesso.');
       return true; // Saldo diminuído com sucesso
-    } else {
-      return false; // Saldo insuficiente
-    }
   } catch (error) {
-    console.error('Erro ao diminuir saldo:', error);
-    return false;
+      console.error('Erro ao diminuir saldo:', error);
+      return false;
   }
 }
+
+
+
+
+
+
 
 async function adicionarSaldo(username) {
   try {
@@ -273,6 +272,76 @@ const isUserBanned = async (username) => {
 
 
 // pagamentos \\
+app.get('/adicionar-premium/:username', async (req, res) => {
+  const { username } = req.params;
+
+  try {
+    const usuario = await User.findOne({ username });
+
+    console.log('Usuário encontrado:', usuario);
+
+    if (!usuario) {
+      return res.status(404).send('Usuário não encontrado.');
+    }
+
+    // Adiciona 3 dias de premium a partir da data atual
+    const dataAtual = new Date();
+    console.log('Data atual:', dataAtual);
+
+    const novaDataExpiracao = new Date(dataAtual);
+    novaDataExpiracao.setDate(novaDataExpiracao.getDate() + 3);
+    console.log('Nova data de expiração:', novaDataExpiracao);
+
+    // Verifica se o usuário já é premium
+    if (usuario.premiumExpiraEm && usuario.premiumExpiraEm >= dataAtual) {
+      // Se já é premium, adiciona 3 dias à data de expiração atual
+      usuario.premiumExpiraEm.setDate(usuario.premiumExpiraEm.getDate() + 3);
+      console.log('Data de expiração atualizada:', usuario.premiumExpiraEm);
+    } else {
+      // Se não é premium ou a assinatura expirou, define a nova data de expiração
+      usuario.premiumExpiraEm = novaDataExpiracao;
+      console.log('Data de expiração definida:', usuario.premiumExpiraEm);
+    }
+
+    await usuario.save();
+    res.status(200).send('3 dias de premium adicionados com sucesso para ' + username);
+  } catch (error) {
+    console.error('Erro:', error);
+    res.status(500).send('Erro ao adicionar dias de premium: ' + error.message);
+  }
+});
+
+
+
+
+
+// Rota para verificar o status de premium do usuário pelo nome de usuário
+app.get('/status-premium/:username', async (req, res) => {
+  const { username } = req.params;
+
+  try {
+    const usuario = await User.findOne({ username });
+
+    if (!usuario) {
+      return res.status(404).send('Usuário não encontrado.');
+    }
+
+    console.log('Data atual:', new Date());
+
+    const dataAtual = new Date();
+    console.log('Data de expiração do premium:', usuario.premiumExpiraEm);
+
+    if (usuario.premiumExpiraEm >= dataAtual) {
+      res.status(200).send(username + ' é premium.');
+    } else {
+      res.status(200).send(username + 'nao é premium.');
+    }
+  } catch (error) {
+    res.status(500).send('Erro ao verificar status de premium: ' + error.message);
+  }
+});
+
+
 
 
 app.get('/loja', (req, res) => {
@@ -336,98 +405,6 @@ app.get('/pagar', async (req, res) => {
   }
 });
 
-app.get('/cpremium', async (req, res) => {
-  const user = req.session.user;
-  if (user) {
-    const { username, password, verificationCode, isVerified } = user;
-    if (isVerified === true) {
-      try {
-        let { valor } = req.query; // Pegue o valor do pagamento
-        // Garante que o valor tenha duas casas decimais
-        valor = parseFloat(valor).toFixed(2);
-        const transactionAmount = parseFloat(valor);
-
-        // Calcula o novo saldo com base no valor pago (1000 de saldo por real)
-        const novosaldo = 15000;
-
-        const payment_data = {
-          transaction_amount: transactionAmount,
-          description: `Saldo AniKit`,
-          payment_method_id: 'pix',
-          payer: {
-            email,
-            first_name: 'Nome do Pagador',
-          }
-        };
-        const data = await mercadopago.payment.create(payment_data);
-        const qrcode = data.body.point_of_interaction.transaction_data.qr_code_base64;
-        const paymentLink = data.body.point_of_interaction.transaction_data.ticket_url;
-        const paymentId = data.body.id;
-        const valorpagar = valor
-        const codigo = data.body.point_of_interaction.transaction_data.qr_code;
-
-        return res.render('cpremium', { username, qrcode, codigo, paymentId, paymentLink, valorpagar, novosaldo });
-
-      } catch (error) {
-        console.error(error);
-        return res.status(500).json({ error: 'Erro ao iniciar o pagamento' });
-      }
-    } else {
-      return res.redirect('/verify');
-    }
-  } else {
-    return res.redirect('/login');
-  }
-});
-
-
-app.get('/premium/:paymentId/:username/:novosaldo', async (req, res) => {
-  const paymentId = req.params.paymentId;
-  const username = req.params.username;
-  const novosaldo = req.params.novosaldo;
-  const timeout = Infinity; // Tempo infinito
-
-  let isPaymentConfirmed = false;
-  const startTime = Date.now();
-
-  while (!isPaymentConfirmed && Date.now() - startTime < timeout) {
-    const res = await mercadopago.payment.get(paymentId);
-    const pagamentoStatus = res.body.status;
-
-    if (pagamentoStatus === 'approved') {
-      console.log('✅ Pagamento aprovado com sucesso!');
-      //const novosaldo = 1000;
-      await adicionarSaldoPix(username, novosaldo); // Espera pela conclusão da função adicionarSaldoPix antes de continuar
-      console.log(username, novosaldo);
-      try {
-        const usuario = await User.findOne({ username });
-
-        if (!usuario) {
-          console.log('❗ Usuário não encontrado.');
-          return res.status(404).send('Usuário não encontrado.');
-        }
-        usuario.isPremium = true;
-        await usuario.save();
-
-        console.log('✅ Usuário tornou-se premium com sucesso.');
-      } catch (error) {
-        console.error('❗ Erro ao tornar usuário premium:', error);
-        return res.status(500).send('Erro ao tornar usuário premium: ' + error.message);
-      }
-
-      isPaymentConfirmed = true;
-    } else {
-      //console.log('Aguardando pagamento...');
-      await new Promise(resolve => setTimeout(resolve, 10000)); // Verificar a cada 10 segundos
-    }
-  }
-
-  if (!isPaymentConfirmed) {
-    console.log('❗ Tempo de pagamento expirado ou pagamento não confirmado.');
-  }
-
-  res.render('payment', { isPaymentConfirmed });
-});
 
 app.get('/payment/:paymentId/:username/:novosaldo', async (req, res) => {
   const paymentId = req.params.paymentId;
@@ -462,21 +439,6 @@ app.get('/payment/:paymentId/:username/:novosaldo', async (req, res) => {
 });
 
 
-app.put('/tornar-premium/:username', async (req, res) => {
-  const { username } = req.params;
-  try {
-    const usuario = await User.findOne({ username });
-    if (!usuario) {
-      return res.status(404).send('Usuário não encontrado.');
-    }
-    usuario.isPremium = true;
-    await usuario.save();
-    res.status(200).send('Usuário ' + username + ' tornou-se premium com sucesso.');
-  } catch (error) {
-    res.status(500).send('Erro ao tornar usuário premium: ' + error.message);
-  }
-});
-
 
 //============\\
 app.get('/', async (req, res) => {
@@ -497,21 +459,6 @@ app.get('/', async (req, res) => {
     return res.redirect('/login');
   }
 });
-
-
-app.get('/perfil-aleatorio', async (req, res) => {
-  try {
-    const randomUser = await User.aggregate([{ $sample: { size: 1 } }]);
-    if (randomUser.length === 0) {
-      return res.status(404).send('Nenhum perfil encontrado.');
-    }
-    const dados = randomUser[0]
-    res.render('usuario', { dados });
-  } catch (error) {
-    res.status(500).send('Erro ao buscar perfil aleatório: ' + error.message);
-  }
-});
-
 
 app.get('/myperfil', async (req, res) => {
   const user = req.session.user;
@@ -740,9 +687,11 @@ app.get('/deletar/:username', async (req, res) => {
 });
 
 
+// Rota para editar o perfil do usuário
+// Rota para editar o perfil do usuário
 app.post('/edit/:username', async (req, res) => {
   const { username } = req.params;
-  const { password, key, ft, saldo, total, isPremium, isAdm, isBaned } = req.body;
+  const { password, key, ft, saldo, total, isAdm, isBaned, adicionarDiasPremium, diminuirDiasPremium, removerPremium } = req.body;
 
   try {
     const user = await User.findOne({ username });
@@ -751,30 +700,53 @@ app.post('/edit/:username', async (req, res) => {
       return res.status(404).send('Usuário não encontrado.');
     }
 
-    // Validação de entrada
-    const isPremiumValue = isPremium === 'true';
-    const isAdmValue = isAdm === 'true';
-    const isBanedValue = isBaned === 'true';
-
     // Atualize os valores
     user.password = password || user.password;
     user.key = key || user.key;
     user.ft = ft || user.ft;
     user.saldo = saldo || user.saldo;
-    user.isPremium = isPremiumValue;
-    user.isAdm = isAdmValue;
-    user.isBaned = isBanedValue;
+    user.isAdm = isAdm === 'true' || user.isAdm;
+    user.isBaned = isBaned === 'true' || user.isBaned;
     user.total = total || user.total;
+
+    // Adicionar dias de premium
+    if (adicionarDiasPremium && adicionarDiasPremium > 0) {
+      const dataAtual = new Date();
+      if (!user.premiumExpiraEm || user.premiumExpiraEm < dataAtual) {
+          user.premiumExpiraEm = dataAtual;
+      }
+      user.premiumExpiraEm.setDate(user.premiumExpiraEm.getDate() + adicionarDiasPremium);
+      user.isPremium = true;
+    }
+
+    // Diminuir dias de premium
+    if (diminuirDiasPremium && diminuirDiasPremium > 0) {
+      const dataAtual = new Date();
+      if (user.premiumExpiraEm && user.premiumExpiraEm >= dataAtual) {
+          user.premiumExpiraEm.setDate(user.premiumExpiraEm.getDate() - diminuirDiasPremium);
+          if (user.premiumExpiraEm < dataAtual) {
+              user.isPremium = false;
+          }
+      }
+    }
+
+    // Remover premium
+    if (removerPremium === 'on') {
+      user.isPremium = false;
+    }
 
     // Salve as alterações no banco de dados
     await user.save();
 
-    return res.redirect('/');
+     res.redirect('/');
+    console.log(user)
   } catch (error) {
     console.error('Erro ao acessar o banco de dados:', error);
     return res.status(500).send('Erro interno do servidor. Por favor, tente novamente mais tarde.');
   }
 });
+
+
 
 
 app.post('/editarr/:username', async (req, res) => {
@@ -831,8 +803,9 @@ app.get('/nsfw/ahegao', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const ahegao = JSON.parse(fs.readFileSync(__dirname + '/data/ahegao.json'));
@@ -842,7 +815,7 @@ app.get('/nsfw/ahegao', async (req, res, next) => {
       url: `${randahegao}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -861,8 +834,9 @@ app.get('/nsfw/ass', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const ass = JSON.parse(fs.readFileSync(__dirname + '/data/ass.json'));
@@ -872,7 +846,7 @@ app.get('/nsfw/ass', async (req, res, next) => {
       url: `${randass}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -891,8 +865,9 @@ app.get('/nsfw/bdsm', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const bdsm = JSON.parse(fs.readFileSync(__dirname + '/data/bdsm.json'));
@@ -902,7 +877,7 @@ app.get('/nsfw/bdsm', async (req, res, next) => {
       url: `${randbdsm}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -922,8 +897,9 @@ app.get('/nsfw/blowjob', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const blowjob = JSON.parse(fs.readFileSync(__dirname + '/data/blowjob.json'));
@@ -933,7 +909,7 @@ app.get('/nsfw/blowjob', async (req, res, next) => {
       url: `${randblowjob}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -952,8 +928,9 @@ app.get('/nsfw/cuckold', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const cuckold = JSON.parse(fs.readFileSync(__dirname + '/data/cuckold.json'));
@@ -963,7 +940,7 @@ app.get('/nsfw/cuckold', async (req, res, next) => {
       url: `${randcuckold}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -982,8 +959,9 @@ app.get('/nsfw/cum', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const cum = JSON.parse(fs.readFileSync(__dirname + '/data/cum.json'));
@@ -993,7 +971,7 @@ app.get('/nsfw/cum', async (req, res, next) => {
       url: `${randcum}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -1012,8 +990,9 @@ app.get('/nsfw/ero', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const ero = JSON.parse(fs.readFileSync(__dirname + '/data/ero.json'));
@@ -1023,7 +1002,7 @@ app.get('/nsfw/ero', async (req, res, next) => {
       url: `${randero}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -1042,8 +1021,9 @@ app.get('/memes', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const meme = JSON.parse(fs.readFileSync(__dirname + '/data/memes-video.json'));
@@ -1053,7 +1033,7 @@ app.get('/memes', async (req, res, next) => {
       url: `${randmeme}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -1072,8 +1052,9 @@ app.get('/nsfw/femdom', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const femdom = JSON.parse(fs.readFileSync(__dirname + '/data/femdom.json'));
@@ -1083,7 +1064,7 @@ app.get('/nsfw/femdom', async (req, res, next) => {
       url: `${randfemdom}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -1102,8 +1083,9 @@ app.get('/nsfw/foot', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const foot = JSON.parse(fs.readFileSync(__dirname + '/data/foot.json'));
@@ -1113,7 +1095,7 @@ app.get('/nsfw/foot', async (req, res, next) => {
       url: `${randfoot}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -1132,8 +1114,9 @@ app.get('/nsfw/gangbang', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const gangbang = JSON.parse(fs.readFileSync(__dirname + '/data/gangbang.json'));
@@ -1143,7 +1126,7 @@ app.get('/nsfw/gangbang', async (req, res, next) => {
       url: `${randgangbang}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -1162,8 +1145,9 @@ app.get('/nsfw/glasses', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const glasses = JSON.parse(fs.readFileSync(__dirname + '/data/glasses.json'));
@@ -1173,7 +1157,7 @@ app.get('/nsfw/glasses', async (req, res, next) => {
       url: `${randglasses}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -1192,8 +1176,9 @@ app.get('/nsfw/hentai', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const hentai = JSON.parse(fs.readFileSync(__dirname + '/data/hentai.json'));
@@ -1203,7 +1188,7 @@ app.get('/nsfw/hentai', async (req, res, next) => {
       url: `${randhentai}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -1222,8 +1207,9 @@ app.get('/nsfw/gifs', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const gifs = JSON.parse(fs.readFileSync(__dirname + '/data/gifs.json'));
@@ -1233,7 +1219,7 @@ app.get('/nsfw/gifs', async (req, res, next) => {
       url: `${randgifs}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -1252,8 +1238,9 @@ app.get('/nsfw/jahy', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const jahy = JSON.parse(fs.readFileSync(__dirname + '/data/jahy.json'));
@@ -1263,7 +1250,7 @@ app.get('/nsfw/jahy', async (req, res, next) => {
       url: `${randjahy}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -1282,8 +1269,9 @@ app.get('/nsfw/manga', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const manga = JSON.parse(fs.readFileSync(__dirname + '/data/manga.json'));
@@ -1293,7 +1281,7 @@ app.get('/nsfw/manga', async (req, res, next) => {
       url: `${randmanga}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -1312,8 +1300,9 @@ app.get('/nsfw/masturbation', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const masturbation = JSON.parse(fs.readFileSync(__dirname + '/data/masturbation.json'));
@@ -1323,7 +1312,7 @@ app.get('/nsfw/masturbation', async (req, res, next) => {
       url: `${randmasturbation}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -1342,8 +1331,9 @@ app.get('/nsfw/neko', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const neko = JSON.parse(fs.readFileSync(__dirname + '/data/neko.json'));
@@ -1353,7 +1343,7 @@ app.get('/nsfw/neko', async (req, res, next) => {
       url: `${randneko}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -1372,8 +1362,9 @@ app.get('/nsfw/orgy', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const orgy = JSON.parse(fs.readFileSync(__dirname + '/data/orgy.json'));
@@ -1383,7 +1374,7 @@ app.get('/nsfw/orgy', async (req, res, next) => {
       url: `${randorgy}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -1404,8 +1395,9 @@ app.get('/nsfw/panties', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const panties = JSON.parse(fs.readFileSync(__dirname + '/data/panties.json'));
@@ -1415,7 +1407,7 @@ app.get('/nsfw/panties', async (req, res, next) => {
       url: `${randpanties}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -1434,8 +1426,9 @@ app.get('/nsfw/pussy', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const pussy = JSON.parse(fs.readFileSync(__dirname + '/data/pussy.json'));
@@ -1445,7 +1438,7 @@ app.get('/nsfw/pussy', async (req, res, next) => {
       url: `${randpussy}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -1464,8 +1457,9 @@ app.get('/nsfw/neko2', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const neko2 = JSON.parse(fs.readFileSync(__dirname + '/data/neko2.json'));
@@ -1475,7 +1469,7 @@ app.get('/nsfw/neko2', async (req, res, next) => {
       url: `${randneko2}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -1494,8 +1488,9 @@ app.get('/nsfw/tentacles', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const tentacles = JSON.parse(fs.readFileSync(__dirname + '/data/tentacles.json'));
@@ -1505,7 +1500,7 @@ app.get('/nsfw/tentacles', async (req, res, next) => {
       url: `${randtentacles}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -1524,8 +1519,9 @@ app.get('/nsfw/thighs', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const thighs = JSON.parse(fs.readFileSync(__dirname + '/data/thighs.json'));
@@ -1535,7 +1531,7 @@ app.get('/nsfw/thighs', async (req, res, next) => {
       url: `${randthighs}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -1554,8 +1550,9 @@ app.get('/nsfw/yuri', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const yuri = JSON.parse(fs.readFileSync(__dirname + '/data/yuri.json'));
@@ -1565,7 +1562,7 @@ app.get('/nsfw/yuri', async (req, res, next) => {
       url: `${randyuri}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -1584,8 +1581,9 @@ app.get('/nsfw/zettai', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const zettai = JSON.parse(fs.readFileSync(__dirname + '/data/zettai.json'));
@@ -1595,7 +1593,7 @@ app.get('/nsfw/zettai', async (req, res, next) => {
       url: `${randzettai}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -1614,8 +1612,9 @@ app.get('/nime/keneki', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const keneki = JSON.parse(fs.readFileSync(__dirname + '/data/keneki.json'));
@@ -1625,7 +1624,7 @@ app.get('/nime/keneki', async (req, res, next) => {
       url: `${randkeneki}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -1644,8 +1643,9 @@ app.get('/nime/megumin', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const megumin = JSON.parse(fs.readFileSync(__dirname + '/data/megumin.json'));
@@ -1655,7 +1655,7 @@ app.get('/nime/megumin', async (req, res, next) => {
       url: `${randmegumin}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -1674,8 +1674,9 @@ app.get('/nime/yotsuba', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const yotsuba = JSON.parse(fs.readFileSync(__dirname + '/data/yotsuba.json'));
@@ -1685,7 +1686,7 @@ app.get('/nime/yotsuba', async (req, res, next) => {
       url: `${randyotsuba}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -1704,8 +1705,9 @@ app.get('/nime/shinomiya', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const shinomiya = JSON.parse(fs.readFileSync(__dirname + '/data/shinomiya.json'));
@@ -1715,7 +1717,7 @@ app.get('/nime/shinomiya', async (req, res, next) => {
       url: `${randshinomiya}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -1734,8 +1736,9 @@ app.get('/nime/yumeko', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const yumeko = JSON.parse(fs.readFileSync(__dirname + '/data/yumeko.json'));
@@ -1745,7 +1748,7 @@ app.get('/nime/yumeko', async (req, res, next) => {
       url: `${randyumeko}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -1764,8 +1767,9 @@ app.get('/nime/tejina', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const tejina = JSON.parse(fs.readFileSync(__dirname + '/data/tejina.json'));
@@ -1775,7 +1779,7 @@ app.get('/nime/tejina', async (req, res, next) => {
       url: `${randtejina}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -1794,8 +1798,9 @@ app.get('/nime/chiho', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const chiho = JSON.parse(fs.readFileSync(__dirname + '/data/chiho.json'));
@@ -1805,7 +1810,7 @@ app.get('/nime/chiho', async (req, res, next) => {
       url: `${randchiho}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -1823,8 +1828,9 @@ app.get('/18/video', async (req, res, next) => {
     return res.sendFile(htmlPath);
   }
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const vid = require("./data/pack.js")
@@ -1835,7 +1841,7 @@ app.get('/18/video', async (req, res, next) => {
       url: `${danvid}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -1852,8 +1858,9 @@ app.get('/18/travazap', async (req, res, next) => {
     return res.sendFile(htmlPath);
   }
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const tra = require("./data/pack.js")
@@ -1864,7 +1871,7 @@ app.get('/18/travazap', async (req, res, next) => {
       url: `${traft}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -1885,8 +1892,9 @@ app.get('/nime/toukachan', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const toukachan = JSON.parse(fs.readFileSync(__dirname + '/data/toukachan.json'));
@@ -1896,7 +1904,7 @@ app.get('/nime/toukachan', async (req, res, next) => {
       url: `${randtoukachan}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -1915,8 +1923,9 @@ app.get('/nime/akira', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const akira = JSON.parse(fs.readFileSync(__dirname + '/data/akira.json'));
@@ -1926,7 +1935,7 @@ app.get('/nime/akira', async (req, res, next) => {
       url: `${randakira}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -1945,8 +1954,9 @@ app.get('/nime/itori', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const itori = JSON.parse(fs.readFileSync(__dirname + '/data/itori.json'));
@@ -1956,7 +1966,7 @@ app.get('/nime/itori', async (req, res, next) => {
       url: `${randitori}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -1975,8 +1985,9 @@ app.get('/nime/kurumi', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const kurumi = JSON.parse(fs.readFileSync(__dirname + '/data/kurumi.json'));
@@ -1986,7 +1997,7 @@ app.get('/nime/kurumi', async (req, res, next) => {
       url: `${randkurumi}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -2005,8 +2016,9 @@ app.get('/nime/miku', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const miku = JSON.parse(fs.readFileSync(__dirname + '/data/miku.json'));
@@ -2016,7 +2028,7 @@ app.get('/nime/miku', async (req, res, next) => {
       url: `${randmiku}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -2035,8 +2047,9 @@ app.get('/nime/pokemon', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const pokemon = JSON.parse(fs.readFileSync(__dirname + '/data/pokemon.json'));
@@ -2046,7 +2059,7 @@ app.get('/nime/pokemon', async (req, res, next) => {
       url: `${randpokemon}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -2065,8 +2078,9 @@ app.get('/nime/ryujin', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const ryujin = JSON.parse(fs.readFileSync(__dirname + '/data/ryujin.json'));
@@ -2076,7 +2090,7 @@ app.get('/nime/ryujin', async (req, res, next) => {
       url: `${randryujin}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -2095,8 +2109,9 @@ app.get('/nime/rose', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const rose = JSON.parse(fs.readFileSync(__dirname + '/data/rose.json'));
@@ -2106,7 +2121,7 @@ app.get('/nime/rose', async (req, res, next) => {
       url: `${randrose}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -2125,8 +2140,9 @@ app.get('/nime/kaori', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const kaori = JSON.parse(fs.readFileSync(__dirname + '/data/kaori.json'));
@@ -2136,7 +2152,7 @@ app.get('/nime/kaori', async (req, res, next) => {
       url: `${randkaori}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -2155,8 +2171,9 @@ app.get('/nime/shizuka', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const shizuka = JSON.parse(fs.readFileSync(__dirname + '/data/shizuka.json'));
@@ -2166,7 +2183,7 @@ app.get('/nime/shizuka', async (req, res, next) => {
       url: `${randshizuka}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -2185,8 +2202,9 @@ app.get('/nime/kaga', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const kaga = JSON.parse(fs.readFileSync(__dirname + '/data/kaga.json'));
@@ -2196,7 +2214,7 @@ app.get('/nime/kaga', async (req, res, next) => {
       url: `${randkaga}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -2215,8 +2233,9 @@ app.get('/nime/kotori', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const kotori = JSON.parse(fs.readFileSync(__dirname + '/data/kotori.json'));
@@ -2226,7 +2245,7 @@ app.get('/nime/kotori', async (req, res, next) => {
       url: `${randkotori}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -2245,8 +2264,9 @@ app.get('/nime/mikasa', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const mikasa = JSON.parse(fs.readFileSync(__dirname + '/data/mikasa.json'));
@@ -2256,7 +2276,7 @@ app.get('/nime/mikasa', async (req, res, next) => {
       url: `${randmikasa}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -2275,8 +2295,9 @@ app.get('/nime/akiyama', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const akiyama = JSON.parse(fs.readFileSync(__dirname + '/data/akiyama.json'));
@@ -2286,7 +2307,7 @@ app.get('/nime/akiyama', async (req, res, next) => {
       url: `${randakiyama}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -2305,8 +2326,9 @@ app.get('/nime/gremory', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const gremory = JSON.parse(fs.readFileSync(__dirname + '/data/gremory.json'));
@@ -2316,7 +2338,7 @@ app.get('/nime/gremory', async (req, res, next) => {
       url: `${randgremory}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -2335,8 +2357,9 @@ app.get('/nime/isuzu', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const isuzu = JSON.parse(fs.readFileSync(__dirname + '/data/isuzu.json'));
@@ -2346,7 +2369,7 @@ app.get('/nime/isuzu', async (req, res, next) => {
       url: `${randisuzu}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -2365,8 +2388,9 @@ app.get('/nime/cosplay', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const cosplay = JSON.parse(fs.readFileSync(__dirname + '/data/cosplay.json'));
@@ -2376,7 +2400,7 @@ app.get('/nime/cosplay', async (req, res, next) => {
       url: `${randcosplay}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -2395,8 +2419,9 @@ app.get('/nime/shina', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const shina = JSON.parse(fs.readFileSync(__dirname + '/data/shina.json'));
@@ -2406,7 +2431,7 @@ app.get('/nime/shina', async (req, res, next) => {
       url: `${randshina}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -2425,8 +2450,9 @@ app.get('/nime/kagura', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const kagura = JSON.parse(fs.readFileSync(__dirname + '/data/kagura.json'));
@@ -2436,7 +2462,7 @@ app.get('/nime/kagura', async (req, res, next) => {
       url: `${randkagura}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -2455,8 +2481,9 @@ app.get('/nime/shinka', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const shinka = JSON.parse(fs.readFileSync(__dirname + '/data/shinka.json'));
@@ -2466,7 +2493,7 @@ app.get('/nime/shinka', async (req, res, next) => {
       url: `${randshinka}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -2485,8 +2512,9 @@ app.get('/nime/eba', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const eba = JSON.parse(fs.readFileSync(__dirname + '/data/eba.json'));
@@ -2496,7 +2524,7 @@ app.get('/nime/eba', async (req, res, next) => {
       url: `${randeba}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -2515,8 +2543,9 @@ app.get('/nime/deidara', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const Deidara = JSON.parse(fs.readFileSync(__dirname + '/data/deidara.json'));
@@ -2526,7 +2555,7 @@ app.get('/nime/deidara', async (req, res, next) => {
       url: `${randDeidara}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -2547,8 +2576,9 @@ app.get('/nime/jeni', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const jeni = JSON.parse(fs.readFileSync(__dirname + '/data/jeni.json'));
@@ -2558,7 +2588,7 @@ app.get('/nime/jeni', async (req, res, next) => {
       url: `${randjeni}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -2578,8 +2608,9 @@ app.get('/random/meme', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const meme = JSON.parse(fs.readFileSync(__dirname + '/data/meme.json'));
@@ -2589,7 +2620,7 @@ app.get('/random/meme', async (req, res, next) => {
       url: `${randmeme}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 app.get('/nime/toukachan', async (req, res, next) => {
@@ -2607,8 +2638,9 @@ app.get('/nime/toukachan', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const toukachan = JSON.parse(fs.readFileSync(__dirname + '/data/toukachan.json'));
@@ -2618,7 +2650,7 @@ app.get('/nime/toukachan', async (req, res, next) => {
       url: `${randtoukachan}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -2637,8 +2669,9 @@ app.get('/nime/akira', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const akira = JSON.parse(fs.readFileSync(__dirname + '/data/akira.json'));
@@ -2648,7 +2681,7 @@ app.get('/nime/akira', async (req, res, next) => {
       url: `${randakira}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -2667,8 +2700,9 @@ app.get('/nime/itori', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const itori = JSON.parse(fs.readFileSync(__dirname + '/data/itori.json'));
@@ -2678,7 +2712,7 @@ app.get('/nime/itori', async (req, res, next) => {
       url: `${randitori}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -2697,8 +2731,9 @@ app.get('/nime/kurumi', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const kurumi = JSON.parse(fs.readFileSync(__dirname + '/data/kurumi.json'));
@@ -2708,7 +2743,7 @@ app.get('/nime/kurumi', async (req, res, next) => {
       url: `${randkurumi}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -2727,8 +2762,9 @@ app.get('/nime/miku', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const miku = JSON.parse(fs.readFileSync(__dirname + '/data/miku.json'));
@@ -2738,7 +2774,7 @@ app.get('/nime/miku', async (req, res, next) => {
       url: `${randmiku}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -2757,8 +2793,9 @@ app.get('/nime/pokemon', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const pokemon = JSON.parse(fs.readFileSync(__dirname + '/data/pokemon.json'));
@@ -2768,7 +2805,7 @@ app.get('/nime/pokemon', async (req, res, next) => {
       url: `${randpokemon}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -2787,8 +2824,9 @@ app.get('/nime/ryujin', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const ryujin = JSON.parse(fs.readFileSync(__dirname + '/data/ryujin.json'));
@@ -2798,7 +2836,7 @@ app.get('/nime/ryujin', async (req, res, next) => {
       url: `${randryujin}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -2817,8 +2855,9 @@ app.get('/nime/rose', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const rose = JSON.parse(fs.readFileSync(__dirname + '/data/rose.json'));
@@ -2828,7 +2867,7 @@ app.get('/nime/rose', async (req, res, next) => {
       url: `${randrose}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -2847,8 +2886,9 @@ app.get('/nime/kaori', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const kaori = JSON.parse(fs.readFileSync(__dirname + '/data/kaori.json'));
@@ -2858,7 +2898,7 @@ app.get('/nime/kaori', async (req, res, next) => {
       url: `${randkaori}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -2877,8 +2917,9 @@ app.get('/nime/shizuka', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const shizuka = JSON.parse(fs.readFileSync(__dirname + '/data/shizuka.json'));
@@ -2888,7 +2929,7 @@ app.get('/nime/shizuka', async (req, res, next) => {
       url: `${randshizuka}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -2907,8 +2948,9 @@ app.get('/nime/kaga', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const kaga = JSON.parse(fs.readFileSync(__dirname + '/data/kaga.json'));
@@ -2918,7 +2960,7 @@ app.get('/nime/kaga', async (req, res, next) => {
       url: `${randkaga}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -2937,8 +2979,9 @@ app.get('/nime/kotori', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const kotori = JSON.parse(fs.readFileSync(__dirname + '/data/kotori.json'));
@@ -2948,7 +2991,7 @@ app.get('/nime/kotori', async (req, res, next) => {
       url: `${randkotori}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -2967,8 +3010,9 @@ app.get('/nime/mikasa', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const mikasa = JSON.parse(fs.readFileSync(__dirname + '/data/mikasa.json'));
@@ -2978,7 +3022,7 @@ app.get('/nime/mikasa', async (req, res, next) => {
       url: `${randmikasa}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -2997,8 +3041,9 @@ app.get('/nime/akiyama', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const akiyama = JSON.parse(fs.readFileSync(__dirname + '/data/akiyama.json'));
@@ -3008,7 +3053,7 @@ app.get('/nime/akiyama', async (req, res, next) => {
       url: `${randakiyama}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -3027,8 +3072,9 @@ app.get('/nime/gremory', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const gremory = JSON.parse(fs.readFileSync('./data/gremory.json'));
@@ -3038,7 +3084,7 @@ app.get('/nime/gremory', async (req, res, next) => {
       url: `${randgremory}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -3057,8 +3103,9 @@ app.get('/nime/isuzu', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const isuzu = JSON.parse(fs.readFileSync(__dirname + '/data/isuzu.json'));
@@ -3068,7 +3115,7 @@ app.get('/nime/isuzu', async (req, res, next) => {
       url: `${randisuzu}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -3087,8 +3134,9 @@ app.get('/nime/cosplay', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const cosplay = JSON.parse(fs.readFileSync(__dirname + '/data/cosplay.json'));
@@ -3098,7 +3146,7 @@ app.get('/nime/cosplay', async (req, res, next) => {
       url: `${randcosplay}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -3117,8 +3165,9 @@ app.get('/nime/shina', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const shina = JSON.parse(fs.readFileSync(__dirname + '/data/shina.json'));
@@ -3128,7 +3177,7 @@ app.get('/nime/shina', async (req, res, next) => {
       url: `${randshina}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -3147,8 +3196,9 @@ app.get('/nime/kagura', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const kagura = JSON.parse(fs.readFileSync(__dirname + '/data/kagura.json'));
@@ -3158,7 +3208,7 @@ app.get('/nime/kagura', async (req, res, next) => {
       url: `${randkagura}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -3177,8 +3227,9 @@ app.get('/nime/shinka', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const shinka = JSON.parse(fs.readFileSync(__dirname + '/data/shinka.json'));
@@ -3188,7 +3239,7 @@ app.get('/nime/shinka', async (req, res, next) => {
       url: `${randshinka}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -3207,8 +3258,9 @@ app.get('/nime/eba', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const eba = JSON.parse(fs.readFileSync(__dirname + '/data/eba.json'));
@@ -3218,7 +3270,7 @@ app.get('/nime/eba', async (req, res, next) => {
       url: `${randeba}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -3237,8 +3289,9 @@ app.get('/nime/deidara', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const Deidara = JSON.parse(fs.readFileSync(__dirname + '/data/deidara.json'));
@@ -3248,7 +3301,7 @@ app.get('/nime/deidara', async (req, res, next) => {
       url: `${randDeidara}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -3269,8 +3322,9 @@ app.get('/nime/jeni', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const jeni = JSON.parse(fs.readFileSync(__dirname + '/data/jeni.json'));
@@ -3280,7 +3334,7 @@ app.get('/nime/jeni', async (req, res, next) => {
       url: `${randjeni}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -3300,8 +3354,9 @@ app.get('/random/meme', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const meme = JSON.parse(fs.readFileSync(__dirname + '/data/meme.json'));
@@ -3311,7 +3366,7 @@ app.get('/random/meme', async (req, res, next) => {
       url: `${randmeme}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -3330,8 +3385,9 @@ app.get('/wallpaper/satanic', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const satanic = JSON.parse(fs.readFileSync(__dirname + '/data/satanic.json'));
@@ -3341,7 +3397,7 @@ app.get('/wallpaper/satanic', async (req, res, next) => {
       url: `${randsatanic}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -3362,8 +3418,9 @@ app.get('/nime/itachi', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const Itachi = JSON.parse(fs.readFileSync(__dirname + '/data/itachi.json'));
@@ -3373,7 +3430,7 @@ app.get('/nime/itachi', async (req, res, next) => {
       url: `${randItachi}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -3392,8 +3449,9 @@ app.get('/nime/madara', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const Madara = JSON.parse(fs.readFileSync(__dirname + '/data/madara.json'));
@@ -3403,7 +3461,7 @@ app.get('/nime/madara', async (req, res, next) => {
       url: `${randMadara}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -3422,8 +3480,9 @@ app.get('/nime/yuki', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const Yuki = JSON.parse(fs.readFileSync(__dirname + '/data/yuki.json'));
@@ -3433,7 +3492,7 @@ app.get('/nime/yuki', async (req, res, next) => {
       url: `${randYuki}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -3452,8 +3511,9 @@ app.get('/wallpaper/asuna', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const asuna = JSON.parse(fs.readFileSync(__dirname + '/data/asuna.json'));
@@ -3463,7 +3523,7 @@ app.get('/wallpaper/asuna', async (req, res, next) => {
       url: `${randasuna}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -3482,8 +3542,9 @@ app.get('/nime/ayuzawa', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const ayuzawa = JSON.parse(fs.readFileSync(__dirname + '/data/ayuzawa.json'));
@@ -3493,7 +3554,7 @@ app.get('/nime/ayuzawa', async (req, res, next) => {
       url: `${randayuzawa}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -3512,8 +3573,9 @@ app.get('/nime/chitoge', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const chitoge = JSON.parse(fs.readFileSync(__dirname + '/data/chitoge.json'));
@@ -3523,7 +3585,7 @@ app.get('/nime/chitoge', async (req, res, next) => {
       url: `${randchitoge}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -3542,8 +3604,9 @@ app.get('/nime/emilia', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const emilia = JSON.parse(fs.readFileSync(__dirname + '/data/emilia.json'));
@@ -3553,7 +3616,7 @@ app.get('/nime/emilia', async (req, res, next) => {
       url: `${randemilia}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -3572,8 +3635,9 @@ app.get('/nime/hestia', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const hestia = JSON.parse(fs.readFileSync(__dirname + '/data/hestia.json'));
@@ -3583,7 +3647,7 @@ app.get('/nime/hestia', async (req, res, next) => {
       url: `${randhestia}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -3602,8 +3666,9 @@ app.get('/nime/inori', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const inori = JSON.parse(fs.readFileSync(__dirname + '/data/inori.json'));
@@ -3613,7 +3678,7 @@ app.get('/nime/inori', async (req, res, next) => {
       url: `${randinori}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -3632,8 +3697,9 @@ app.get('/nime/ana', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const ana = JSON.parse(fs.readFileSync(__dirname + '/data/ana.json'));
@@ -3643,7 +3709,7 @@ app.get('/nime/ana', async (req, res, next) => {
       url: `${randana}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -3662,8 +3728,9 @@ app.get('/nime/boruto', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const Boruto = JSON.parse(fs.readFileSync(__dirname + '/data/boruto.json'));
@@ -3673,7 +3740,7 @@ app.get('/nime/boruto', async (req, res, next) => {
       url: `${randBoruto}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -3692,8 +3759,9 @@ app.get('/nime/erza', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const Erza = JSON.parse(fs.readFileSync(__dirname + '/data/erza.json'));
@@ -3703,7 +3771,7 @@ app.get('/nime/erza', async (req, res, next) => {
       url: `${randErza}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -3722,8 +3790,9 @@ app.get('/nime/kakasih', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const Kakasih = JSON.parse(fs.readFileSync(__dirname + '/data/kakasih.json'));
@@ -3733,7 +3802,7 @@ app.get('/nime/kakasih', async (req, res, next) => {
       url: `${randKakasih}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -3752,8 +3821,9 @@ app.get('/nime/sagiri', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const Sagiri = JSON.parse(fs.readFileSync(__dirname + '/data/sagiri.json'));
@@ -3763,7 +3833,7 @@ app.get('/nime/sagiri', async (req, res, next) => {
       url: `${randSagiri}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -3782,8 +3852,9 @@ app.get('/nime/minato', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const Minato = JSON.parse(fs.readFileSync(__dirname + '/data/minato.json'));
@@ -3793,7 +3864,7 @@ app.get('/nime/minato', async (req, res, next) => {
       url: `${randMinato}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -3812,8 +3883,9 @@ app.get('/nime/naruto', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const Naruto = JSON.parse(fs.readFileSync(__dirname + '/data/naruto.json'));
@@ -3823,7 +3895,7 @@ app.get('/nime/naruto', async (req, res, next) => {
       url: `${randNaruto}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -3842,8 +3914,9 @@ app.get('/nime/nezuko', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const Nezuko = JSON.parse(fs.readFileSync(__dirname + '/data/nezuko.json'));
@@ -3853,7 +3926,7 @@ app.get('/nime/nezuko', async (req, res, next) => {
       url: `${randNezuko}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -3872,8 +3945,9 @@ app.get('/nime/onepiece', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const Pic = JSON.parse(fs.readFileSync(__dirname + '/data/onepiece.json'));
@@ -3883,7 +3957,7 @@ app.get('/nime/onepiece', async (req, res, next) => {
       url: `${randPic}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -3902,8 +3976,9 @@ app.get('/nime/rize', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const Rize = JSON.parse(fs.readFileSync(__dirname + '/data/rize.json'));
@@ -3913,7 +3988,7 @@ app.get('/nime/rize', async (req, res, next) => {
       url: `${randRize}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -3932,8 +4007,9 @@ app.get('/nime/sakura', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const Sakura = JSON.parse(fs.readFileSync(__dirname + '/data/sakura.json'));
@@ -3943,7 +4019,7 @@ app.get('/nime/sakura', async (req, res, next) => {
       url: `${randSakura}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -3962,8 +4038,9 @@ app.get('/nime/sasuke', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const Sasuke = JSON.parse(fs.readFileSync(__dirname + '/data/sasuke.json'));
@@ -3973,7 +4050,7 @@ app.get('/nime/sasuke', async (req, res, next) => {
       url: `${randSasuke}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -3992,8 +4069,9 @@ app.get('/nime/tsunade', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const Su = JSON.parse(fs.readFileSync(__dirname + '/data/tsunade.json'));
@@ -4003,7 +4081,7 @@ app.get('/nime/tsunade', async (req, res, next) => {
       url: `${randSu}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -4022,8 +4100,9 @@ app.get('/nime/montor', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const Mon = JSON.parse(fs.readFileSync(__dirname + '/data/montor.json'));
@@ -4033,7 +4112,7 @@ app.get('/nime/montor', async (req, res, next) => {
       url: `${randMon}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 // ain
@@ -4052,8 +4131,9 @@ app.get('/nime/mobil', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const Mob = JSON.parse(fs.readFileSync(__dirname + '/data/mobil.json'));
@@ -4063,7 +4143,7 @@ app.get('/nime/mobil', async (req, res, next) => {
       url: `${randMob}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -4083,8 +4163,9 @@ app.get('/nime/anime', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const Wai23 = JSON.parse(fs.readFileSync(__dirname + '/data/wallhp2.json'));
@@ -4094,7 +4175,7 @@ app.get('/nime/anime', async (req, res, next) => {
       url: `${randWai23}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -4114,8 +4195,9 @@ app.get('/nime/wallhp', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const Wai22 = JSON.parse(fs.readFileSync(__dirname + '/data/wallhp.json'));
@@ -4125,7 +4207,7 @@ app.get('/nime/wallhp', async (req, res, next) => {
       url: `${randWai22}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -4144,8 +4226,9 @@ app.get('/nime/waifu2', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const Wai2 = JSON.parse(fs.readFileSync(__dirname + '/data/waifu2.json'));
@@ -4155,7 +4238,7 @@ app.get('/nime/waifu2', async (req, res, next) => {
       url: `${randWai2}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -4174,8 +4257,9 @@ app.get('/nime/waifu', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const Wai = JSON.parse(fs.readFileSync(__dirname + '/data/waifu.json'));
@@ -4185,7 +4269,7 @@ app.get('/nime/waifu', async (req, res, next) => {
       url: `${randWai}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -4205,8 +4289,9 @@ app.get('/nime/hekel', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     Hekel = JSON.parse(fs.readFileSync(__dirname + '/data/hekel.json'));
@@ -4216,7 +4301,7 @@ app.get('/nime/hekel', async (req, res, next) => {
       url: `${randHekel}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -4235,8 +4320,9 @@ app.get('/nime/kucing', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     Kucing = JSON.parse(fs.readFileSync(__dirname + '/data/kucing.json'));
@@ -4246,7 +4332,7 @@ app.get('/nime/kucing', async (req, res, next) => {
       url: `${randKucing}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -4265,8 +4351,9 @@ app.get('/wallpaper/pubg', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     Pubg = JSON.parse(fs.readFileSync(__dirname + '/data/pubg.json'));
@@ -4276,7 +4363,7 @@ app.get('/wallpaper/pubg', async (req, res, next) => {
       url: `${randPubg}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -4295,8 +4382,9 @@ app.get('/wallpaper/ppcouple', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     Pp = JSON.parse(fs.readFileSync(__dirname + '/data/profil.json'));
@@ -4306,7 +4394,7 @@ app.get('/wallpaper/ppcouple', async (req, res, next) => {
       url: `${randPp}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -4325,8 +4413,9 @@ app.get('/wallpaper/anjing', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     Anjing = JSON.parse(fs.readFileSync(__dirname + '/data/anjing.json'));
@@ -4336,7 +4425,7 @@ app.get('/wallpaper/anjing', async (req, res, next) => {
       url: `${randAnjing}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -4355,8 +4444,9 @@ app.get('/nime/doraemon', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     Dora = JSON.parse(fs.readFileSync(__dirname + '/data/doraemon.json'));
@@ -4366,7 +4456,7 @@ app.get('/nime/doraemon', async (req, res, next) => {
       url: `${randDora}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -4386,8 +4476,9 @@ app.get('/nime/elaina', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const Elaina = JSON.parse(fs.readFileSync(__dirname + '/data/elaina.json'))
@@ -4398,7 +4489,7 @@ app.get('/nime/elaina', async (req, res, next) => {
       url: `${randElaina}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -4418,8 +4509,9 @@ app.get('/nime/loli', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const Loli = JSON.parse(fs.readFileSync(__dirname + '/data/loli.json'))
@@ -4430,7 +4522,7 @@ app.get('/nime/loli', async (req, res, next) => {
       url: `${randLoli}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -4450,8 +4542,9 @@ app.get('/nime/yuri', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const Yuri = JSON.parse(fs.readFileSync(__dirname + '/data/yuri.json'))
@@ -4461,7 +4554,7 @@ app.get('/nime/yuri', async (req, res, next) => {
       url: `${randYuri}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -4481,8 +4574,9 @@ app.get('/nime/cecan', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const cecan = JSON.parse(fs.readFileSync(__dirname + '/data/cecan.json'));
@@ -4493,7 +4587,7 @@ app.get('/nime/cecan', async (req, res, next) => {
       url: `${randCecan}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -4513,8 +4607,9 @@ app.get('/wallpaper/aesthetic', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const Aesthetic = JSON.parse(fs.readFileSync(__dirname + '/data/aesthetic.json'));
@@ -4525,7 +4620,7 @@ app.get('/wallpaper/aesthetic', async (req, res, next) => {
       url: `${randAesthetic}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -4546,8 +4641,9 @@ app.get('/nime/sagiri', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const Sagiri = JSON.parse(fs.readFileSync(__dirname + '/data/sagiri.json'));
@@ -4558,7 +4654,7 @@ app.get('/nime/sagiri', async (req, res, next) => {
       url: `${randSagiri}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -4577,8 +4673,9 @@ app.get('/nime/shota', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const Shota = JSON.parse(fs.readFileSync(__dirname + '/data/shota.json'));
@@ -4589,7 +4686,7 @@ app.get('/nime/shota', async (req, res, next) => {
       url: `${randShota}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -4608,8 +4705,9 @@ app.get('/nime/nsfwloli', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const Lol = JSON.parse(fs.readFileSync(__dirname + '/data/nsfwloli.json'));
@@ -4620,7 +4718,7 @@ app.get('/nime/nsfwloli', async (req, res, next) => {
       url: `${randLol}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -4640,8 +4738,9 @@ app.get('/nime/hinata', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const Hinata = JSON.parse(fs.readFileSync(__dirname + '/data/hinata.json'));
@@ -4652,7 +4751,7 @@ app.get('/nime/hinata', async (req, res, next) => {
       url: `${randHin}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -4672,8 +4771,9 @@ app.get('/download/ytmp3', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
     ytDonlodMp3(url)
       .then((result) => {
@@ -4706,8 +4806,9 @@ app.get('/download/tiktok', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
     TiktokDownload(url)
       .then((result) => {
@@ -4737,8 +4838,9 @@ app.get('/download/ytmp4', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
     ytDonlodMp4(url)
       .then((result) => {
@@ -4768,8 +4870,9 @@ app.get("/yt/playmp3", async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
     ytPlayMp3(query)
       .then((result) => {
@@ -4802,8 +4905,9 @@ app.get("/yt/playmp4", async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
     ytPlayMp4(query)
       .then((result) => {
@@ -4833,8 +4937,9 @@ app.get('/anime/amv', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
     const amv = JSON.parse(fs.readFileSync(path + '/data/amv.json'));
     const randomAmv = amv[Math.floor(Math.random() * amv.length)];
@@ -4865,8 +4970,9 @@ app.get('/wallpaper/cyberspace', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const cyberspace = JSON.parse(fs.readFileSync(__dirname + '/data/CyberSpace.json'));
@@ -4895,8 +5001,9 @@ app.get('/wallpaper/gaming', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const gaming = JSON.parse(fs.readFileSync(__dirname + '/data/GameWallp.json'));
@@ -4925,8 +5032,9 @@ app.get('/wallpaper/programing', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const programing = JSON.parse(fs.readFileSync(__dirname + '/data/Programming.json'));
@@ -4955,8 +5063,9 @@ app.get('/wallpaper/wallpapertec', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const teknologi = JSON.parse(fs.readFileSync(__dirname + '/data/Technology.json'));
@@ -4985,8 +5094,9 @@ app.get('/wallpaper/mountain', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const mountain = JSON.parse(fs.readFileSync(__dirname + '/data/Mountain.json'));
@@ -5017,8 +5127,9 @@ app.get('/wallpaper/satanic', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const satanic = JSON.parse(fs.readFileSync(__dirname + '/data/satanic.json'));
@@ -5049,8 +5160,9 @@ app.get('/wallpaper/asuna', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const asuna = JSON.parse(fs.readFileSync(__dirname + '/data/asuna.json'));
@@ -5080,8 +5192,9 @@ app.get('/wallpaper/pubg', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     Pubg = JSON.parse(fs.readFileSync(__dirname + '/data/pubg.json'));
@@ -5110,8 +5223,9 @@ app.get('/wallpaper/ppcouple', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     Pp = JSON.parse(fs.readFileSync(__dirname + '/data/profil.json'));
@@ -5140,8 +5254,9 @@ app.get('/wallpaper/anjing', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     Anjing = JSON.parse(fs.readFileSync(__dirname + '/data/anjing.json'));
@@ -5170,8 +5285,9 @@ app.get('/wallpaper/aesthetic', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const Aesthetic = JSON.parse(fs.readFileSync(__dirname + '/data/aesthetic.json'));
@@ -5202,8 +5318,9 @@ app.get("/download/pinterest", async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     pin.pinterest(query)
@@ -5232,8 +5349,9 @@ app.get('/memes', async (req, res, next) => {
   }
 
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const meme = JSON.parse(fs.readFileSync(__dirname + '/data/memes-video.json'));
@@ -5243,7 +5361,7 @@ app.get('/memes', async (req, res, next) => {
       url: `${randmeme}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -5260,8 +5378,9 @@ app.get('/18/video', async (req, res, next) => {
     return res.sendFile(htmlPath);
   }
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const vid = require("./data/pack.js")
@@ -5272,7 +5391,7 @@ app.get('/18/video', async (req, res, next) => {
       url: `${danvid}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -5289,8 +5408,9 @@ app.get('/18/travazap', async (req, res, next) => {
     return res.sendFile(htmlPath);
   }
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const tra = require("./data/pack.js")
@@ -5301,7 +5421,7 @@ app.get('/18/travazap', async (req, res, next) => {
       url: `${traft}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -5318,8 +5438,9 @@ app.get('/18/foto_18', async (req, res, next) => {
     return res.sendFile(htmlPath);
   }
 
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const tra = require("./data/pack.js")
@@ -5330,7 +5451,7 @@ app.get('/18/foto_18', async (req, res, next) => {
       url: `${traft}`
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 })
 
@@ -5345,8 +5466,9 @@ app.get('/welcome', async (req, res) => {
   if (user.isBaned === true) {
     return res.sendFile(htmlPath);
   }
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
     const nick = req.query.nick || 'clover';
     const guildName = req.query.guildName || 'clover grupo';
@@ -5386,7 +5508,7 @@ app.get('/welcome', async (req, res) => {
       fs.unlinkSync('background.jpg');
     }
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 });
 app.get('/goodbye', async (req, res) => {
@@ -5399,8 +5521,9 @@ app.get('/goodbye', async (req, res) => {
   if (user.isBaned === true) {
     return res.sendFile(htmlPath);
   }
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const nick = req.query.nick || "clover";
@@ -5441,7 +5564,7 @@ app.get('/goodbye', async (req, res) => {
       fs.unlinkSync('background.jpg');
     }
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 });
 
@@ -5482,8 +5605,9 @@ app.get('/ranking', async (req, res) => {
   if (user.isBaned === true) {
     return res.sendFile(htmlPath);
   }
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
     const username = req.query.nick || 'clover';
     const currxp = req.query.currxp || '100';
@@ -5525,7 +5649,7 @@ app.get('/ranking', async (req, res) => {
       fs.unlinkSync('rank.png');
     }
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 });
 
@@ -5540,8 +5664,9 @@ app.get('/play-store-search', async (req, res) => {
   if (user.isBaned === true) {
     return res.sendFile(htmlPath);
   }
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const appName = req.query.appName;
@@ -5549,7 +5674,7 @@ app.get('/play-store-search', async (req, res) => {
     res.json(result);
 
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 });
 
@@ -5564,15 +5689,16 @@ app.get('/memes-droid', async (req, res) => {
   if (user.isBaned === true) {
     return res.sendFile(htmlPath);
   }
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const result = await memesDroid();
     res.json(result);
 
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 });
 
@@ -5587,15 +5713,16 @@ app.get('/grupos-zap', async (req, res) => {
   if (user.isBaned === true) {
     return res.sendFile(htmlPath);
   }
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const result = await gruposZap();
     res.json(result);
 
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 });
 
@@ -5610,8 +5737,9 @@ app.get('/anime-fire-download', async (req, res) => {
   if (user.isBaned === true) {
     return res.sendFile(htmlPath);
   }
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const url = req.query.url;
@@ -5619,7 +5747,7 @@ app.get('/anime-fire-download', async (req, res) => {
     res.json(result);
 
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 });
 
@@ -5634,8 +5762,9 @@ app.get('/animes-fire-search', async (req, res) => {
   if (user.isBaned === true) {
     return res.sendFile(htmlPath);
   }
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const query = req.query.q;
@@ -5643,7 +5772,7 @@ app.get('/animes-fire-search', async (req, res) => {
     res.json(result);
 
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 });
 
@@ -5658,8 +5787,9 @@ app.get('/animes-fire-eps', async (req, res) => {
   if (user.isBaned === true) {
     return res.sendFile(htmlPath);
   }
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const url = req.query.url;
@@ -5667,7 +5797,7 @@ app.get('/animes-fire-eps', async (req, res) => {
     res.json(result);
 
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 });
 
@@ -5682,15 +5812,16 @@ app.get('/ultimas-noticias', async (req, res) => {
   if (user.isBaned === true) {
     return res.sendFile(htmlPath);
   }
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const result = await ultimasNoticias();
     res.json(result);
 
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 });
 
@@ -5705,15 +5836,16 @@ app.get('/random-grupos', async (req, res) => {
   if (user.isBaned === true) {
     return res.sendFile(htmlPath);
   }
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const result = await randomGrupos();
     res.json(result);
 
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 });
 
@@ -5728,8 +5860,9 @@ app.get('/xvideos-downloader', async (req, res) => {
   if (user.isBaned === true) {
     return res.sendFile(htmlPath);
   }
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const url = req.query.url;
@@ -5737,7 +5870,7 @@ app.get('/xvideos-downloader', async (req, res) => {
     res.json(result);
 
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 });
 
@@ -5752,8 +5885,9 @@ app.get('/xvideos-search', async (req, res) => {
   if (user.isBaned === true) {
     return res.sendFile(htmlPath);
   }
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const query = req.query.q;
@@ -5761,7 +5895,7 @@ app.get('/xvideos-search', async (req, res) => {
     res.json(result);
 
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 });
 
@@ -5776,15 +5910,16 @@ app.get('/frase-amor', async (req, res) => {
   if (user.isBaned === true) {
     return res.sendFile(htmlPath);
   }
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const result = await fraseAmor();
     res.json(result);
 
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 });
 
@@ -5799,15 +5934,16 @@ app.get('/ifunny', async (req, res) => {
   if (user.isBaned === true) {
     return res.sendFile(htmlPath);
   }
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const result = await iFunny();
     res.json(result);
 
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 });
 
@@ -5822,15 +5958,16 @@ app.get('/frases-pensador', async (req, res) => {
   if (user.isBaned === true) {
     return res.sendFile(htmlPath);
   }
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const result = await frasesPensador();
     res.json(result);
 
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 });
 
@@ -5845,15 +5982,16 @@ app.get('/wallpaper2', async (req, res) => {
   if (user.isBaned === true) {
     return res.sendFile(htmlPath);
   }
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const result = await wallpaper2();
     res.json(result);
 
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 });
 
@@ -5868,15 +6006,16 @@ app.get('/hentai', async (req, res) => {
   if (user.isBaned === true) {
     return res.sendFile(htmlPath);
   }
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const result = await hentai();
     res.json(result);
 
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 });
 
@@ -5891,8 +6030,9 @@ app.get('/styletext', async (req, res) => {
   if (user.isBaned === true) {
     return res.sendFile(htmlPath);
   }
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     const text = req.query.text;
@@ -5900,7 +6040,7 @@ app.get('/styletext', async (req, res) => {
     res.json(result);
 
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 });
 
@@ -5915,8 +6055,9 @@ app.get('/attp', async (req, res, next) => {
   if (user.isBaned === true) {
     return res.sendFile(htmlPath);
   }
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     var texto = req.query.texto
@@ -5976,7 +6117,7 @@ app.get('/attp', async (req, res, next) => {
 
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 });
 
@@ -5990,8 +6131,9 @@ app.get('/attp2', async (req, res, next) => {
   if (user.isBaned === true) {
     return res.sendFile(htmlPath);
   }
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
 
     var texto = req.query.texto
@@ -6051,7 +6193,7 @@ app.get('/attp2', async (req, res, next) => {
 
     })
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 });
 
@@ -6068,8 +6210,9 @@ app.get('/cardgame', async (req, res) => {
   if (user.isBaned === true) {
     return res.sendFile(htmlPath);
   }
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
     const { foto, atk, def, legenda, nick } = req.query
     try {
@@ -6115,7 +6258,7 @@ app.get('/cardgame', async (req, res) => {
       res.status(500).send('Erro ao gerar a thumbnail.');
     }
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 });
 
@@ -6134,8 +6277,9 @@ app.get('/welcome2', async (req, res) => {
   if (user.isBaned === true) {
     return res.sendFile(htmlPath);
   }
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
     try {
       const width = 1920;
@@ -6220,7 +6364,7 @@ app.get('/welcome2', async (req, res) => {
       res.status(500).send('Erro ao gerar a imagem.');
     }
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 });
 
@@ -6235,8 +6379,9 @@ app.get('/goodbye2', async (req, res) => {
   if (user.isBaned === true) {
     return res.sendFile(htmlPath);
   }
-  diminuirSaldo(username);
+  const resultadoDiminuicao = diminuirSaldo(username);
   adicionarSaldo(username)
+  // const add = adicionarSaldo(username)
   if (user.saldo > 1) {
     try {
       const width = 1920;
@@ -6321,7 +6466,7 @@ app.get('/goodbye2', async (req, res) => {
       res.status(500).send('Erro ao gerar a imagem.');
     }
   } else {
-    return res.sendFile(htmlPath);
+    return res.sendFile(htmlPath);;
   }
 });
 
