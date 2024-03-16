@@ -115,6 +115,10 @@ mongoose.connect('mongodb+srv://anikit:EPt96b3yMx3wmEC@cluster0.ukzkyjq.mongodb.
 mercadopago.configure({
   access_token: 'APP_USR-8259792445335336-080911-dea2c74872b688a02354a83a497effba-1445374797',
 });
+/*
+mongoose.connect('mongodb+srv://pedro13755:h77UrfAohhybqngF@cluster0.wlbjwkj.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0', { useNewUrlParser: true, useUnifiedTopology: true });
+*/
+  
 //mongoose.connect('mongodb+srv://clover:clover@cluster0.6lnnwns.mongodb.net/?retryWrites=true&w=majority', { useNewUrlParser: true, useUnifiedTopology: true });
 
 const userSchema = new mongoose.Schema({
@@ -273,13 +277,43 @@ const isUserBanned = async (username) => {
 };
 
 
-// pagamentos \\
+const http = require('http');
+const server = http.createServer(app);
+const socketIo = require('socket.io');
+const io = socketIo(server);
 
-
-app.get('/loja', (req, res) => {
-
+app.get('/chat', async (req, res) => {
   const user = req.session.user;
+  
+if (user) {
+  const { username, password, verificationCode, isVerified } = user;
+  const userDb = await User.findOne({ username });
+  if (isVerified === true) {
+    res.render('chat', { userDb });
+  } else {
+    return res.redirect('/verify');
+  }
+} else {
+  return res.redirect('/login');
+}
+  
+});
 
+io.on('connection', (socket) => {
+    console.log('Um cliente se conectou');
+
+    socket.on('chat message', (msg) => {
+        console.log('Mensagem recebida:', msg);
+        io.emit('chat message', msg); // Envia a mensagem para todos os clientes conectados
+    });
+});
+
+
+
+
+// pagamentos \\
+app.get('/loja', (req, res) => {
+  const user = req.session.user;
   if (user) {
     const { username, password, verificationCode, isVerified } = user;
     if (isVerified === true) {
@@ -835,13 +869,19 @@ app.get('/nsfw/ahegao', async (req, res, next) => {
   diminuirSaldo(username);
   adicionarSaldo(username)
   if (user.saldo > 1) {
-
+/*
     const ahegao = JSON.parse(fs.readFileSync(__dirname + '/data/ahegao.json'));
     const randahegao = ahegao[Math.floor(Math.random() * ahegao.length)];
 
     res.json({
       url: `${randahegao}`
     })
+    */
+   fetch('https://nekos.life/api/hug').then(data => data.json()).then(data => {
+   res.json({
+    url: `${data.url}`
+  })
+})
   } else {
     return res.sendFile(htmlPath);
   }
