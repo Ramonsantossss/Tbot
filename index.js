@@ -25,6 +25,14 @@ const fs = require('fs');
 const knights = require('knights-canvas');
 const cron = require('node-cron');
 
+const { attp1 } = require('./data/src/attp1.js');
+const { attp2 } = require('./data/src/attp2.js');
+const { attp3 } = require('./data/src/attp3.js');
+const { attp4 } = require('./data/src/attp4.js');
+const { attp5 } = require('./data/src/attp5.js');
+const { attp6 } = require('./data/src/attp6.js');
+const { attp7 } = require('./data/src/attp7.js');
+
 const downloadImage = async (url, filename) => {
   const response = await axios.get(url, { responseType: 'arraybuffer' });
   fs.writeFileSync(filename, Buffer.from(response.data, 'binary'));
@@ -5926,8 +5934,8 @@ app.get('/attp', async (req, res, next) => {
   adicionarSaldo(username)
   if (user.saldo > 1) {
     const texto = req.query.texto
-    const { attp2 } = require('./data/src/attp2.js');
-    await attp2(texto)
+    const { attp1 } = require('./data/src/attp1.js');
+    await attp1(texto)
     res.sendFile(__dirname + '/modulos-api/src/attp.webp')
 
   } else {
@@ -5935,84 +5943,132 @@ app.get('/attp', async (req, res, next) => {
   }
 });
 
-app.get('/attp2', async (req, res, next) => {
+
+
+
+
+
+
+app.get('/attp1', async (req, res, next) => {
   const { username, key } = req.query;
-  const users = Person
   const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.sendFile(htmlPath);
-  }
-  if (user.isBaned === true) {
+  if (!user || user.isBaned) {
     return res.sendFile(htmlPath);
   }
   diminuirSaldo(username);
-  adicionarSaldo(username)
+  adicionarSaldo(username);
   if (user.saldo > 1) {
-
-    var texto = req.query.texto
-    if (!texto) return res.json({ status: false, message: "[!] masukan parameter texto" })
-
-    const file = "./attp.gif"
-
-    let length = texto.length
-
-    var font = 90
-    if (length > 12) { font = 68 }
-    if (length > 15) { font = 58 }
-    if (length > 18) { font = 55 }
-    if (length > 19) { font = 50 }
-    if (length > 22) { font = 48 }
-    if (length > 24) { font = 38 }
-    if (length > 27) { font = 35 }
-    if (length > 30) { font = 30 }
-    if (length > 35) { font = 26 }
-    if (length > 39) { font = 25 }
-    if (length > 40) { font = 20 }
-    if (length > 49) { font = 10 }
-    Canvas.registerFont('./SF-Pro.ttf', { family: 'SF-Pro' })
-    canvasGif(
-      file,
-      (ctx, width, height, totalFrames, currentFrame) => {
-
-        var couler = ["#ff0000", "#ffe100", "#33ff00", "#00ffcc", "#0033ff", "#9500ff", "#ff00ff"]
-        let jadi = couler[Math.floor(Math.random() * couler.length)]
-
-
-        function drawStroked(text, x, y) {
-          ctx.font = `${font}px SF-Pro`
-          ctx.strokeStyle = 'black'
-          ctx.lineWidth = 3
-          ctx.textAlign = 'center'
-          ctx.strokeText(text, x, y)
-          ctx.fillStyle = jadi
-          ctx.fillText(text, x, y)
-        }
-
-        drawStroked(texto, 290, 300)
-
-      },
-      {
-        coalesce: false, // whether the gif should be coalesced first (requires graphicsmagick), default: false
-        delay: 0, // the delay between each frame in ms, default: 0
-        repeat: 0, // how many times the GIF should repeat, default: 0 (runs forever)
-        algorithm: 'neuquant', // the algorithm the encoder should use, default: 'neuquant',
-        optimiser: false, // whether the encoder should use the in-built optimiser, default: false,
-        fps: 22, // the amount of frames to render per second, default: 60
-        quality: 1, // the quality of the gif, a value between 1 and 100, default: 100
-      }
-    ).then((buffer) => {
-      res.set({ 'Content-Type': 'gif' })
-      res.send(buffer)
-
-    })
+    const texto = req.query.texto;
+    await attp1(texto);
+    res.sendFile(__dirname + '/modulos-api/src/attp.webp');
   } else {
     return res.sendFile(htmlPath);
   }
 });
 
+app.get('/attp2', async (req, res, next) => {
+  const { username, key } = req.query;
+  const user = await User.findOne({ username, key });
+  if (!user || user.isBaned) {
+    return res.sendFile(htmlPath);
+  }
+  diminuirSaldo(username);
+  adicionarSaldo(username);
+  if (user.saldo > 1) {
+    const texto = req.query.texto;
+    await attp2(texto);
+    res.sendFile(__dirname + '/modulos-api/src/attp.webp');
+  } else {
+    return res.sendFile(htmlPath);
+  }
+});
 
+app.get('/attp3', async (req, res, next) => {
+  const { username, key } = req.query;
+  const user = await User.findOne({ username, key });
+  if (!user || user.isBaned) {
+    return res.sendFile(htmlPath);
+  }
+  diminuirSaldo(username);
+  adicionarSaldo(username);
+  if (user.saldo > 1) {
+    const texto = req.query.texto;
+    await attp3(texto);
+    res.sendFile(__dirname + '/modulos-api/src/attp.webp');
+  } else {
+    return res.sendFile(htmlPath);
+  }
+});
 
-// 
+app.get('/attp4', async (req, res, next) => {
+  const { username, key } = req.query;
+  const user = await User.findOne({ username, key });
+  if (!user || user.isBaned) {
+    return res.sendFile(htmlPath);
+  }
+  diminuirSaldo(username);
+  adicionarSaldo(username);
+  if (user.saldo > 1) {
+    const texto = req.query.texto;
+    await attp4(texto);
+    res.sendFile(__dirname + '/modulos-api/src/attp.webp');
+  } else {
+    return res.sendFile(htmlPath);
+  }
+});
+
+app.get('/attp5', async (req, res, next) => {
+  const { username, key } = req.query;
+  const user = await User.findOne({ username, key });
+  if (!user || user.isBaned) {
+    return res.sendFile(htmlPath);
+  }
+  diminuirSaldo(username);
+  adicionarSaldo(username);
+  if (user.saldo > 1) {
+    const texto = req.query.texto;
+    await attp5(texto);
+    res.sendFile(__dirname + '/modulos-api/src/attp.webp');
+  } else {
+    return res.sendFile(htmlPath);
+  }
+});
+
+app.get('/attp6', async (req, res, next) => {
+  const { username, key } = req.query;
+  const user = await User.findOne({ username, key });
+  if (!user || user.isBaned) {
+    return res.sendFile(htmlPath);
+  }
+  diminuirSaldo(username);
+  adicionarSaldo(username);
+  if (user.saldo > 1) {
+    const texto = req.query.texto;
+    await attp6(texto);
+    res.sendFile(__dirname + '/modulos-api/src/attp.webp');
+  } else {
+    return res.sendFile(htmlPath);
+  }
+});
+
+app.get('/attp7', async (req, res, next) => {
+  const { username, key } = req.query;
+  const user = await User.findOne({ username, key });
+  if (!user || user.isBaned) {
+    return res.sendFile(htmlPath);
+  }
+  diminuirSaldo(username);
+  adicionarSaldo(username);
+  if (user.saldo > 1) {
+    const texto = req.query.texto;
+    await attp7(texto);
+    res.sendFile(__dirname + '/modulos-api/src/attp.webp');
+  } else {
+    return res.sendFile(htmlPath);
+  }
+});
+
+// fim do attp 
 app.get('/cardgame', async (req, res) => {
   const { username, key } = req.query;
   const users = Person
