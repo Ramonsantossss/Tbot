@@ -5928,7 +5928,7 @@ app.get('/attp', async (req, res, next) => {
     const texto = req.query.texto
     const { attp2 } = require('./data/src/attp2.js');
     await attp2(texto)
-    res.sendFile(__path + '/src/attp.webp')
+    res.sendFile(__dirname + '/modulos-api/src/attp.webp')
 
   } else {
     return res.sendFile(htmlPath);
