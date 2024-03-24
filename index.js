@@ -190,7 +190,7 @@ const {
 } = require("./data/scraper.js");
 
 
-async function diminuirSaldo(username) {
+async function diminuirSaldo(username) {/*
   try {
     const user = await User.findOne({ username });
     if (!user) {
@@ -211,7 +211,7 @@ async function diminuirSaldo(username) {
   } catch (error) {
     console.error('Erro ao diminuir saldo:', error);
     return false;
-  }
+  }*/
 }
 
 async function adicionarSaldo(username) {
@@ -275,40 +275,6 @@ const isUserBanned = async (username) => {
     return false;
   }
 };
-
-
-const http = require('http');
-const server = http.createServer(app);
-const socketIo = require('socket.io');
-const io = socketIo(server);
-
-app.get('/chat', async (req, res) => {
-  const user = req.session.user;
-  
-if (user) {
-  const { username, password, verificationCode, isVerified } = user;
-  const userDb = await User.findOne({ username });
-  if (isVerified === true) {
-    res.render('chat', { userDb });
-  } else {
-    return res.redirect('/verify');
-  }
-} else {
-  return res.redirect('/login');
-}
-  
-});
-
-io.on('connection', (socket) => {
-    console.log('Um cliente se conectou');
-
-    socket.on('chat message', (msg) => {
-        console.log('Mensagem recebida:', msg);
-        io.emit('chat message', msg); // Envia a mensagem para todos os clientes conectados
-    });
-});
-
-
 
 
 // pagamentos \\
@@ -5959,63 +5925,11 @@ app.get('/attp', async (req, res, next) => {
   diminuirSaldo(username);
   adicionarSaldo(username)
   if (user.saldo > 1) {
+    const texto = req.query.texto
+    const { attp2 } = require('./data/src/attp2.js');
+    await attp2(texto)
+    res.sendFile(__path + '/src/attp.webp')
 
-    var texto = req.query.texto
-    if (!texto) return res.json({ status: false, message: "[!] masukan parameter texto" })
-
-    const file = "./attp.gif"
-
-    let length = texto.length
-
-    var font = 90
-    if (length > 12) { font = 68 }
-    if (length > 15) { font = 58 }
-    if (length > 18) { font = 55 }
-    if (length > 19) { font = 50 }
-    if (length > 22) { font = 48 }
-    if (length > 24) { font = 38 }
-    if (length > 27) { font = 35 }
-    if (length > 30) { font = 30 }
-    if (length > 35) { font = 26 }
-    if (length > 39) { font = 25 }
-    if (length > 40) { font = 20 }
-    if (length > 49) { font = 10 }
-    Canvas.registerFont('./SF-Pro.ttf', { family: 'SF-Pro' })
-    canvasGif(
-      file,
-      (ctx, width, height, totalFrames, currentFrame) => {
-
-        var couler = ["#ff0000", "#ffe100", "#33ff00", "#00ffcc", "#0033ff", "#9500ff", "#ff00ff"]
-        let jadi = couler[Math.floor(Math.random() * couler.length)]
-
-
-        function drawStroked(text, x, y) {
-          ctx.font = `${font}px SF-Pro`
-          ctx.strokeStyle = 'black'
-          ctx.lineWidth = 3
-          ctx.textAlign = 'center'
-          ctx.strokeText(text, x, y)
-          ctx.fillStyle = jadi
-          ctx.fillText(text, x, y)
-        }
-
-        drawStroked(texto, 290, 300)
-
-      },
-      {
-        coalesce: false, // whether the gif should be coalesced first (requires graphicsmagick), default: false
-        delay: 0, // the delay between each frame in ms, default: 0
-        repeat: 0, // how many times the GIF should repeat, default: 0 (runs forever)
-        algorithm: 'neuquant', // the algorithm the encoder should use, default: 'neuquant',
-        optimiser: false, // whether the encoder should use the in-built optimiser, default: false,
-        fps: 22, // the amount of frames to render per second, default: 60
-        quality: 1, // the quality of the gif, a value between 1 and 100, default: 100
-      }
-    ).then((buffer) => {
-      res.set({ 'Content-Type': 'gif' })
-      res.send(buffer)
-
-    })
   } else {
     return res.sendFile(htmlPath);
   }
