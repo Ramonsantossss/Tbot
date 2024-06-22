@@ -1,4 +1,4 @@
-# API de Catálogos AniKit
+# API de Catálogos de AniKit
 
 Esta API fornece endpoints para acessar catálogos de mangás, capítulos específicos e imagens de capítulos. Abaixo estão as rotas disponíveis e como usá-las.
 
@@ -27,6 +27,7 @@ Esta API fornece endpoints para acessar catálogos de mangás, capítulos espec�
 GET /all?username=seuUsuario&key=suaChave
 
 **Exemplo de Resposta:**
+```
 [
   {
     "_id": "60d0fe4f5311236168a109ca",
@@ -36,7 +37,7 @@ GET /all?username=seuUsuario&key=suaChave
     ]
   }
 ]
-
+```
 ### 2. Obter um Capítulo Específico
 
 **Endpoint:** `/catalogo/:catalogoId/chapters/:chapterNumber`
@@ -60,6 +61,7 @@ GET /all?username=seuUsuario&key=suaChave
 GET /catalogo/60d0fe4f5311236168a109ca/chapters/1
 
 **Exemplo de Resposta:**
+```
 {
   "chapterNumber": 1,
   "title": "Título do Capítulo",
@@ -67,6 +69,7 @@ GET /catalogo/60d0fe4f5311236168a109ca/chapters/1
     // Lista de páginas
   ]
 }
+```
 
 ### 3. Obter uma Foto de um Capítulo Específico
 
