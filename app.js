@@ -6357,31 +6357,6 @@ app.get('/foto/:mangaId/chapters/:chapterNumber', async (req, res) => {
   }
 });
 
-
-app.get('/audio', async (req, res) => {
-  try {
-    const audioId =  `https://files.catbox.moe/a2ndkj.mp3`;
-    const audioUrl = `https://files.catbox.moe/a2ndkj.mp3`;
-
-
-    const audioResponse = await axios.get(audioUrl, {
-      responseType: 'stream' 
-    });
-
-    // Define os cabeçalhos de resposta para o tipo de conteúdo e outros cabeçalhos necessários
-    res.set({
-      'Content-Type': 'audio/mpeg',
-      'Content-Disposition': 'attachment; filename="audio.mp3"' // Define um nome de arquivo para o áudio
-    });
-
-    // Transmite o áudio de volta como resposta
-    audioResponse.data.pipe(res);
-  } catch (error) {
-    console.error('Erro ao processar o áudio:', error);
-    return res.status(500).json({ error: 'Erro ao processar o áudio' });
-  }
-});
-
 // API para obter todos os mangas
 app.get('/all', async (req, res) => {
   try {
