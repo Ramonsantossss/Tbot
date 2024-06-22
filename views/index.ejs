@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Manga List</title>
+  <title>List</title>
   <link rel="stylesheet" href="/css/styles.css">
   <style>
     * {
@@ -91,12 +91,12 @@
   </style>
 </head>
 <body>
-  <h1>Lista de Mangás</h1>
-  <a href="/mangas/upload" class="upload-link">Upload de Novo Mangá</a>
+  <h1>Uploads</h1>
+  <a href="/foto/upload" class="upload-link">Upload de Novo Catálogo</a>
   <ul>
     <% mangas.forEach(manga => { %>
       <li>
-        <a href="/mangas/<%= manga._id %>">
+        <a href="/foto/<%= manga._id %>">
           <div class="manga-item">
             <img src="<%= manga.coverUrl %>" alt="<%= manga.name %>">
             <div class="manga-details">

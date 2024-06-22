@@ -179,16 +179,15 @@
         <p class="descricao">Tags: <%= manga.tags.join(', ') %></p>
       </div>
     </div>
-
-    <h2 class="titulo">Capítulos</h2>
     <ul>
       <% manga.chapters.sort((a, b) => a.chapterNumber - b.chapterNumber).forEach(chapter => { %>
+          <h2 class="titulo">Capítulos</h2>
         <li>
           <h3>Capítulo <%= chapter.chapterNumber %></h3>
           <p><%= chapter.title %></p>
-          <a href="/mangas/<%= manga._id %>/chapters/<%= chapter.chapterNumber %>" class="button read">Ler Capítulo</a>
+          <a href="/foto/<%= manga._id %>/chapters/<%= chapter.chapterNumber %>" class="button read">Ler Capítulo</a>
           <% if (isOwner) { %>
-            <a href="/mangas/<%= manga._id %>/chapters/<%= chapter.chapterNumber %>/delete" onclick="return confirm('Tem certeza que deseja deletar o capítulo?')" class="button delete">Deletar Capítulo</a>
+            <a href="/foto/<%= manga._id %>/chapters/<%= chapter.chapterNumber %>/delete" onclick="return confirm('Tem certeza que deseja deletar o capítulo?')" class="button delete">Deletar Capítulo</a>
           <% } %>
         </li>
       <% }); %>
@@ -220,12 +219,12 @@
     <!-- Fim do código do Disqus -->
      <br><br>
     <% if (isOwner) { %>
-      <a href="/mangas/<%= manga._id %>/delete" onclick="return confirm('Tem certeza que deseja deletar o mangá?')">Deletar Manga</a>
+      <a href="/foto/<%= manga._id %>/delete" onclick="return confirm('Tem certeza que deseja deletar o mangá?')">Deletar Manga</a>
     <% } %>
 
     <% if (isOwner) { %>
       <h2 class="titulo">Upload de Capítulo</h2>
-      <form action="/mangas/<%= manga._id %>/uploadChapter" method="post" enctype="multipart/form-data">
+      <form action="/foto/<%= manga._id %>/uploadChapter" method="post" enctype="multipart/form-data">
         <div>
           <label for="title">Título do Capítulo:</label>
           <input class="input" type="text" id="title" name="title" required>

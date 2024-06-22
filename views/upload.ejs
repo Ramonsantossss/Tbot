@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Upload Manga</title>
+  <title>Upload</title>
   <link rel="stylesheet" href="/css/styles.css">
   <style>
     body {
@@ -73,53 +73,25 @@
 </head>
 <body>
   <div class="container">
-    <h1>Upload de Mangá</h1>
-    <form action="/mangas/upload" method="post" enctype="multipart/form-data">
+    <h1>Upload de Catálogo</h1>
+    <form action="/foto/upload" method="post" enctype="multipart/form-data">
       <label for="name">Nome:</label>
       <input type="text" id="name" name="name" required>
       
-      <label for="description">Descrição/Sinopse:</label>
+      <label for="description">Descrição:</label>
       <textarea id="description" name="description" rows="4" required></textarea>
       
       <label>Tags:</label>
       <div>
-        <input type="checkbox" id="romance" name="tags" value="Romance">
-        <label for="romance">Romance</label>
+        <input type="checkbox" id="SFW" name="tags" value="SFW">
+        <label for="romance">SFW</label>
       </div>
       <div>
-        <input type="checkbox" id="full_color" name="tags" value="Full Color">
-        <label for="full_color">Full Color</label>
-      </div>
-      <div>
-        <input type="checkbox" id="erotic" name="tags" value="Erotic">
-        <label for="erotic">Erotic</label>
-      </div>
-      <div>
-        <input type="checkbox" id="action" name="tags" value="Action">
-        <label for="action">Action</label>
-      </div>
-      <div>
-        <input type="checkbox" id="adventure" name="tags" value="Adventure">
-        <label for="adventure">Adventure</label>
-      </div>
-      <div>
-        <input type="checkbox" id="drama" name="tags" value="Drama">
-        <label for="drama">Drama</label>
-      </div>
-      <div>
-        <input type="checkbox" id="fantasy" name="tags" value="Fantasy">
-        <label for="fantasy">Fantasy</label>
-      </div>
-      <div>
-        <input type="checkbox" id="comedy" name="tags" value="Comedy">
-        <label for="comedy">Comedy</label>
-      </div>
-      <div>
-        <input type="checkbox" id="slice_of_life" name="tags" value="Slice of Life">
-        <label for="slice_of_life">Slice of Life</label>
+        <input type="checkbox" id="NSFW" name="tags" value="NSFW">
+        <label for="full_color">NSFW</label>
       </div>
       
-      <label for="cover">Capa:</label>
+      <label for="cover">Capa do catálogo:</label>
       <input type="file" id="cover" name="cover" required>
       
       <button type="submit">Upload</button>

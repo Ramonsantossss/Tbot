@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Leitura do Capítulo - <%= manga.name %></title>
+    <title>Ver Capítulo - <%= manga.name %></title>
     <style>
         body {
             margin: 0;
@@ -109,7 +109,7 @@
 <body>
     <div class="container">
         <!-- Link de volta para todos os capítulos do manga -->
-        <a href="/mangas/<%= manga._id %>" class="back-link">&lt; Voltar para todos os capítulos</a>
+        <a href="/foto/<%= manga._id %>" class="back-link">&lt; Voltar para todos os capítulos</a>
         <br><br>
         <!-- Título do manga 
         <div class="manga-title"><%= manga.name %></div>
@@ -131,10 +131,10 @@
         <!-- Navegação entre capítulos -->
         <div class="navigation">
             <% if (selectedChapter.chapterNumber > 1) { %>
-                <a href="/mangas/<%= manga._id %>/chapters/<%= selectedChapter.chapterNumber - 1 %>" class="previous">Capítulo Anterior</a>
+                <a href="/foto/<%= manga._id %>/chapters/<%= selectedChapter.chapterNumber - 1 %>" class="previous">Capítulo Anterior</a>
             <% } %>
             <% if (selectedChapter.chapterNumber < totalChapters) { %>
-                <a href="/mangas/<%= manga._id %>/chapters/<%= selectedChapter.chapterNumber + 1 %>" class="next">Próximo Capítulo</a>
+                <a href="/foto/<%= manga._id %>/chapters/<%= selectedChapter.chapterNumber + 1 %>" class="next">Próximo Capítulo</a>
             <% } %>
         </div>
 <br><br>
