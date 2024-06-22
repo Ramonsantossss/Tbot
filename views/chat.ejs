@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat</title>
+    <script src="https://cdn.jsdelivr.net/npm/socket.io/client-dist/socket.io.js"></script>
+</head>
+<body>
+    <h2>Chat Messages</h2>
+    <div id="chat-container"></div>
+    <div id="input-container">
+        <input id="m" autocomplete="off" placeholder="Digite sua mensagem..." onkeydown="if (event.keyCode === 13) sendMessage()" />
+        <button id="send-btn" onclick="sendMessage()">Enviar</button>
+    </div>
+
+    <script>
+        const socket = io();
+
+        function sendMessage() {
+            const message = document.getElementById('m').value.trim();
+            if (message !== '') {
+                socket.emit('chat message', message);
+                document.getElementById('m').value = '';
+            }
+            return false;
+        }
+
+        socket.on('chat message', (msg) => {
+            const chatContainer = document.getElementById('chat-container');
+            const messageElement = document.createElement('div');
+            messageElement.textContent = msg;
+            chatContainer.appendChild(messageElement);
+        });
+    </script>
+</body>
+</html>

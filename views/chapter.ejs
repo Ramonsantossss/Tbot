@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leitura do Capítulo - <%= manga.name %></title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #1e272e;
+            /* Fundo escuro */
+            font-family: Arial, sans-serif;
+            color: #dfe6e9;
+            /* Texto claro */
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative; /* Para posicionamento relativo */
+        }
+
+        .chapter {
+            background-color: #2d3436;
+            /* Fundo cinza escuro */
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+
+        /* Estilos para as imagens do capítulo */
+        .chapter img {
+            display: block;
+            width: 100%;
+            /* A imagem ocupará toda a largura do contêiner pai */
+            height: auto;
+            /* Mantém a proporção da imagem */
+            margin-bottom: 0;
+            /* Removendo a margem inferior entre as imagens */
+            border-radius: 0;
+            /* Removendo o border-radius */
+        }
+
+        .navigation {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .navigation a {
+            color: #0984e3;
+            /* Azul */
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            background-color: #2d3436;
+            /* Fundo cinza escuro */
+            margin: 0 3px;
+            transition: background-color 0.3s;
+        }
+
+        .navigation a:hover {
+            background-color: #0984e3;
+            /* Azul claro */
+            color: #fff;
+            /* Texto branco */
+        }
+
+        /* Estilo para o link de voltar */
+        .back-link {
+            position: absolute; /* Posicionamento absoluto */
+            top: 10px; /* Distância do topo */
+            left: 10px; /* Distância da esquerda */
+            z-index: 999; /* Para garantir que fique acima do conteúdo */
+            color: #0984e3; /* Azul */
+            text-decoration: none;
+        }
+
+        /* Estilos para o título do manga */
+        .manga-title {
+            position: absolute; /* Posicionamento absoluto */
+            top: 50%; /* Centraliza verticalmente */
+            left: 50%; /* Centraliza horizontalmente */
+            transform: translate(-50%, -50%); /* Para centralizar completamente */
+            text-align: center; /* Alinhamento do texto centralizado */
+            color: white; /* Cor do texto */
+            font-size: 24px; /* Tamanho da fonte */
+            z-index: 999; /* Para garantir que fique acima do conteúdo */
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); /* Sombra do texto */
+        }
+
+        /* Estilos para o título do capítulo */
+        .chapter-title {
+            position: absolute; /* Posicionamento absoluto */
+            bottom: 10px; /* Distância do rodapé */
+            left: 50%; /* Centraliza horizontalmente */
+            transform: translateX(-50%); /* Para centralizar horizontalmente */
+            text-align: center; /* Alinhamento do texto centralizado */
+            color: white; /* Cor do texto */
+            font-size: 18px; /* Tamanho da fonte */
+            z-index: 999; /* Para garantir que fique acima do conteúdo */
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); /* Sombra do texto */
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Link de volta para todos os capítulos do manga -->
+        <a href="/mangas/<%= manga._id %>" class="back-link">&lt; Voltar para todos os capítulos</a>
+        <br><br>
+        <!-- Título do manga 
+        <div class="manga-title"><%= manga.name %></div>
+        -->
+        
+        <div class="chapter">
+            <% if (selectedChapter.images && selectedChapter.images.length > 0) { %>
+                <% selectedChapter.images.forEach((image, index) => { %>
+                    <img src="<%= image %>" alt="Imagem do capítulo <%= index + 1 %>">
+                <% }); %>
+            <% } else { %>
+                <p>Nenhuma imagem disponível para este capítulo.</p>
+            <% } %>
+        </div>
+
+        <!-- Título do capítulo -->
+        <div class="chapter-title"><%= selectedChapter.title %></div>
+
+        <!-- Navegação entre capítulos -->
+        <div class="navigation">
+            <% if (selectedChapter.chapterNumber > 1) { %>
+                <a href="/mangas/<%= manga._id %>/chapters/<%= selectedChapter.chapterNumber - 1 %>" class="previous">Capítulo Anterior</a>
+            <% } %>
+            <% if (selectedChapter.chapterNumber < totalChapters) { %>
+                <a href="/mangas/<%= manga._id %>/chapters/<%= selectedChapter.chapterNumber + 1 %>" class="next">Próximo Capítulo</a>
+            <% } %>
+        </div>
+<br><br>
+        <!-- Adicione o código do Disqus abaixo -->
+        <div id="disqus_thread"></div>
+        <!-- Código do Disqus -->
+        <script>
+            /**
+             *  REQUER A CONFIGURAÇÃO DO SHORTNAME DO DISQUS
+             *  Veja os detalhes da configuração em https://disqus.com/admin/create/
+             */
+            var disqus_config = function () {
+                this.page.url = window.location.href; // URL da página onde os comentários estão
+                this.page.identifier = '<%= manga._id %>'; // Identificador único para a página (pode ser o ID do seu mangá)
+            };
+            (function () { // Não modifique o código abaixo
+                var d = document,
+                    s = d.createElement('script');
+                s.src = 'https://trevo-mangas.disqus.com/embed.js'; // Substitua 'seushortname' pelo seu shortname do Disqus
+                s.setAttribute('data-timestamp', +new Date());
+                (d.head || d.body).appendChild(s);
+            })();
+        </script>
+        <noscript>Ative o JavaScript para ver os comentários.</noscript>
+        <!-- Fim do código do Disqus -->
+    </div>
+</body>
+
+</html>

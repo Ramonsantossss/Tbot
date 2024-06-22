@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Upload Manga</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #121212; /* Cor de fundo escura */
+      color: #fff; /* Cor do texto */
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      max-width: 90%; /* Largura máxima do conteúdo */
+      margin: 0 auto; /* Centralizar o conteúdo na página */
+      padding: 20px; /* Espaçamento interno */
+    }
+
+    h1 {
+      font-size: 34px; /* Tamanho do título */
+      color: #6c5ce7; /* Cor do título */
+      margin-bottom: 20px; /* Espaçamento inferior */
+    }
+
+    form {
+      background-color: #212121; /* Cor de fundo do formulário */
+      padding: 20px; /* Espaçamento interno */
+      border-radius: 10px; /* Bordas arredondadas */
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Sombra suave */
+    }
+
+    label {
+      font-size: 28px; /* Tamanho do texto */
+      display: block; /* Mostrar em bloco */
+      margin-bottom: 10px; /* Espaçamento inferior */
+    }
+
+    input[type="text"],
+    input[type="file"],
+    textarea {
+      width: calc(100% - 40px); /* Largura do campo de entrada */
+      padding: 10px; /* Espaçamento interno */
+      margin-bottom: 15px; /* Espaçamento inferior */
+      border: 1px solid #333; /* Borda cinza */
+      border-radius: 5px; /* Bordas arredondadas */
+      font-size: 26px; /* Tamanho do texto */
+      background-color: #333; /* Cor de fundo */
+      color: #fff; /* Cor do texto */
+    }
+
+    input[type="checkbox"] {
+      margin-right: 5px; /* Espaçamento direita */
+    }
+
+    button {
+      width: 100%; /* Largura total */
+      background-color: #6c5ce7; /* Cor de fundo do botão */
+      color: #fff; /* Cor do texto */
+      border: none; /* Sem borda */
+      border-radius: 5px; /* Bordas arredondadas */
+      padding: 10px; /* Espaçamento interno */
+      font-size: 28px; /* Tamanho do texto */
+      cursor: pointer; /* Cursor de ponteiro */
+      transition: background-color 0.3s; /* Transição suave */
+    }
+
+    button:hover {
+      background-color: #a29bfe; /* Cor de fundo do botão ao passar o mouse */
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Upload de Mangá</h1>
+    <form action="/mangas/upload" method="post" enctype="multipart/form-data">
+      <label for="name">Nome:</label>
+      <input type="text" id="name" name="name" required>
+      
+      <label for="description">Descrição/Sinopse:</label>
+      <textarea id="description" name="description" rows="4" required></textarea>
+      
+      <label>Tags:</label>
+      <div>
+        <input type="checkbox" id="romance" name="tags" value="Romance">
+        <label for="romance">Romance</label>
+      </div>
+      <div>
+        <input type="checkbox" id="full_color" name="tags" value="Full Color">
+        <label for="full_color">Full Color</label>
+      </div>
+      <div>
+        <input type="checkbox" id="erotic" name="tags" value="Erotic">
+        <label for="erotic">Erotic</label>
+      </div>
+      <div>
+        <input type="checkbox" id="action" name="tags" value="Action">
+        <label for="action">Action</label>
+      </div>
+      <div>
+        <input type="checkbox" id="adventure" name="tags" value="Adventure">
+        <label for="adventure">Adventure</label>
+      </div>
+      <div>
+        <input type="checkbox" id="drama" name="tags" value="Drama">
+        <label for="drama">Drama</label>
+      </div>
+      <div>
+        <input type="checkbox" id="fantasy" name="tags" value="Fantasy">
+        <label for="fantasy">Fantasy</label>
+      </div>
+      <div>
+        <input type="checkbox" id="comedy" name="tags" value="Comedy">
+        <label for="comedy">Comedy</label>
+      </div>
+      <div>
+        <input type="checkbox" id="slice_of_life" name="tags" value="Slice of Life">
+        <label for="slice_of_life">Slice of Life</label>
+      </div>
+      
+      <label for="cover">Capa:</label>
+      <input type="file" id="cover" name="cover" required>
+      
+      <button type="submit">Upload</button>
+    </form>
+  </div>
+</body>
+</html>

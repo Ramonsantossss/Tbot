@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Manga List</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: black;
+      color: white;
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 56px;
+      margin-bottom: 20px;
+      color: #a29bfe; /* roxo */
+    }
+
+    a {
+      color: #0984e3; /* azul */
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .upload-link {
+      display: block;
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 40px;
+      background-color: #6c5ce7; /* roxo */
+      padding: 25px;
+      border-radius: 8px;
+      color: white;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    li {
+      background-color: #2d3436; /* cinza escuro */
+      margin: 10px 0;
+      padding: 15px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+    }
+
+    .manga-item {
+      display: flex;
+      flex: 1;
+    }
+
+    .manga-item img {
+      max-width: 428px; /* Largura máxima */
+      max-height: 428px; /* Altura máxima */
+      object-fit: cover; /* Garante que a imagem mantenha a proporção e preencha o espaço */
+      border-radius: 5px;
+      margin-right: 20px; /* Espaço entre a imagem e o texto */
+    }
+
+    .manga-details {
+      flex: 1;
+    }
+
+    .manga-details h2 {
+      font-size: 24px;
+      margin-bottom: 10px;
+      color: #dfe6e9; /* branco sujo */
+    }
+
+    .manga-details p {
+      font-size: 16px; /* Reduzindo o tamanho da fonte */
+      margin-bottom: 5px;
+      overflow: hidden;
+      word-wrap: break-word; /* Permitindo que as palavras quebrem a linha */
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <h1>Lista de Mangás</h1>
+  <a href="/mangas/upload" class="upload-link">Upload de Novo Mangá</a>
+  <ul>
+    <% mangas.forEach(manga => { %>
+      <li>
+        <a href="/mangas/<%= manga._id %>">
+          <div class="manga-item">
+            <img src="<%= manga.coverUrl %>" alt="<%= manga.name %>">
+            <div class="manga-details">
+              <h2><%= manga.name %></h2>
+              <p><%= manga.description %></p>
+              <p>Tags: <%= manga.tags.join(', ') %></p>
+            </div>
+          </div>
+        </a>
+      </li>
+    <% }); %>
+  </ul>
+</body>
+</html>
