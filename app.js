@@ -6001,167 +6001,6 @@ app.get('/teste', async (req, res) => {
 
 
 /// rotas de upload \\\
-app.get('/mangas', ensureAuthenticated, async (req, res) => {
-  try {
-    const userId = req.session.user._id;
-    const mangas = await Manga.find({ userId: userId });
-    res.render('index', { mangas });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Rota para página de upload de mangá
-app.get('/mangas/upload', ensureAuthenticated, (req, res) => {
-  res.render('upload');
-});
-
-// Rota para upload de mangá
-app.post('/mangas/upload', ensureAuthenticated, upload.single('cover'), async (req, res) => {
-  const user = req.session.user;
-  const { username, password, verificationCode, isVerified } = user;
-  try {
-    const { name, description, tags } = req.body;
-    const userId = req.session.user._id;
-
-    if (!req.file) {
-      return res.status(400).json({ error: 'A capa do manga é obrigatória' });
-    }
-
-    const coverPath = req.file.path;
-    const formData = new FormData();
-    formData.append('file', fs.createReadStream(coverPath));
-
-    const response = await axios.post('https://telegra.ph/upload', formData, {
-      headers: formData.getHeaders()
-    });
-
-    const coverUrl = `https://telegra.ph${response.data[0].src}`;
-
-    const newManga = new Manga({ name, description, tags, coverUrl, userId });
-    ////diminuirSaldo(username);
-    adicionarSaldo(username)
-    await newManga.save();
-
-    fs.unlinkSync(coverPath);
-
-    res.redirect('/mangas');
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.get('/mangas/:id', ensureAuthenticated, async (req, res) => {
-  try {
-    const manga = await Manga.findById(req.params.id);
-    const isOwner = manga.userId.toString() === req.session.user._id.toString();
-    res.render('manga', { manga, isOwner });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-
-app.post('/mangas/:id/uploadChapter', ensureAuthenticated, upload.array('images'), async (req, res) => {
-  const user = req.session.user;
-  const { username, password, verificationCode, isVerified } = user;
-  try {
-    const mangaId = req.params.id;
-    const manga = await Manga.findById(mangaId);
-
-    if (!manga) {
-      return res.status(404).json({ error: 'Mangá não encontrado' });
-    }
-
-    if (manga.userId.toString() !== req.session.user._id.toString()) {
-      return res.status(403).json({ error: 'Você não tem permissão para adicionar capítulo a este mangá' });
-    }
-
-    const { title, chapterNumber } = req.body;
-    const chapterNum = Number(chapterNumber);
-    if (isNaN(chapterNum)) {
-      return res.status(400).json({ error: 'Número do capítulo inválido' });
-    }
-
-    const existingChapter = manga.chapters.find(chapter => chapter.chapterNumber === chapterNum);
-    if (existingChapter) {
-      return res.status(400).json({ error: 'Capítulo com esse número já existe' });
-    }
-
-    const images = [];
-    for (const file of req.files) {
-      const formData = new FormData();
-      formData.append('file', fs.createReadStream(file.path));
-
-      try {
-        const response = await axios.post('https://telegra.ph/upload', formData, {
-          headers: formData.getHeaders()
-        });
-
-        if (response.data && response.data[0] && response.data[0].src) {
-          const imageUrl = `https://telegra.ph${response.data[0].src}`;
-          images.push(imageUrl);
-        } else {
-          throw new Error('Falha ao fazer o upload da imagem: resposta inválida');
-        }
-
-        fs.unlinkSync(file.path);
-      } catch (error) {
-        res.status(500).json({ error: 'Erro ao processar o upload de capítulo' });
-        return;
-      }
-    }
-
-    manga.chapters.push({ chapterNumber: chapterNum, title, images });
-    ////diminuirSaldo(username);
-    adicionarSaldo(username)
-    await manga.save();
-    res.status(200).json({ message: 'Capítulo adicionado com sucesso' });
-  } catch (error) {
-    res.status(500).json({ error: 'Erro ao processar o upload de capítulo' });
-  }
-});
-
-// Rota para deletar um mangá e todos os seus capítulos
-app.get('/mangas/:id/delete', ensureAuthenticated, async (req, res) => {
-  try {
-    const mangaId = req.params.id;
-    const manga = await Manga.findById(mangaId);
-
-    if (!manga) {
-      return res.status(404).json({ error: 'Mangá não encontrado' });
-    }
-
-    if (manga.userId.toString() !== req.session.user._id.toString()) {
-      return res.status(403).json({ error: 'Você não tem permissão para deletar este mangá' });
-    }
-
-    await Manga.findByIdAndDelete(mangaId);
-    res.redirect('/home');
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Rota para deletar um capítulo de um mangá
-app.get('/mangas/:mangaId/deleteChapter/:chapterIndex', ensureAuthenticated, async (req, res) => {
-  try {
-    const { mangaId, chapterIndex } = req.params;
-    const manga = await Manga.findById(mangaId);
-
-    if (!manga) {
-      return res.status(404).json({ error: 'Mangá não encontrado' });
-    }
-
-    if (manga.userId.toString() !== req.session.user._id.toString()) {
-      return res.status(403).json({ error: 'Você não tem permissão para deletar este capítulo' });
-    }
-
-    manga.chapters.splice(chapterIndex, 1);
-    await manga.save();
-    res.redirect(`/mangas/${mangaId}`);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
 app.get('/foto', async (req, res) => {
   try {
     const userId = req.session.user._id;
@@ -6358,6 +6197,31 @@ app.get('/foto/:mangaId/chapters/:chapterNumber', async (req, res) => {
   }
 });
 
+
+app.get('/audio', async (req, res) => {
+  try {
+    const audioId =  `https://files.catbox.moe/a2ndkj.mp3`;
+    const audioUrl = `https://files.catbox.moe/a2ndkj.mp3`;
+
+
+    const audioResponse = await axios.get(audioUrl, {
+      responseType: 'stream' 
+    });
+
+    // Define os cabeçalhos de resposta para o tipo de conteúdo e outros cabeçalhos necessários
+    res.set({
+      'Content-Type': 'audio/mpeg',
+      'Content-Disposition': 'attachment; filename="audio.mp3"' // Define um nome de arquivo para o áudio
+    });
+
+    // Transmite o áudio de volta como resposta
+    audioResponse.data.pipe(res);
+  } catch (error) {
+    console.error('Erro ao processar o áudio:', error);
+    return res.status(500).json({ error: 'Erro ao processar o áudio' });
+  }
+});
+
 // API para obter todos os mangas
 app.get('/all', async (req, res) => {
   try {
@@ -6367,6 +6231,8 @@ app.get('/all', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
