@@ -1,4 +1,4 @@
-# API de Catálogos de Mangás
+# API de Catálogos AniKit
 
 Esta API fornece endpoints para acessar catálogos de mangás, capítulos específicos e imagens de capítulos. Abaixo estão as rotas disponíveis e como usá-las.
 
