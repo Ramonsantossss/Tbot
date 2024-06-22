@@ -55,7 +55,7 @@ var {
 var pin = require(__dirname + '/data/pinterest.js');
 
 
-const PORT = 8080;
+const PORT = 8000;
 
 const app = express();
 
@@ -132,7 +132,7 @@ const mangaSchema = new mongoose.Schema({
 });
 
 const User = mongoose.model('User', userSchema);
-const Manga = mongoose.model('AniKitUP', mangaSchema);
+const Manga = mongoose.model('UPLOADS', mangaSchema);
 Person = User;
 
 // Configuração do Multer para upload de arquivos
