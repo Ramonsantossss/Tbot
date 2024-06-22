@@ -1,4 +1,4 @@
-8const FormData = require('form-data');
+const FormData = require('form-data');
 var gis = require('g-i-s');
 const { createCanvas, loadImage } = require('canvas');
 const axios = require('axios');
