@@ -6224,14 +6224,92 @@ app.get('/audio', async (req, res) => {
 
 // API para obter todos os mangas
 app.get('/all', async (req, res) => {
-  try {
-    const mangas = await Manga.find();
-    res.json(mangas);
+const { username, key } = req.query;
+  const users = Person
+  const user = await User.findOne({ username, key });
+  if (!user) {
+    return res.sendFile(htmlPath);
+  }
+  if (user.isBaned === true) {
+    return res.sendFile(htmlPath);
+  }
+  //diminuirSaldo(username);
+  adicionarSaldo(username)
+  if (user.saldo > 1) {
+   try {
+    const dados = await User.findOne({ username });
+    const userId = dados._id;
+    const mangas = await Manga.find({ userId: userId });
+    res.json(mangas)
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
+} else {
+  return res.sendFile(htmlPath);
+}
 });
 
+// pega um capítulo específico 
+app.get('/catalogo/:mangaId/chapters/:chapterNumber', async (req, res) => {
+  const { mangaId, chapterNumber } = req.params;
+  try {
+    const manga = await Manga.findById(mangaId);
+    if (!manga) {
+      return res.status(404).json({ error: 'Mangá não encontrado' });
+    }
+    const selectedChapter = manga.chapters.find(chapter => chapter.chapterNumber == chapterNumber);
+    if (!selectedChapter) {
+      return res.status(404).json({ error: 'Capítulo não encontrado' });
+    }
+    res.json(selectedChapter);
+  } catch (error) {
+    console.error('Erro ao buscar os dados do capítulo:', error);
+    return res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+// pega uma foto do capítulo específico 
+app.get('/imagem/:mangaId/chapters/:chapterNumber/:fotoNumber', async (req, res) => {
+  const { mangaId, chapterNumber, fotoNumber } = req.params;
+  try {
+    const manga = await Manga.findById(mangaId);
+    if (!manga) {
+      return res.status(404).json({ error: 'Mangá não encontrado' });
+    }
+    const selectedChapter = manga.chapters.find(chapter => chapter.chapterNumber == chapterNumber);
+    if (!selectedChapter) {
+      return res.status(404).json({ error: 'Capítulo não encontrado' });
+    }
+    const imageUrl = selectedChapter.images[fotoNumber];
+    if (!imageUrl) {
+      return res.status(404).json({ error: 'Imagem não encontrada' });
+    }
+    const imagePath = path.join(__dirname, 'clover.jpeg');
+    const response = await axios({
+      url: imageUrl,
+      responseType: 'stream'
+    });
+    response.data.pipe(fs.createWriteStream(imagePath));
+    response.data.on('end', () => {
+      res.sendFile(imagePath, (err) => {
+        if (err) {
+          console.error('Erro ao enviar o arquivo:', err);
+          res.status(500).json({ error: 'Erro interno do servidor' });
+        }
+        fs.unlink(imagePath, (err) => {
+          if (err) console.error('Erro ao deletar a imagem temporária:', err);
+        });
+      });
+    });
+    response.data.on('error', (err) => {
+      console.error('Erro ao baixar a imagem:', err);
+      res.status(500).json({ error: 'Erro ao baixar a imagem' });
+    });
+  } catch (error) {
+    console.error('Erro ao buscar os dados do capítulo:', error);
+    return res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
 
 
 app.listen(PORT, () => {
