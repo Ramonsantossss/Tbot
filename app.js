@@ -1,3 +1,4 @@
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 const FormData = require('form-data');
 var gis = require('g-i-s');
 const { createCanvas, loadImage } = require('canvas');
@@ -54,7 +55,7 @@ var {
 var pin = require(__dirname + '/data/pinterest.js');
 
 
-const PORT = 3000;
+const PORT = 8080;
 
 const app = express();
 
