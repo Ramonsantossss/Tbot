@@ -6144,9 +6144,9 @@ app.get('/foto/:id/delete', ensureAuthenticated, async (req, res) => {
 });
 
 // Rota para deletar um capítulo de um mangá
-app.get('/foto/:mangaId/deleteChapter/:chapterIndex', ensureAuthenticated, async (req, res) => {
+app.get('/foto/:mangaId/deleteChapter/:chapterId', ensureAuthenticated, async (req, res) => {
   try {
-    const { mangaId, chapterIndex } = req.params;
+    const { mangaId, chapterId } = req.params;
     const manga = await Manga.findById(mangaId);
 
     if (!manga) {
@@ -6157,13 +6157,29 @@ app.get('/foto/:mangaId/deleteChapter/:chapterIndex', ensureAuthenticated, async
       return res.status(403).json({ error: 'Você não tem permissão para deletar este capítulo' });
     }
 
-    manga.chapters.splice(chapterIndex, 1);
+    // Encontrando o índice do capítulo no array de capítulos
+    const index = manga.chapters.findIndex(chapter => chapter._id.toString() === chapterId);
+
+    // Verificando se o capítulo foi encontrado
+    if (index === -1) {
+      return res.status(400).json({ error: 'Capítulo não encontrado' });
+    }
+
+    // Removendo o capítulo do array de capítulos
+    manga.chapters.splice(index, 1);
+
+    // Salvando as alterações
     await manga.save();
+
+    // Redirecionando apenas após a exclusão do capítulo
     res.redirect(`/foto/${mangaId}`);
+
   } catch (error) {
+    // Lidando com erros
     res.status(500).json({ error: error.message });
   }
 });
+
 
 app.get('/foto/:mangaId/chapters/:chapterNumber', async (req, res) => {
   const { mangaId, chapterNumber } = req.params;
