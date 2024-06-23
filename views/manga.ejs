@@ -5,12 +5,12 @@
   <link rel="stylesheet" href="/css/styles.css">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
+    /* Estilos existentes */
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
-
     body {
       background-color: #1e272e; /* cinza escuro */
       color: #dfe6e9; /* branco sujo */
@@ -19,49 +19,40 @@
       line-height: 1.6;
       padding: 20px;
     }
-
     .container {
       max-width: 800px;
       margin: 0 auto;
     }
-
     .manga {
       display: flex;
       align-items: center;
       margin-bottom: 20px;
     }
-
     .capa {
       width: 150px; /* Reduzindo o tamanho da foto para a versão mobile */
       height: auto;
       border-radius: 5px;
       margin-right: 20px;
     }
-
     .infomanga {
       flex: 1;
     }
-
     .titulo {
       font-size: 36px;
       margin-bottom: 5px; /* Reduzindo a margem inferior do título */
       color: #a29bfe; /* roxo */
     }
-
     .descricao {
       font-size: 16px; /* Reduzindo o tamanho da fonte para a versão mobile */
       margin-bottom: 5px;
     }
-
     a {
       color: #0984e3; /* azul */
       text-decoration: none;
     }
-
     a:hover {
       text-decoration: underline;
     }
-
     .input, .upimg {
       width: calc(100% - 40px);
       max-width: 300px;
@@ -73,13 +64,11 @@
       padding: 5px;
       margin: 10px 0;
     }
-
     label {
       font-size: 18px;
       display: block;
       margin-bottom: 5px;
     }
-
     button {
       background-color: #6c5ce7; /* roxo */
       color: white;
@@ -90,17 +79,14 @@
       cursor: pointer;
       margin-top: 10px;
     }
-
     button:hover {
       background-color: #a29bfe; /* roxo claro */
     }
-
     ul {
       list-style: none;
       padding: 0;
       margin-bottom: 20px;
     }
-
     li {
       background-color: #2d3436; /* cinza escuro */
       margin-bottom: 10px;
@@ -108,13 +94,11 @@
       border-radius: 5px;
       border: 1px solid #34495e; /* cinza escuro */
     }
-
     h3 {
       font-size: 21px;
       margin-bottom: 5px;
       color: #dfe6e9; /* branco sujo */
     }
-
     @media (max-width: 600px) {
       .capa {
         width: 100%;
@@ -122,21 +106,17 @@
         margin-right: 0; /* Remover margem direita para a versão mobile */
         margin-bottom: 10px;
       }
-
       .titulo {
         font-size: 24px; /* Reduzindo o tamanho da fonte para a versão mobile */
         margin-bottom: 0; /* Removendo a margem inferior do título para a versão mobile */
       }
-
       .descricao {
         font-size: 14px; /* Reduzindo o tamanho da fonte para a versão mobile */
       }
-
       .manga {
         flex-direction: column; /* Alterando para layout de coluna para a versão mobile */
         align-items: center; /* Centralizando itens na versão mobile */
       }
-
       .infomanga {
         text-align: center; /* Centralizando texto para a versão mobile */
       }
@@ -154,18 +134,31 @@
       text-decoration: none;
       transition: background-color 0.3s;
     }
-
     .button:hover {
       background-color: #a29bfe; /* roxo claro */
     }
-
-    /* Estilo específico para o botão de deletar */
     .delete {
       background-color: #d63031; /* vermelho */
     }
-
     .delete:hover {
       background-color: #ff7675; /* vermelho claro */
+    }
+    /* Estilo da barra de progresso */
+    #progressWrapper {
+      display: none;
+      margin-top: 20px;
+      width: 100%;
+      background-color: #2d3436; /* cinza escuro */
+      border-radius: 5px;
+    }
+    #progressBar {
+      width: 0;
+      height: 30px;
+      background-color: #6c5ce7; /* roxo */
+      border-radius: 5px;
+      text-align: center;
+      line-height: 30px;
+      color: white;
     }
   </style>
 </head>
@@ -191,40 +184,15 @@
           <% } %>
         </li>
       <% }); %>
-
-    
     </ul>
     <br><br>
-    <!-- Adicione o código do Disqus abaixo -->
-    <div id="disqus_thread"></div>
-    <!-- Código do Disqus -->
-    <script>
-        /**
-         *  REQUER A CONFIGURAÇÃO DO SHORTNAME DO DISQUS
-         *  Veja os detalhes da configuração em https://disqus.com/admin/create/
-         */
-        var disqus_config = function () {
-            this.page.url = window.location.href; // URL da página onde os comentários estão
-            this.page.identifier = '<%= manga._id %>'; // Identificador único para a página (pode ser o ID do seu mangá)
-        };
-        (function () { // Não modifique o código abaixo
-            var d = document,
-                s = d.createElement('script');
-            s.src = 'https://trevo-mangas.disqus.com/embed.js'; // Substitua 'seushortname' pelo seu shortname do Disqus
-            s.setAttribute('data-timestamp', +new Date());
-            (d.head || d.body).appendChild(s);
-        })();
-    </script>
-    <noscript>Ative o JavaScript para ver os comentários.</noscript>
-    <!-- Fim do código do Disqus -->
-     <br><br>
+
     <% if (isOwner) { %>
       <a href="/foto/<%= manga._id %>/delete" onclick="return confirm('Tem certeza que deseja deletar o Catálogo?')">Deletar Catálogo</a>
     <% } %>
-
     <% if (isOwner) { %>
       <h2 class="titulo">Upload de Capítulo</h2>
-      <form action="/foto/<%= manga._id %>/uploadChapter" method="post" enctype="multipart/form-data">
+      <form id="uploadForm" action="/foto/<%= manga._id %>/uploadChapter" method="post" enctype="multipart/form-data">
         <div>
           <label for="title">Título do Capítulo:</label>
           <input class="input" type="text" id="title" name="title" required>
@@ -240,8 +208,70 @@
         <div>
           <button type="submit">Upload</button>
         </div>
+        <div id="progressWrapper">
+          <div id="progressBar">0%</div>
+        </div>
       </form>
     <% } %>
   </div>
+      <div id="disqus_thread"></div>
+    <script>
+        var disqus_config = function () {
+            this.page.url = window.location.href;
+            this.page.identifier = '<%= manga._id %>';
+        };
+        (function () {
+            var d = document,
+                s = d.createElement('script');
+            s.src = 'https://trevo-mangas.disqus.com/embed.js';
+            s.setAttribute('data-timestamp', +new Date());
+            (d.head || d.body).appendChild(s);
+        })();
+    </script>
+    <noscript>Ative o JavaScript para ver os comentários.</noscript>
+    <br><br>
+  <script>
+    document.getElementById('uploadForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      
+      var form = e.target;
+      var formData = new FormData(form);
+      var progressBar = document.getElementById('progressBar');
+      var progressWrapper = document.getElementById('progressWrapper');
+      
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', form.action, true);
+      
+      xhr.upload.onprogress = function (event) {
+        if (event.lengthComputable) {
+          var percentComplete = Math.round((event.loaded / event.total) * 100);
+          progressBar.style.width = percentComplete + '%';
+          progressBar.textContent = percentComplete + '%';
+        }
+      };
+      
+      xhr.onload = function () {
+        if (xhr.status === 200) {
+          // Verifique a resposta do servidor
+          var response = JSON.parse(xhr.responseText);
+          if (response.message === 'Capítulo adicionado com sucesso') {
+            alert('Capítulo adicionado com sucesso!');
+            window.location.reload();
+          } else {
+            alert('Erro ao fazer o upload do capítulo: ' + response.error);
+          }
+        } else {
+          alert('Erro ao fazer o upload do capítulo.');
+        }
+      };
+      
+      xhr.onerror = function () {
+        alert('Erro na rede ou no servidor.');
+      };
+      
+      progressWrapper.style.display = 'block';
+      xhr.send(formData);
+    });
+  </script>
 </body>
 </html>

@@ -103,18 +103,68 @@
             z-index: 999; /* Para garantir que fique acima do conteúdo */
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); /* Sombra do texto */
         }
+        #upload-form {
+            margin-top: 20px;
+            /*  display: none;Ocultar por padrão */
+        }
+        .form {
+            background-color: #2d3436;
+            /* Fundo cinza escuro */
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        input[type="file"] {
+            display: block;
+            margin-bottom: 20px;
+        }
+        button {
+            background-color: #6c5ce7;
+            /* Roxo */
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #a29bfe;
+            /* Roxo claro */
+        }
     </style>
 </head>
 
 <body>
     <div class="container">
+     <% if (isOwner) { %>
+        
+        <h1>Adicionar Imagens ao Capítulo</h1>
+        <div class="form">
+            <form action="/foto/<%= manga._id %>/chapters/<%= selectedChapter._id %>/uploadImages" method="post" enctype="multipart/form-data">
+                <div>
+                    <label for="images">Selecione até 50 imagens por vez:</label>
+                    <input type="file" id="images" name="images" multiple required>
+                </div>
+                <button type="submit">Enviar</button>
+            </form>
+        </div>
+     <% } %>
         <!-- Link de volta para todos os capítulos do manga -->
         <a href="/foto/<%= manga._id %>" class="back-link">&lt; Voltar para todos os capítulos</a>
         <br><br>
         <!-- Título do manga 
         <div class="manga-title"><%= manga.name %></div>
         -->
-        
+
+        <br><br>
         <div class="chapter">
             <% if (selectedChapter.images && selectedChapter.images.length > 0) { %>
                 <% selectedChapter.images.forEach((image, index) => { %>
@@ -138,6 +188,7 @@
             <% } %>
         </div>
 <br><br>
+
         <!-- Adicione o código do Disqus abaixo -->
         <div id="disqus_thread"></div>
         <!-- Código do Disqus -->
@@ -164,3 +215,4 @@
 </body>
 
 </html>
+
