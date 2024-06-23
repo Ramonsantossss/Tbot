@@ -187,7 +187,7 @@
           <p><%= chapter.title %></p>
           <a href="/foto/<%= manga._id %>/chapters/<%= chapter.chapterNumber %>" class="button read">Ver Capítulo</a>
           <% if (isOwner) { %>
-            <a href="/foto/<%= manga._id %>/chapters/<%= chapter.chapterNumber %>/delete" onclick="return confirm('Tem certeza que deseja deletar o capítulo?')" class="button delete">Deletar Capítulo</a>
+            <a href="/foto/<%= manga._id %>/deleteChapter/<%= chapter.chapterNumber %>" onclick="return confirm('Tem certeza que deseja deletar o capítulo?')" class="button delete">Deletar Capítulo</a>
           <% } %>
         </li>
       <% }); %>
