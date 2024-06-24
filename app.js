@@ -6062,7 +6062,7 @@ app.get('/foto/:id', ensureAuthenticated, async (req, res) => {
 });
 
 
-app.post('/foto/:id/uploadChapter', ensureAuthenticated, upload.array('images', 50), async (req, res) => {
+app.post('/foto/:id/uploadChapter', ensureAuthenticated, upload.array('images'), async (req, res) => {
   const user = req.session.user;
   const { username } = user;
 
@@ -6089,41 +6089,42 @@ app.post('/foto/:id/uploadChapter', ensureAuthenticated, upload.array('images', 
       return res.status(400).json({ error: 'Capítulo com esse número já existe' });
     }
 
-    const images = [];
-    const files = req.files;
+    let images = [];
+    if (req.files && req.files.length > 0) {
+      const files = req.files;
 
-    // Função para fazer o upload em lotes
-    const uploadBatch = async (batch) => {
-      for (const file of batch) {
-        const formData = new FormData();
-        formData.append('file', fs.createReadStream(file.path));
+      // Função para fazer o upload em lotes
+      const uploadBatch = async (batch) => {
+        for (const file of batch) {
+          const formData = new FormData();
+          formData.append('file', fs.createReadStream(file.path));
 
-        try {
-          const response = await axios.post('https://telegra.ph/upload', formData, {
-            headers: formData.getHeaders()
-          });
+          try {
+            const response = await axios.post('https://telegra.ph/upload', formData, {
+              headers: formData.getHeaders()
+            });
 
-          if (response.data && response.data[0] && response.data[0].src) {
-            const imageUrl = `https://telegra.ph${response.data[0].src}`;
-            images.push(imageUrl);
-          } else {
-            throw new Error('Falha ao fazer o upload da imagem: resposta inválida');
+            if (response.data && response.data[0] && response.data[0].src) {
+              const imageUrl = `https://telegra.ph${response.data[0].src}`;
+              images.push(imageUrl);
+            } else {
+              throw new Error('Falha ao fazer o upload da imagem: resposta inválida');
+            }
+
+            fs.unlinkSync(file.path);
+          } catch (error) {
+            throw new Error(`Erro ao processar o upload de capítulo: ${error.message}`);
           }
-
-          fs.unlinkSync(file.path);
-        } catch (error) {
-          throw new Error(`Erro ao processar o upload de capítulo: ${error.message}`);
         }
-      }
-    };
+      };
 
-    // Limitar o tamanho do lote para até 50 imagens
-    const batchSize = Math.min(files.length, 50);
-    const batch = files.slice(0, batchSize);
-    await uploadBatch(batch);
+      // Limitar o tamanho do lote para até 50 imagens
+      const batchSize = Math.min(files.length, 50);
+      const batch = files.slice(0, batchSize);
+      await uploadBatch(batch);
+    }
 
     manga.chapters.push({ chapterNumber: chapterNum, title, images });
-    //diminuirSaldo(username);
     adicionarSaldo(username);
     await manga.save();
     res.status(200).json({ message: 'Capítulo adicionado com sucesso' });
@@ -6131,6 +6132,8 @@ app.post('/foto/:id/uploadChapter', ensureAuthenticated, upload.array('images', 
     res.status(500).json({ error: `Erro ao processar o upload de capítulo: ${error.message}` });
   }
 });
+
+
 
 app.post('/foto/:mangaId/chapters/:chapterId/uploadImages', ensureAuthenticated, upload.array('images', 50), async (req, res) => {
   const user = req.session.user;
@@ -6368,6 +6371,22 @@ app.get('/catalogo/:mangaId/chapters/:chapterNumber', async (req, res) => {
   }
 });
 
+// pega os capítulos de um catalogo específico 
+app.get('/catalogo/:mangaId', async (req, res) => {
+  const { mangaId } = req.params;
+  try {
+    const manga = await Manga.findById(mangaId);
+    if (!manga) {
+      return res.status(404).json({ error: 'Mangá não encontrado' });
+    }
+    const selectedChapter = manga.chapters
+    res.json(selectedChapter);
+  } catch (error) {
+    console.error('Erro ao buscar os dados dos capítulos:', error);
+    return res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
 // pega uma foto do capítulo específico 
 app.get('/imagem/:mangaId/chapters/:chapterNumber/:fotoNumber', async (req, res) => {
   const { mangaId, chapterNumber, fotoNumber } = req.params;
@@ -6410,8 +6429,6 @@ app.get('/imagem/:mangaId/chapters/:chapterNumber/:fotoNumber', async (req, res)
     return res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
-
-
 
 
 
