@@ -92,10 +92,11 @@
         }
 
         /* Estilos para o título do capítulo */
-        .chapter-title {
-            position: absolute; /* Posicionamento absoluto */
+        .chapter-title { /*
+            position: absolute; 
             bottom: 10px; /* Distância do rodapé */
             left: 50%; /* Centraliza horizontalmente */
+            */
             transform: translateX(-50%); /* Para centralizar horizontalmente */
             text-align: center; /* Alinhamento do texto centralizado */
             color: white; /* Cor do texto */
@@ -139,78 +140,145 @@
             background-color: #a29bfe;
             /* Roxo claro */
         }
-    </style>
+        
+        .api button {
+            width: 100%;
+        }
+    /* Estilo da barra de progresso */
+    #progressWrapper {
+      display: none;
+      margin-top: 20px;
+      width: 100%;
+      background-color: #2d3436; /* cinza escuro */
+      border-radius: 5px;
+    }
+    #progressBar {
+      width: 0;
+      height: 30px;
+      background-color: #6c5ce7; /* roxo */
+      border-radius: 5px;
+      text-align: center;
+      line-height: 30px;
+      color: white;
+    }
+  </style>
+
 </head>
 
 <body>
     <div class="container">
-     <% if (isOwner) { %>
-        
+        <% if (isOwner) { %>
         <h1>Adicionar Imagens ao Capítulo</h1>
         <div class="form">
-            <form action="/foto/<%= manga._id %>/chapters/<%= selectedChapter._id %>/uploadImages" method="post" enctype="multipart/form-data">
+            <form id="uploadForm" action="/foto/<%= manga._id %>/chapters/<%= selectedChapter._id %>/uploadImages" method="post" enctype="multipart/form-data">
                 <div>
                     <label for="images">Selecione até 50 imagens por vez:</label>
                     <input type="file" id="images" name="images" multiple required>
                 </div>
                 <button type="submit">Enviar</button>
             </form>
+            <div id="progressWrapper">
+                <div id="progressBar">0%</div>
+            </div>
+            <hr>
+            <div class="api">
+                <label for="images">Rotas disponíveis:</label>
+                <form action="/catalogo/<%= manga._id %>/chapters/<%= selectedChapter.chapterNumber %>" method="get" enctype="multipart/form-data">
+                    <button class="api" type="submit">API do capítulo</button>
+                </form>
+            </div>
         </div>
-     <% } %>
-        <!-- Link de volta para todos os capítulos do manga -->
+        <% } %>
         <a href="/foto/<%= manga._id %>" class="back-link">&lt; Voltar para todos os capítulos</a>
         <br><br>
-        <!-- Título do manga 
-        <div class="manga-title"><%= manga.name %></div>
-        -->
-
-        <br><br>
         <div class="chapter">
+            <div class="chapter-title">Imagens do Capítulo <%= selectedChapter.title %></div>
+            <hr>
             <% if (selectedChapter.images && selectedChapter.images.length > 0) { %>
-                <% selectedChapter.images.forEach((image, index) => { %>
-                    <img src="<%= image %>" alt="Imagem do capítulo <%= index + 1 %>">
-                <% }); %>
+            <% selectedChapter.images.forEach((image, index) => { %>
+            <div class="api">
+                <form action="/imagem/<%= manga._id %>/chapters/<%= selectedChapter.chapterNumber %>/<%= index %>" method="get" enctype="multipart/form-data">
+                    <button class="api" type="submit">Link da imagem N°<%= index %></button>
+                </form>
+            </div>
+            <br>
+            <% }); %>
             <% } else { %>
-                <p>Nenhuma imagem disponível para este capítulo.</p>
+            <p>Nenhuma imagem disponível para este capítulo.</p>
             <% } %>
         </div>
-
-        <!-- Título do capítulo -->
-        <div class="chapter-title"><%= selectedChapter.title %></div>
-
-        <!-- Navegação entre capítulos -->
         <div class="navigation">
             <% if (selectedChapter.chapterNumber > 1) { %>
-                <a href="/foto/<%= manga._id %>/chapters/<%= selectedChapter.chapterNumber - 1 %>" class="previous">Capítulo Anterior</a>
+            <a href="/foto/<%= manga._id %>/chapters/<%= selectedChapter.chapterNumber - 1 %>" class="previous">Capítulo Anterior</a>
             <% } %>
             <% if (selectedChapter.chapterNumber < totalChapters) { %>
-                <a href="/foto/<%= manga._id %>/chapters/<%= selectedChapter.chapterNumber + 1 %>" class="next">Próximo Capítulo</a>
+            <a href="/foto/<%= manga._id %>/chapters/<%= selectedChapter.chapterNumber + 1 %>" class="next">Próximo Capítulo</a>
             <% } %>
         </div>
-<br><br>
-
-        <!-- Adicione o código do Disqus abaixo -->
+        <br><br>
+        <hr>
         <div id="disqus_thread"></div>
-        <!-- Código do Disqus -->
+
         <script>
-            /**
-             *  REQUER A CONFIGURAÇÃO DO SHORTNAME DO DISQUS
-             *  Veja os detalhes da configuração em https://disqus.com/admin/create/
-             */
+            document.getElementById('uploadForm').addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                var form = e.target;
+                var formData = new FormData(form);
+                var progressBar = document.getElementById('progressBar');
+                var progressWrapper = document.getElementById('progressWrapper');
+
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', form.action, true);
+
+                xhr.upload.onprogress = function (event) {
+                    if (event.lengthComputable) {
+                        var percentComplete = Math.round((event.loaded / event.total) * 100);
+                        progressBar.style.width = percentComplete + '%';
+                        progressBar.textContent = percentComplete + '%';
+                    }
+                };
+
+                xhr.onload = function () {
+                    if (xhr.status === 200) {
+                        try {
+                            var response = JSON.parse(xhr.responseText);
+                            if (response.message === 'Capítulo adicionado com sucesso') {
+                                alert('Capítulo adicionado com sucesso!');
+                                window.location.reload();
+                            } else {
+                                alert('Capítulo adicionado com sucesso!');
+                                window.location.reload();
+                            }
+                        } catch (error) {
+                            alert('Erro ao processar a resposta do servidor.');
+                        }
+                    } else {
+                        alert('Erro ao fazer o upload do capítulo.');
+                    }
+                };
+
+                xhr.onerror = function () {
+                    alert('Erro na rede ou no servidor.');
+                };
+
+                progressWrapper.style.display = 'block';
+                xhr.send(formData);
+            });
+        </script>
+        <script>
             var disqus_config = function () {
-                this.page.url = window.location.href; // URL da página onde os comentários estão
-                this.page.identifier = '<%= manga._id %>'; // Identificador único para a página (pode ser o ID do seu mangá)
+                this.page.url = window.location.href;
+                this.page.identifier = '<%= manga._id %>';
             };
-            (function () { // Não modifique o código abaixo
-                var d = document,
-                    s = d.createElement('script');
-                s.src = 'https://trevo-mangas.disqus.com/embed.js'; // Substitua 'seushortname' pelo seu shortname do Disqus
+            (function () {
+                var d = document, s = d.createElement('script');
+                s.src = 'https://trevo-mangas.disqus.com/embed.js';
                 s.setAttribute('data-timestamp', +new Date());
                 (d.head || d.body).appendChild(s);
             })();
         </script>
         <noscript>Ative o JavaScript para ver os comentários.</noscript>
-        <!-- Fim do código do Disqus -->
     </div>
 </body>
 

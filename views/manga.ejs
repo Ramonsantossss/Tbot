@@ -160,6 +160,10 @@
       line-height: 30px;
       color: white;
     }
+    api button {
+      width: 100%;
+    }
+
   </style>
 </head>
 <body>
@@ -171,10 +175,17 @@
         <p class="descricao">Descrição: <%= manga.description %></p>
         <p class="descricao">Tags: <%= manga.tags.join(', ') %></p>
       </div>
-    </div>
+              <div class="api">
+
+                <form action="/catalogo/<%= manga._id %>" method="get" enctype="multipart/form-data">
+                    <button class="api" type="submit">API de todos os capítulos</button>
+                </form>
+            </div>
+    </div><hr>
     <ul>
+     <h2 class="titulo">Capítulos</h2>
       <% manga.chapters.sort((a, b) => a.chapterNumber - b.chapterNumber).forEach(chapter => { %>
-          <h2 class="titulo">Capítulos</h2>
+         
         <li>
           <h3>Capítulo <%= chapter.chapterNumber %></h3>
           <p><%= chapter.title %></p>
@@ -185,11 +196,8 @@
         </li>
       <% }); %>
     </ul>
-    <br><br>
+    <hr><br>
 
-    <% if (isOwner) { %>
-      <a href="/foto/<%= manga._id %>/delete" onclick="return confirm('Tem certeza que deseja deletar o Catálogo?')">Deletar Catálogo</a>
-    <% } %>
     <% if (isOwner) { %>
       <h2 class="titulo">Upload de Capítulo</h2>
       <form id="uploadForm" action="/foto/<%= manga._id %>/uploadChapter" method="post" enctype="multipart/form-data">
@@ -202,11 +210,11 @@
           <input class="input" type="number" id="chapterNumber" name="chapterNumber" required>
         </div>
         <div>
-          <label for="images">Imagens do Capítulo:</label><br>
-          <input class="upimg" type="file" id="images" name="images" multiple required>
+          <label for="images">Imagens do Capítulo (opcional):</label><br>
+          <input class="upimg" type="file" id="images" name="images" multiple>
         </div>
         <div>
-          <button type="submit">Upload</button>
+          <button type="submit">Criar Capítulo</button>
         </div>
         <div id="progressWrapper">
           <div id="progressBar">0%</div>
@@ -231,7 +239,7 @@
     <noscript>Ative o JavaScript para ver os comentários.</noscript>
     <br><br>
   <script>
-    document.getElementById('uploadForm').addEventListener('submit', function (e) {
+    document.getElementById('uploadForm').addEventListener('submit', function(e) {
       e.preventDefault();
       
       var form = e.target;
@@ -242,7 +250,7 @@
       var xhr = new XMLHttpRequest();
       xhr.open('POST', form.action, true);
       
-      xhr.upload.onprogress = function (event) {
+      xhr.upload.onprogress = function(event) {
         if (event.lengthComputable) {
           var percentComplete = Math.round((event.loaded / event.total) * 100);
           progressBar.style.width = percentComplete + '%';
@@ -250,28 +258,32 @@
         }
       };
       
-      xhr.onload = function () {
+      xhr.onload = function() {
         if (xhr.status === 200) {
-          // Verifique a resposta do servidor
-          var response = JSON.parse(xhr.responseText);
-          if (response.message === 'Capítulo adicionado com sucesso') {
-            alert('Capítulo adicionado com sucesso!');
-            window.location.reload();
-          } else {
-            alert('Erro ao fazer o upload do capítulo: ' + response.error);
-          }
+          alert('Upload bem-sucedido');
+          progressBar.style.width = '0%';
+          progressBar.textContent = '0%';
+          form.reset();
+          window.location.reload();
         } else {
-          alert('Erro ao fazer o upload do capítulo.');
+          alert('Erro no upload: ' + xhr.statusText);
         }
+        progressWrapper.style.display = 'none';
       };
       
-      xhr.onerror = function () {
-        alert('Erro na rede ou no servidor.');
+      xhr.onerror = function() {
+        alert('Erro no upload: ' + xhr.statusText);
+        progressWrapper.style.display = 'none';
       };
       
       progressWrapper.style.display = 'block';
       xhr.send(formData);
     });
+
   </script>
 </body>
 </html>
+
+
+
+
