@@ -6019,7 +6019,7 @@ app.get('/music-card1', async (req, res) => {
       name: nome,
       nameColor: "#FF7A00",
       author: autor,
-      authorColor: "#696969",
+      authorColor: "#FF7A00",
       startTime,
       endTime,
       timeColor: "#FF7A00"
@@ -6053,7 +6053,7 @@ app.get('/music-card2', async (req, res) => {
       name: nome,
       nameColor: "#FF7A00",
       author: autor,
-      authorColor: "#696969",
+      authorColor: "#FF7A00",
       startTime,
       endTime,
       timeColor: "#FF7A00"
@@ -6087,7 +6087,7 @@ app.get('/music-card3', async (req, res) => {
       name: nome,
       nameColor: "#FF7A00",
       author: autor,
-      authorColor: "#696969"
+      authorColor: "#FF7A00"
     });
 
     fs.writeFileSync("musicard.png", musicard);
