@@ -6011,7 +6011,8 @@ app.get('/music-card1', async (req, res) => {
 
     const musicard = await Classic({
       thumbnailImage: thumbnail,
-      backgroundColor,
+      backgroundImage: thumbnail,
+      imageDarkness: 60,
       progress: 10,
       progressColor: "#FF7A00",
       progressBarColor: "#5F2D00",
@@ -6044,7 +6045,8 @@ app.get('/music-card2', async (req, res) => {
 
     const musicard = await ClassicPro({
       thumbnailImage: thumbnail,
-      backgroundColor,
+      backgroundImage: thumbnail,
+      imageDarkness: 60,
       progress: 10,
       progressColor: "#FF7A00",
       progressBarColor: "#5F2D00",
@@ -6077,7 +6079,8 @@ app.get('/music-card3', async (req, res) => {
 
     const musicard = await Dynamic({
       thumbnailImage: thumbnail,
-      backgroundColor,
+      backgroundImage: thumbnail,
+      imageDarkness: 60,
       progress: 10,
       progressColor: "#FF7A00",
       progressBarColor: "#5F2D00",
@@ -6108,7 +6111,8 @@ app.get('/music-card4', async (req, res) => {
 
     const musicard = await Mini({
       thumbnailImage: thumbnail,
-      backgroundColor,
+      backgroundImage: thumbnail,
+      imageDarkness: 60,
       progress: 10,
       progressColor: "#FF7A00",
       progressBarColor: "#5F2D00",
