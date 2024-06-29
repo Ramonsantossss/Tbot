@@ -6018,8 +6018,8 @@ app.get('/music-card1', async (req, res) => {
   if (user.saldo > 1) {
   try {
     const musicard = await Classic({
-      thumbnailImage: thumbnail,
-      backgroundColor: backgroundColor,
+      thumbnail,
+      backgroundColor,
       progress: 10,
       progressColor: "#FF7A00",
       progressBarColor: "#5F2D00",
@@ -6027,8 +6027,8 @@ app.get('/music-card1', async (req, res) => {
       nameColor: "#FF7A00",
       author: autor,
       authorColor: "#696969",
-      startTime: StartTime,
-      endTime: EndTime,
+      StartTime,
+      EndTime,
       timeColor: "#FF7A00"
     });
 
@@ -6064,17 +6064,17 @@ app.get('/music-card2', async (req, res) => {
   if (user.saldo > 1) {
   try {
     const musicard = await ClassicPro({
-        thumbnailImage: thumbnail,
-        backgroundColor: backgroundColor,
+        thumbnail,
+        backgroundColor,
         progress: 10,
         progressColor: "#FF7A00",
         progressBarColor: "#5F2D00",
-        name: nome,
+        nome,
         nameColor: "#FF7A00",
-        author: autor,
+        autor,
         authorColor: "#696969",
-        startTime: StartTime,
-        endTime: EndTime,
+        StartTime,
+        EndTime,
         timeColor: "#FF7A00"
     });
     
@@ -6110,14 +6110,14 @@ app.get('/music-card3', async (req, res) => {
   if (user.saldo > 1) {
   try {
     const musicard = await Dynamic({
-        thumbnailImage: thumbnail,
-        backgroundColor: backgroundColor,
+        thumbnail,
+        backgroundColor,
         progress: 10,
         progressColor: "#FF7A00",
         progressBarColor: "#5F2D00",
-        name: nome,
+        nome,
         nameColor: "#FF7A00",
-        author: autor,
+        autor,
         authorColor: "#696969"
     });
     fs.writeFileSync("musicard.png", musicard);
@@ -6151,8 +6151,8 @@ app.get('/music-card4', async (req, res) => {
   if (user.saldo > 1) {
   try {
     const musicard = await Mini({
-        thumbnailImage: thumbnail,
-        backgroundColor: backgroundColor,
+        thumbnail,
+        backgroundColor,
         progress: 10,
         progressColor: "#FF7A00",
         progressBarColor: "#5F2D00",
