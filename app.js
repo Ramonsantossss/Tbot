@@ -6002,169 +6002,176 @@ app.get('/music-cardTest', async (req, res) => {
 });
 
 app.get('/music-card1', async (req, res) => {
-  const { username, key, thumbnail, backgroundColor, autor, nome, StartTime, EndTime } = req.query;
-
+  const { username, key } = req.query;
+  const thumbnail = req.query.thumbnail || "https://telegra.ph/file/87fe9fdbf08280460e531.jpg"
+  const backgroundColor = req.query.backgroundcolor || "#070707"
+  const autor = req.query.autor || "Clover Mods - @clovermyt"
+  const nome = req.query.nome || "Clover"
+  const StartTime = req.query.starttime || "0:00"
+  const EndTime = req.query.endtime || "3:45"
   const user = await User.findOne({ username, key });
   if (!user || user.isBaned) {
     return res.sendFile(htmlPath);
   }
-
+  //diminuirSaldo(username);
   adicionarSaldo(username);
-  
   if (user.saldo > 1) {
-    try {
-      const options = {
-        progress: 10,
-        progressColor: "#FF7A00",
-        progressBarColor: "#5F2D00",
-        timeColor: "#FF7A00"
-      };
+  try {
+    const musicard = await Classic({
+      thumbnailImage: thumbnail,
+      backgroundColor: backgroundColor,
+      progress: 10,
+      progressColor: "#FF7A00",
+      progressBarColor: "#5F2D00",
+      name: nome,
+      nameColor: "#FF7A00",
+      author: autor,
+      authorColor: "#696969",
+      startTime: StartTime,
+      endTime: EndTime,
+      timeColor: "#FF7A00"
+    });
 
-      if (thumbnail) options.thumbnailImage = thumbnail;
-      if (backgroundColor) options.backgroundColor = backgroundColor;
-      if (nome) options.name = nome;
-      if (autor) options.author = autor;
-      if (StartTime) options.startTime = StartTime;
-      if (EndTime) options.endTime = EndTime;
-
-      const musicard = await Classic(options);
-
-      fs.writeFileSync("musicard.png", musicard);
-      console.log("Music card gerado com sucesso!");
-      
-      res.sendFile(__dirname + '/musicard.png');
-    } catch (err) {
-      console.error("Erro ao gerar o music card:", err);
-      res.status(500).send("Erro ao gerar o music card. Verifique o console para mais detalhes.");
-    }
-  } else {
-    return res.sendFile(htmlPath);
+    fs.writeFileSync("musicard.png", musicard);
+    console.log("Music card gerado com sucesso!");
+    
+    // Envie o arquivo musicard.png como resposta
+    res.sendFile(__dirname + '/musicard.png');
+  } catch (err) {
+    console.error("Erro ao gerar o music card:", err);
+    res.status(500).send("Erro ao gerar o music card. Verifique o console para mais detalhes.");
   }
+} else {
+  return res.sendFile(htmlPath);
+}
 });
+
 
 app.get('/music-card2', async (req, res) => {
-  const { username, key, thumbnail, backgroundColor, autor, nome, StartTime, EndTime } = req.query;
-
+  const { username, key } = req.query;
+  const thumbnail = req.query.thumbnail || "https://telegra.ph/file/87fe9fdbf08280460e531.jpg"
+  const backgroundColor = req.query.backgroundcolor || "#070707"
+  const autor = req.query.autor || "Clover Mods - @clovermyt"
+  const nome = req.query.nome || "Clover"
+  const StartTime = req.query.starttime || "0:00"
+  const EndTime = req.query.endtime || "3:45"
   const user = await User.findOne({ username, key });
   if (!user || user.isBaned) {
     return res.sendFile(htmlPath);
   }
-
+  //diminuirSaldo(username);
   adicionarSaldo(username);
-  
   if (user.saldo > 1) {
-    try {
-      const options = {
+  try {
+    const musicard = await ClassicPro({
+        thumbnailImage: thumbnail,
+        backgroundColor: backgroundColor,
         progress: 10,
         progressColor: "#FF7A00",
         progressBarColor: "#5F2D00",
+        name: nome,
+        nameColor: "#FF7A00",
+        author: autor,
+        authorColor: "#696969",
+        startTime: StartTime,
+        endTime: EndTime,
         timeColor: "#FF7A00"
-      };
-
-      if (thumbnail) options.thumbnailImage = thumbnail;
-      if (backgroundColor) options.backgroundColor = backgroundColor;
-      if (nome) options.name = nome;
-      if (autor) options.author = autor;
-      if (StartTime) options.startTime = StartTime;
-      if (EndTime) options.endTime = EndTime;
-
-      const musicard = await ClassicPro(options);
-
-      fs.writeFileSync("musicard.png", musicard);
-      console.log("Music card gerado com sucesso!");
-      
-      res.sendFile(__dirname + '/musicard.png');
-    } catch (err) {
-      console.error("Erro ao gerar o music card:", err);
-      res.status(500).send("Erro ao gerar o music card. Verifique o console para mais detalhes.");
-    }
-  } else {
-    return res.sendFile(htmlPath);
+    });
+    
+    fs.writeFileSync("musicard.png", musicard);
+    console.log("Music card gerado com sucesso!");
+    
+    // Envie o arquivo musicard.png como resposta
+    res.sendFile(__dirname + '/musicard.png');
+  } catch (err) {
+    console.error("Erro ao gerar o music card:", err);
+    res.status(500).send("Erro ao gerar o music card. Verifique o console para mais detalhes.");
   }
+} else {
+  return res.sendFile(htmlPath);
+}
 });
 
-app.get('/music-card3', async (req, res) => {
-  const { username, key, thumbnail, backgroundColor, autor, nome, StartTime, EndTime } = req.query;
 
+app.get('/music-card3', async (req, res) => {
+  const { username, key } = req.query;
+  const thumbnail = req.query.thumbnail || "https://telegra.ph/file/87fe9fdbf08280460e531.jpg"
+  const backgroundColor = req.query.backgroundcolor || "#070707"
+  const autor = req.query.autor || "Clover Mods - @clovermyt"
+  const nome = req.query.nome || "Clover"
+  const StartTime = req.query.starttime || "0:00"
+  const EndTime = req.query.endtime || "3:45"
   const user = await User.findOne({ username, key });
   if (!user || user.isBaned) {
     return res.sendFile(htmlPath);
   }
-
+  //diminuirSaldo(username);
   adicionarSaldo(username);
-  
   if (user.saldo > 1) {
-    try {
-      const options = {
+  try {
+    const musicard = await Dynamic({
+        thumbnailImage: thumbnail,
+        backgroundColor: backgroundColor,
         progress: 10,
         progressColor: "#FF7A00",
         progressBarColor: "#5F2D00",
+        name: nome,
+        nameColor: "#FF7A00",
+        author: autor,
         authorColor: "#696969"
-      };
-
-      if (thumbnail) options.thumbnailImage = thumbnail;
-      if (backgroundColor) options.backgroundColor = backgroundColor;
-      if (nome) options.name = nome;
-      if (autor) options.author = autor;
-      if (StartTime) options.startTime = StartTime;
-      if (EndTime) options.endTime = EndTime;
-
-      const musicard = await Dynamic(options);
-
-      fs.writeFileSync("musicard.png", musicard);
-      console.log("Music card gerado com sucesso!");
-      
-      res.sendFile(__dirname + '/musicard.png');
-    } catch (err) {
-      console.error("Erro ao gerar o music card:", err);
-      res.status(500).send("Erro ao gerar o music card. Verifique o console para mais detalhes.");
-    }
-  } else {
-    return res.sendFile(htmlPath);
+    });
+    fs.writeFileSync("musicard.png", musicard);
+    console.log("Music card gerado com sucesso!");
+    
+    // Envie o arquivo musicard.png como resposta
+    res.sendFile(__dirname + '/musicard.png');
+  } catch (err) {
+    console.error("Erro ao gerar o music card:", err);
+    res.status(500).send("Erro ao gerar o music card. Verifique o console para mais detalhes.");
   }
+} else {
+  return res.sendFile(htmlPath);
+}
 });
 
 app.get('/music-card4', async (req, res) => {
-  const { username, key, thumbnail, backgroundColor, autor, nome, StartTime, EndTime } = req.query;
-
+  const { username, key } = req.query;
+  const thumbnail = req.query.thumbnail || "https://telegra.ph/file/87fe9fdbf08280460e531.jpg"
+  const backgroundColor = req.query.backgroundcolor || "#070707"
+  const autor = req.query.autor || "Clover Mods - @clovermyt"
+  const nome = req.query.nome || "Clover"
+  const StartTime = req.query.starttime || "0:00"
+  const EndTime = req.query.endtime || "3:45"
   const user = await User.findOne({ username, key });
   if (!user || user.isBaned) {
     return res.sendFile(htmlPath);
   }
-
+  //diminuirSaldo(username);
   adicionarSaldo(username);
-  
   if (user.saldo > 1) {
-    try {
-      const options = {
+  try {
+    const musicard = await Mini({
+        thumbnailImage: thumbnail,
+        backgroundColor: backgroundColor,
         progress: 10,
         progressColor: "#FF7A00",
         progressBarColor: "#5F2D00",
+        menuColor: "#FF7A00",
         paused: false
-      };
-
-      if (thumbnail) options.thumbnailImage = thumbnail;
-      if (backgroundColor) options.backgroundColor = backgroundColor;
-      if (nome) options.name = nome;
-      if (autor) options.author = autor;
-      if (StartTime) options.startTime = StartTime;
-      if (EndTime) options.endTime = EndTime;
-
-      const musicard = await Mini(options);
-
-      fs.writeFileSync("musicard.png", musicard);
-      console.log("Music card gerado com sucesso!");
-      
-      res.sendFile(__dirname + '/musicard.png');
-    } catch (err) {
-      console.error("Erro ao gerar o music card:", err);
-      res.status(500).send("Erro ao gerar o music card. Verifique o console para mais detalhes.");
-    }
-  } else {
-    return res.sendFile(htmlPath);
+    });
+    fs.writeFileSync("musicard.png", musicard);
+    console.log("Music card gerado com sucesso!");
+    
+    // Envie o arquivo musicard.png como resposta
+    res.sendFile(__dirname + '/musicard.png');
+  } catch (err) {
+    console.error("Erro ao gerar o music card:", err);
+    res.status(500).send("Erro ao gerar o music card. Verifique o console para mais detalhes.");
   }
+} else {
+  return res.sendFile(htmlPath);
+}
 });
-
 
 app.get('/googlefoto', async (req, res) => {
   const { username, key } = req.query;
