@@ -6002,14 +6002,8 @@ app.get('/music-cardTest', async (req, res) => {
 });
 
 app.get('/music-card1', async (req, res) => {
-  const { username, key } = req.query;
-  const thumbnail = req.query.thumbnail;
-  const backgroundColor = req.query.backgroundColor;
-  const autor = req.query.autor;
-  const nome = req.query.nome;
-  const StartTime = req.query.StartTime;
-  const EndTime = req.query.EndTime;
-  
+  const { username, key, thumbnail, backgroundColor, autor, nome, StartTime, EndTime } = req.query;
+
   const user = await User.findOne({ username, key });
   if (!user || user.isBaned) {
     return res.sendFile(htmlPath);
@@ -6019,20 +6013,21 @@ app.get('/music-card1', async (req, res) => {
   
   if (user.saldo > 1) {
     try {
-      const musicard = await Classic({
-        thumbnailImage: thumbnail,
-        backgroundColor: backgroundColor,
+      const options = {
         progress: 10,
         progressColor: "#FF7A00",
         progressBarColor: "#5F2D00",
-        name: nome,
-        nameColor: "#FF7A00",
-        author: autor,
-        authorColor: "#696969",
-        startTime: StartTime,
-        endTime: EndTime,
         timeColor: "#FF7A00"
-      });
+      };
+
+      if (thumbnail) options.thumbnailImage = thumbnail;
+      if (backgroundColor) options.backgroundColor = backgroundColor;
+      if (nome) options.name = nome;
+      if (autor) options.author = autor;
+      if (StartTime) options.startTime = StartTime;
+      if (EndTime) options.endTime = EndTime;
+
+      const musicard = await Classic(options);
 
       fs.writeFileSync("musicard.png", musicard);
       console.log("Music card gerado com sucesso!");
@@ -6048,14 +6043,8 @@ app.get('/music-card1', async (req, res) => {
 });
 
 app.get('/music-card2', async (req, res) => {
-  const { username, key } = req.query;
-  const thumbnail = req.query.thumbnail;
-  const backgroundColor = req.query.backgroundColor;
-  const autor = req.query.autor;
-  const nome = req.query.nome;
-  const StartTime = req.query.StartTime;
-  const EndTime = req.query.EndTime;
-  
+  const { username, key, thumbnail, backgroundColor, autor, nome, StartTime, EndTime } = req.query;
+
   const user = await User.findOne({ username, key });
   if (!user || user.isBaned) {
     return res.sendFile(htmlPath);
@@ -6065,20 +6054,21 @@ app.get('/music-card2', async (req, res) => {
   
   if (user.saldo > 1) {
     try {
-      const musicard = await ClassicPro({
-        thumbnailImage: thumbnail,
-        backgroundColor: backgroundColor,
+      const options = {
         progress: 10,
         progressColor: "#FF7A00",
         progressBarColor: "#5F2D00",
-        name: nome,
-        nameColor: "#FF7A00",
-        author: autor,
-        authorColor: "#696969",
-        startTime: StartTime,
-        endTime: EndTime,
         timeColor: "#FF7A00"
-      });
+      };
+
+      if (thumbnail) options.thumbnailImage = thumbnail;
+      if (backgroundColor) options.backgroundColor = backgroundColor;
+      if (nome) options.name = nome;
+      if (autor) options.author = autor;
+      if (StartTime) options.startTime = StartTime;
+      if (EndTime) options.endTime = EndTime;
+
+      const musicard = await ClassicPro(options);
 
       fs.writeFileSync("musicard.png", musicard);
       console.log("Music card gerado com sucesso!");
@@ -6094,14 +6084,8 @@ app.get('/music-card2', async (req, res) => {
 });
 
 app.get('/music-card3', async (req, res) => {
-  const { username, key } = req.query;
-  const thumbnail = req.query.thumbnail;
-  const backgroundColor = req.query.backgroundColor;
-  const autor = req.query.autor;
-  const nome = req.query.nome;
-  const StartTime = req.query.StartTime;
-  const EndTime = req.query.EndTime;
-  
+  const { username, key, thumbnail, backgroundColor, autor, nome, StartTime, EndTime } = req.query;
+
   const user = await User.findOne({ username, key });
   if (!user || user.isBaned) {
     return res.sendFile(htmlPath);
@@ -6111,17 +6095,21 @@ app.get('/music-card3', async (req, res) => {
   
   if (user.saldo > 1) {
     try {
-      const musicard = await Dynamic({
-        thumbnailImage: thumbnail,
-        backgroundColor: backgroundColor,
+      const options = {
         progress: 10,
         progressColor: "#FF7A00",
         progressBarColor: "#5F2D00",
-        name: nome,
-        nameColor: "#FF7A00",
-        author: autor,
         authorColor: "#696969"
-      });
+      };
+
+      if (thumbnail) options.thumbnailImage = thumbnail;
+      if (backgroundColor) options.backgroundColor = backgroundColor;
+      if (nome) options.name = nome;
+      if (autor) options.author = autor;
+      if (StartTime) options.startTime = StartTime;
+      if (EndTime) options.endTime = EndTime;
+
+      const musicard = await Dynamic(options);
 
       fs.writeFileSync("musicard.png", musicard);
       console.log("Music card gerado com sucesso!");
@@ -6137,14 +6125,8 @@ app.get('/music-card3', async (req, res) => {
 });
 
 app.get('/music-card4', async (req, res) => {
-  const { username, key } = req.query;
-  const thumbnail = req.query.thumbnail;
-  const backgroundColor = req.query.backgroundColor;
-  const autor = req.query.autor;
-  const nome = req.query.nome;
-  const StartTime = req.query.StartTime;
-  const EndTime = req.query.EndTime;
-  
+  const { username, key, thumbnail, backgroundColor, autor, nome, StartTime, EndTime } = req.query;
+
   const user = await User.findOne({ username, key });
   if (!user || user.isBaned) {
     return res.sendFile(htmlPath);
@@ -6154,15 +6136,21 @@ app.get('/music-card4', async (req, res) => {
   
   if (user.saldo > 1) {
     try {
-      const musicard = await Mini({
-        thumbnailImage: thumbnail,
-        backgroundColor: backgroundColor,
+      const options = {
         progress: 10,
         progressColor: "#FF7A00",
         progressBarColor: "#5F2D00",
-        menuColor: "#FF7A00",
         paused: false
-      });
+      };
+
+      if (thumbnail) options.thumbnailImage = thumbnail;
+      if (backgroundColor) options.backgroundColor = backgroundColor;
+      if (nome) options.name = nome;
+      if (autor) options.author = autor;
+      if (StartTime) options.startTime = StartTime;
+      if (EndTime) options.endTime = EndTime;
+
+      const musicard = await Mini(options);
 
       fs.writeFileSync("musicard.png", musicard);
       console.log("Music card gerado com sucesso!");
