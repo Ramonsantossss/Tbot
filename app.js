@@ -6006,8 +6006,8 @@ app.get('/music-card1', async (req, res) => {
     const { username, key, thumbnail, backgroundcolor, autor, nome, starttime, endtime } = req.query;
 
     const backgroundColor = backgroundcolor ? `#${backgroundcolor}` : "#070707";
-    const startTime = starttime ? starttime.replace(':', '%3A') : "0%3A00";
-    const endTime = endtime ? endtime.replace(':', '%3A') : "3%3A45";
+    const startTime = starttime 
+    const endTime = endtime 
 
     const musicard = await Classic({
       thumbnailImage: thumbnail,
@@ -6039,8 +6039,8 @@ app.get('/music-card2', async (req, res) => {
     const { username, key, thumbnail, backgroundcolor, autor, nome, starttime, endtime } = req.query;
 
     const backgroundColor = backgroundcolor ? `#${backgroundcolor}` : "#070707";
-    const startTime = starttime ? starttime.replace(':', '%3A') : "0%3A00";
-    const endTime = endtime ? endtime.replace(':', '%3A') : "3%3A45";
+    const startTime = starttime 
+    const endTime = endtime 
 
     const musicard = await ClassicPro({
       thumbnailImage: thumbnail,
@@ -6072,8 +6072,8 @@ app.get('/music-card3', async (req, res) => {
     const { username, key, thumbnail, backgroundcolor, autor, nome, starttime, endtime } = req.query;
 
     const backgroundColor = backgroundcolor ? `#${backgroundcolor}` : "#070707";
-    const startTime = starttime ? starttime.replace(':', '%3A') : "0%3A00";
-    const endTime = endtime ? endtime.replace(':', '%3A') : "3%3A45";
+    const startTime = starttime 
+    const endTime = endtime 
 
     const musicard = await Dynamic({
       thumbnailImage: thumbnail,
@@ -6102,8 +6102,9 @@ app.get('/music-card4', async (req, res) => {
     const { username, key, thumbnail, backgroundcolor, autor, nome, starttime, endtime } = req.query;
 
     const backgroundColor = backgroundcolor ? `#${backgroundcolor}` : "#070707";
-    const startTime = starttime ? starttime.replace(':', '%3A') : "0%3A00";
-    const endTime = endtime ? endtime.replace(':', '%3A') : "3%3A45";
+    const startTime = starttime 
+    const endTime = endtime 
+    
 
     const musicard = await Mini({
       thumbnailImage: thumbnail,
