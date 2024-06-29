@@ -6003,12 +6003,12 @@ app.get('/music-cardTest', async (req, res) => {
 
 app.get('/music-card1', async (req, res) => {
   const { username, key } = req.query;
-  const thumbnail = req.query.thumbnail || "https://telegra.ph/file/87fe9fdbf08280460e531.jpg"
+  const thumbnailImage = req.query.thumbnail || "https://telegra.ph/file/87fe9fdbf08280460e531.jpg"
   const backgroundColor = req.query.backgroundcolor || "#070707"
   const autor = req.query.autor || "Clover Mods - @clovermyt"
-  const nome = req.query.nome || "Clover"
-  const StartTime = req.query.starttime || "0:00"
-  const EndTime = req.query.endtime || "3:45"
+  const name = req.query.nome || "Clover"
+  const startTime = req.query.starttime || "0:00"
+  const endTime = req.query.endtime || "3:45"
   const user = await User.findOne({ username, key });
   if (!user || user.isBaned) {
     return res.sendFile(htmlPath);
@@ -6018,17 +6018,17 @@ app.get('/music-card1', async (req, res) => {
   if (user.saldo > 1) {
   try {
     const musicard = await Classic({
-      thumbnail,
+      thumbnailImage,
       backgroundColor,
       progress: 10,
       progressColor: "#FF7A00",
       progressBarColor: "#5F2D00",
-      name: nome,
+      name,
       nameColor: "#FF7A00",
       author: autor,
       authorColor: "#696969",
-      StartTime,
-      EndTime,
+      startTime,
+      endTime,
       timeColor: "#FF7A00"
     });
 
@@ -6049,12 +6049,12 @@ app.get('/music-card1', async (req, res) => {
 
 app.get('/music-card2', async (req, res) => {
   const { username, key } = req.query;
-  const thumbnail = req.query.thumbnail || "https://telegra.ph/file/87fe9fdbf08280460e531.jpg"
+  const thumbnailImage = req.query.thumbnail || "https://telegra.ph/file/87fe9fdbf08280460e531.jpg"
   const backgroundColor = req.query.backgroundcolor || "#070707"
   const autor = req.query.autor || "Clover Mods - @clovermyt"
-  const nome = req.query.nome || "Clover"
-  const StartTime = req.query.starttime || "0:00"
-  const EndTime = req.query.endtime || "3:45"
+  const name = req.query.nome || "Clover"
+  const startTime = req.query.starttime || "0:00"
+  const endTime = req.query.endtime || "3:45"
   const user = await User.findOne({ username, key });
   if (!user || user.isBaned) {
     return res.sendFile(htmlPath);
@@ -6064,17 +6064,17 @@ app.get('/music-card2', async (req, res) => {
   if (user.saldo > 1) {
   try {
     const musicard = await ClassicPro({
-        thumbnail,
+        thumbnailImage,
         backgroundColor,
         progress: 10,
         progressColor: "#FF7A00",
         progressBarColor: "#5F2D00",
-        nome,
+        name,
         nameColor: "#FF7A00",
-        autor,
+        author: autor,
         authorColor: "#696969",
-        StartTime,
-        EndTime,
+        startTime,
+        endTime,
         timeColor: "#FF7A00"
     });
     
@@ -6095,12 +6095,12 @@ app.get('/music-card2', async (req, res) => {
 
 app.get('/music-card3', async (req, res) => {
   const { username, key } = req.query;
-  const thumbnail = req.query.thumbnail || "https://telegra.ph/file/87fe9fdbf08280460e531.jpg"
+  const thumbnailImage = req.query.thumbnail || "https://telegra.ph/file/87fe9fdbf08280460e531.jpg"
   const backgroundColor = req.query.backgroundcolor || "#070707"
   const autor = req.query.autor || "Clover Mods - @clovermyt"
-  const nome = req.query.nome || "Clover"
-  const StartTime = req.query.starttime || "0:00"
-  const EndTime = req.query.endtime || "3:45"
+  const name = req.query.nome || "Clover"
+  const startTime = req.query.starttime || "0:00"
+  const endTime = req.query.endtime || "3:45"
   const user = await User.findOne({ username, key });
   if (!user || user.isBaned) {
     return res.sendFile(htmlPath);
@@ -6110,14 +6110,14 @@ app.get('/music-card3', async (req, res) => {
   if (user.saldo > 1) {
   try {
     const musicard = await Dynamic({
-        thumbnail,
+        thumbnailImage,
         backgroundColor,
         progress: 10,
         progressColor: "#FF7A00",
         progressBarColor: "#5F2D00",
-        nome,
+        name,
         nameColor: "#FF7A00",
-        autor,
+        author,
         authorColor: "#696969"
     });
     fs.writeFileSync("musicard.png", musicard);
@@ -6136,12 +6136,12 @@ app.get('/music-card3', async (req, res) => {
 
 app.get('/music-card4', async (req, res) => {
   const { username, key } = req.query;
-  const thumbnail = req.query.thumbnail || "https://telegra.ph/file/87fe9fdbf08280460e531.jpg"
+  const thumbnailImage = req.query.thumbnail || "https://telegra.ph/file/87fe9fdbf08280460e531.jpg"
   const backgroundColor = req.query.backgroundcolor || "#070707"
   const autor = req.query.autor || "Clover Mods - @clovermyt"
-  const nome = req.query.nome || "Clover"
-  const StartTime = req.query.starttime || "0:00"
-  const EndTime = req.query.endtime || "3:45"
+  const name = req.query.nome || "Clover"
+  const startTime = req.query.starttime || "0:00"
+  const endTime = req.query.endtime || "3:45"
   const user = await User.findOne({ username, key });
   if (!user || user.isBaned) {
     return res.sendFile(htmlPath);
@@ -6151,7 +6151,7 @@ app.get('/music-card4', async (req, res) => {
   if (user.saldo > 1) {
   try {
     const musicard = await Mini({
-        thumbnail,
+        thumbnailImage,
         backgroundColor,
         progress: 10,
         progressColor: "#FF7A00",
