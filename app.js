@@ -16,12 +16,13 @@ const path = require('path');
 const MemoryStore = require('memorystore')(session);
 const fs = require('fs');
 const knights = require('knights-canvas');
+const { musicCard } = require("musicard-quartz");
 const multer = require('multer');
 const downloadImage = async (url, filename) => {
   const response = await axios.get(url, { responseType: 'arraybuffer' });
   fs.writeFileSync(filename, Buffer.from(response.data, 'binary'));
 };
-
+const { Classic } = require("musicard");
 const nodemailer = require("nodemailer");
 const mercadopago = require('mercadopago');
 
@@ -764,19 +765,19 @@ app.get('/nsfw/ahegao', async (req, res, next) => {
   //diminuirSaldo(username);
   adicionarSaldo(username)
   if (user.saldo > 1) {
-/*
-    const ahegao = JSON.parse(fs.readFileSync(__dirname + '/data/ahegao.json'));
-    const randahegao = ahegao[Math.floor(Math.random() * ahegao.length)];
-
-    res.json({
-      url: `${randahegao}`
+    /*
+        const ahegao = JSON.parse(fs.readFileSync(__dirname + '/data/ahegao.json'));
+        const randahegao = ahegao[Math.floor(Math.random() * ahegao.length)];
+    
+        res.json({
+          url: `${randahegao}`
+        })
+        */
+    fetch('https://nekos.life/api/hug').then(data => data.json()).then(data => {
+      res.json({
+        url: `${data.url}`
+      })
     })
-    */
-   fetch('https://nekos.life/api/hug').then(data => data.json()).then(data => {
-   res.json({
-    url: `${data.url}`
-  })
-})
   } else {
     return res.sendFile(htmlPath);
   }
@@ -5919,6 +5920,123 @@ app.get('/goodbye2', async (req, res) => {
 });
 
 
+
+
+app.get('/music-card', async (req, res) => {
+  const { username, key } = req.query;
+
+  try {
+    // Verificar se o usuário existe e está autorizado
+    const user = await User.findOne({ username, key });
+
+    if (!user || user.isBanned) {
+      return res.status(403).send('Unauthorized');
+    }
+
+    // Verificar saldo do usuário
+    // diminuirSaldo(username);
+    adicionarSaldo(username);
+
+    if (user.saldo <= 1) {
+      return res.status(403).send('Saldo insuficiente');
+    }
+
+    // Configurações do canvas e contexto
+    const width = 1920;
+    const height = 1080; // Ajuste conforme necessário
+
+    const canvas = createCanvas(width, height);
+    const ctx = canvas.getContext('2d');
+
+    // Carregar imagem de fundo
+    const backgroundImageURL = req.query.background || 'https://marketplace.canva.com/EAFKIsxfWjI/1/0/1600w/canva-papel-de-parede-coração-gradiente-bege-rosa-e-azul-eS21LuYsgUs.jpg';
+    const backgroundImage = await loadImage(backgroundImageURL);
+    ctx.drawImage(backgroundImage, 0, 0, width, height);
+
+    // Carregar foto da música (substituir pela URL ou caminho da imagem da música)
+    const musicPhotoURL = req.query.musicphoto || 'https://telegra.ph/file/87fe9fdbf08280460e531.jpg';
+    const musicPhoto = await loadImage(musicPhotoURL);
+    const musicPhotoSize = 600; // Tamanho da foto da música
+    ctx.drawImage(musicPhoto, 50, 200, musicPhotoSize, musicPhotoSize);
+
+    // Nome da música
+    const musicName = req.query.musicname || 'Nome da Música';
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 60px Arial'; // Fonte em negrito
+    ctx.textAlign = 'left';
+    ctx.fillText(musicName, 700, 300); // Posição do nome da música
+
+    // Tempo de início da música
+    const startTime = req.query.starttime || '00:00';
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '40px Arial';
+    ctx.fillText(`Início: ${startTime}`, 700, 370); // Posição do tempo de início
+
+    // Minuto final da música
+    const endTime = req.query.endtime || '03:45';
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '40px Arial';
+    ctx.fillText(`Final: ${endTime}`, 700, 430); // Posição do minuto final
+
+    // Barra de progresso da música
+    const progress = req.query.progress || 75; // Valor da barra de progresso (exemplo)
+    const progressBarWidth = 800;
+    const progressBarHeight = 20;
+    const progressBarX = 700;
+    const progressBarY = 500;
+    const progressBarColor = '#00ff00'; // Cor da barra de progresso
+    const progressBarBackground = '#808080'; // Cor do fundo da barra de progresso
+
+    // Desenhar fundo da barra de progresso
+    ctx.fillStyle = progressBarBackground;
+    ctx.fillRect(progressBarX, progressBarY, progressBarWidth, progressBarHeight);
+
+    // Desenhar barra de progresso preenchida
+    const progressWidth = (progress / 100) * progressBarWidth;
+    ctx.fillStyle = progressBarColor;
+    ctx.fillRect(progressBarX, progressBarY, progressWidth, progressBarHeight);
+
+    // Finalizar e enviar imagem
+    res.set('Content-Type', 'image/png');
+    canvas.createPNGStream().pipe(res);
+  } catch (error) {
+    console.error('Erro ao gerar o card de música:', error);
+    res.status(500).send('Erro ao gerar a imagem.');
+  }
+});
+
+
+
+app.get('/musica', async (req, res) => {
+  try {
+    const musicard = await Classic({
+      thumbnailImage: "https://telegra.ph/file/87fe9fdbf08280460e531.jpg",
+      backgroundColor: "#070707",
+      progress: 10,
+      progressColor: "#FF7A00",
+      progressBarColor: "#5F2D00",
+      name: "Burn",
+      nameColor: "#FF7A00",
+      author: "By 2WEI & Edda Hayes",
+      authorColor: "#696969",
+      startTime: "0:00",
+      endTime: "4:00",
+      timeColor: "#FF7A00"
+    });
+
+    fs.writeFileSync("musicard.png", musicard);
+    console.log("Music card gerado com sucesso!");
+    
+    // Envie o arquivo musicard.png como resposta
+    res.sendFile(__dirname + '/musicard.png');
+  } catch (err) {
+    console.error("Erro ao gerar o music card:", err);
+    res.status(500).send("Erro ao gerar o music card. Verifique o console para mais detalhes.");
+  }
+});
+
+
+
 app.get('/googlefoto', async (req, res) => {
   const { username, key } = req.query;
   const user = await User.findOne({ username, key });
@@ -6302,12 +6420,12 @@ app.get('/foto/:mangaId/chapters/:chapterNumber', async (req, res) => {
 
 app.get('/audio', async (req, res) => {
   try {
-    const audioId =  `https://files.catbox.moe/a2ndkj.mp3`;
+    const audioId = `https://files.catbox.moe/a2ndkj.mp3`;
     const audioUrl = `https://files.catbox.moe/a2ndkj.mp3`;
 
 
     const audioResponse = await axios.get(audioUrl, {
-      responseType: 'stream' 
+      responseType: 'stream'
     });
 
     // Define os cabeçalhos de resposta para o tipo de conteúdo e outros cabeçalhos necessários
@@ -6327,7 +6445,7 @@ app.get('/audio', async (req, res) => {
 
 // API para obter todos os Catálogos 
 app.get('/all', async (req, res) => {
-const { username, key } = req.query;
+  const { username, key } = req.query;
   const users = Person
   const user = await User.findOne({ username, key });
   if (!user) {
@@ -6339,17 +6457,17 @@ const { username, key } = req.query;
   //diminuirSaldo(username);
   adicionarSaldo(username)
   if (user.saldo > 1) {
-   try {
-    const dados = await User.findOne({ username });
-    const userId = dados._id;
-    const mangas = await Manga.find({ userId: userId });
-    res.json(mangas)
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    try {
+      const dados = await User.findOne({ username });
+      const userId = dados._id;
+      const mangas = await Manga.find({ userId: userId });
+      res.json(mangas)
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  } else {
+    return res.sendFile(htmlPath);
   }
-} else {
-  return res.sendFile(htmlPath);
-}
 });
 
 // pega um capítulo específico 
