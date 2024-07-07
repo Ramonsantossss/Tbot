@@ -6584,20 +6584,35 @@ app.get('/catalogo/:mangaId/chapters/:chapterNumber', async (req, res) => {
 });
 
 // pega os capítulos de um catalogo específico 
-app.get('/catalogo/:mangaId', async (req, res) => {
-  const { mangaId } = req.params;
+app.get('/catalogo/:mangaId/chapters/:chapterNumber', async (req, res) => {
+  const { mangaId, chapterNumber } = req.params;
   try {
     const manga = await Manga.findById(mangaId);
     if (!manga) {
       return res.status(404).json({ error: 'Mangá não encontrado' });
     }
-    const selectedChapter = manga.chapters
-    res.json(selectedChapter);
+    const selectedChapter = manga.chapters.find(chapter => chapter.chapterNumber == chapterNumber);
+    if (!selectedChapter) {
+      return res.status(404).json({ error: 'Capítulo não encontrado' });
+    }
+
+    // Mapeia as URLs das imagens para o novo formato
+    const baseUrl = 'https://anikit-apis.onrender.com/imagem';
+    const mappedImages = selectedChapter.images.map((_, index) => `${baseUrl}/${mangaId}/chapters/${chapterNumber}/${index}`);
+
+    // Cria um novo objeto para incluir as URLs mapeadas
+    const responseChapter = {
+      ...selectedChapter,
+      images: mappedImages
+    };
+
+    res.json(responseChapter);
   } catch (error) {
-    console.error('Erro ao buscar os dados dos capítulos:', error);
+    console.error('Erro ao buscar os dados do capítulo:', error);
     return res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
+
 
 // pega uma foto do capítulo específico 
 app.get('/imagem/:mangaId/chapters/:chapterNumber/:fotoNumber', async (req, res) => {
