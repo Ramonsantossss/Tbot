@@ -6370,8 +6370,10 @@ app.get('/catalogo/:mangaId/chapters/:chapterNumber', async (req, res) => {
 
     // Cria um novo objeto para incluir as URLs mapeadas
     const responseChapter = {
-      ...selectedChapter,
-      images: mappedImages
+      chapterNumber: selectedChapter.chapterNumber,
+      title: selectedChapter.title,
+      images: mappedImages, 
+      _id: selectedChapter._id
     };
 
     res.json(responseChapter);
