@@ -6576,20 +6576,7 @@ app.get('/catalogo/:mangaId/chapters/:chapterNumber', async (req, res) => {
     if (!selectedChapter) {
       return res.status(404).json({ error: 'Capítulo não encontrado' });
     }
-
-    // Mapeia as URLs das imagens para o novo formato
-    const baseUrl = 'https://anikit-apis.onrender.com/imagem';
-    const mappedImages = selectedChapter.images.map((_, index) => `${baseUrl}/${mangaId}/chapters/${chapterNumber}/${index}`);
-
-    // Cria um novo objeto para incluir as URLs mapeadas
-    const responseChapter = {
-      chapterNumber: selectedChapter.chapterNumber,
-      title: selectedChapter.title,
-      images: mappedImages, 
-      _id: selectedChapter._id
-    };
-
-    res.json(responseChapter);
+    res.json(selectedChapter);
   } catch (error) {
     console.error('Erro ao buscar os dados do capítulo:', error);
     return res.status(500).json({ error: 'Erro interno do servidor' });
