@@ -5462,57 +5462,7 @@ app.get('/play-store-search', async (req, res) => {
   }
 });
 
-// Rota para gruposZap
-app.get('/grupos-zap', async (req, res) => {
-  const { username, key } = req.query;
-  const users = Person
-  const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.sendFile(htmlPath);
-  }
-  if (user.isBaned === true) {
-    return res.sendFile(htmlPath);
-  }
-  //diminuirSaldo(username);
-  adicionarSaldo(username)
-  if (user.saldo > 1) {
 
-    const result = await gruposZap();
-    res.json(result);
-
-  } else {
-    return res.sendFile(htmlPath);
-  }
-});
-
-
-
-
-// Rota para xvideosDownloader
-app.get('/xvideos-downloader', async (req, res) => {
-  const { username, key } = req.query;
-  const users = Person
-  const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.sendFile(htmlPath);
-  }
-  if (user.isBaned === true) {
-    return res.sendFile(htmlPath);
-  }
-  //diminuirSaldo(username);
-  adicionarSaldo(username)
-  if (user.saldo > 1) {
-
-    const url = req.query.url;
-    const result = await xvideosDownloader(url);
-    res.json(result);
-
-  } else {
-    return res.sendFile(htmlPath);
-  }
-});
-
-// Rota para fraseAmor
 app.get('/frase-amor', async (req, res) => {
   const { username, key } = req.query;
   const users = Person
@@ -5528,29 +5478,6 @@ app.get('/frase-amor', async (req, res) => {
   if (user.saldo > 1) {
 
     const result = await fraseAmor();
-    res.json(result);
-
-  } else {
-    return res.sendFile(htmlPath);
-  }
-});
-
-// Rota para iFunny
-app.get('/ifunny', async (req, res) => {
-  const { username, key } = req.query;
-  const users = Person
-  const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.sendFile(htmlPath);
-  }
-  if (user.isBaned === true) {
-    return res.sendFile(htmlPath);
-  }
-  //diminuirSaldo(username);
-  adicionarSaldo(username)
-  if (user.saldo > 1) {
-
-    const result = await iFunny();
     res.json(result);
 
   } else {
@@ -5574,52 +5501,6 @@ app.get('/frases-pensador', async (req, res) => {
   if (user.saldo > 1) {
 
     const result = await frasesPensador();
-    res.json(result);
-
-  } else {
-    return res.sendFile(htmlPath);
-  }
-});
-
-// Rota para wallpaper2
-app.get('/wallpaper2', async (req, res) => {
-  const { username, key } = req.query;
-  const users = Person
-  const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.sendFile(htmlPath);
-  }
-  if (user.isBaned === true) {
-    return res.sendFile(htmlPath);
-  }
-  //diminuirSaldo(username);
-  adicionarSaldo(username)
-  if (user.saldo > 1) {
-
-    const result = await wallpaper2();
-    res.json(result);
-
-  } else {
-    return res.sendFile(htmlPath);
-  }
-});
-
-// Rota para hentai
-app.get('/hentai', async (req, res) => {
-  const { username, key } = req.query;
-  const users = Person
-  const user = await User.findOne({ username, key });
-  if (!user) {
-    return res.sendFile(htmlPath);
-  }
-  if (user.isBaned === true) {
-    return res.sendFile(htmlPath);
-  }
-  //diminuirSaldo(username);
-  adicionarSaldo(username)
-  if (user.saldo > 1) {
-
-    const result = await hentai();
     res.json(result);
 
   } else {
