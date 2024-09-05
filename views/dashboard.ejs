@@ -20,13 +20,17 @@
         }
 
         .navbar {
-            background: rgba(0, 0, 0, 0.6);
+            background: rgba(0, 0, 0, 9);
             padding: 1px;
             text-align: center;
             box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.2);
             color: limegreen;
         }
-
+        
+        a {
+        color: limegreen;
+        }
+        
         .content {
             padding: 20px;
             margin: 0 auto;
@@ -50,7 +54,7 @@
         }
 
         .card {
-    background: rgba(0, 0, 0, 0.6);
+    background: rgba(0, 0, 0, 9);
     padding: 20px;
     border-radius: 10px;
     flex: 1 1 calc(25% - 20px);
@@ -90,7 +94,7 @@
             bottom: 0;
             left: 0;
             width: 100%;
-            background: rgba(0, 0, 0, 0.6);
+            background: rgba(0, 0, 0, 9);
             color: #F5F5F5;
             text-align: center;
             box-shadow: 0px -5px 10px rgba(0, 0, 0, 0.2);
@@ -136,7 +140,7 @@
         }
 
         .txt {
-            background: rgba(0, 0, 0, 0.6);
+            background: rgba(0, 0, 0, 9);
             padding: 10px;
             border-radius: 10px;
         }
@@ -195,6 +199,88 @@
         .painel {
           color: limegreen;
         }
+
+/* Estilo para a seção de usuários mais ativos */
+.tutotxt {
+    background: rgba(0, 0, 0, 0.7);
+    padding: 20px;
+    border-radius: 6px;
+    color: #F5F5F5;
+    margin-bottom: 20px;
+}
+
+.tutotxt h1 {
+    text-align: center;
+    font-size: 1.4em;
+    color: #31c71a;
+    margin-bottom: 10px;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    border-radius: 6px;
+    transition: background-color 0.2s ease;
+    width: 100%;
+    max-width: 600px;
+    margin-bottom: 10px;
+}
+
+.user-info:hover {
+    background-color: rgba(0, 0, 0, 0.8);
+}
+
+.user-photo {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 10px;
+    border: 2px solid #31c71a;
+}
+
+.user-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.user-name {
+    font-size: 1em;
+    color: #F5F5F5;
+}
+
+.user-details small {
+    font-size: 0.75em;
+    color: #31c71a;
+    margin-bottom: 3px;
+}
+
+.premium-badge {
+    font-size: 0.8em;
+    color: #31c71a;
+    font-weight: bold;
+    margin-top: 3px;
+}
+
+.regular-badge {
+    font-size: 0.8em;
+    color: #888;
+    margin-top: 3px;
+}
+
+.verp {
+    text-decoration: none;
+    color: inherit;
+}
+
+hr {
+    border: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    width: 100%;
+    max-width: 600px;
+    margin: 10px 0;
+}
+
     </style>
 </head>
 <body>
@@ -206,11 +292,12 @@
     <div id="mySidebar" class="sidebar">
         <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
         <hr>
-        <a href="#">Home</a>
-        <a href="#">Perfil</a>
-        <a href="#">Configurações</a>
+        <% if (user.isAdm) { %>
+        <a href="/admin">Configurações</a>
+        <% } else { %>
+        <% } %>
         <a href="#">Ajuda</a>
-        <a href="#">Sair</a>
+        <a href="/login">Sair</a>
     </div>
 
     <div class="content">
@@ -251,10 +338,10 @@
                 <i class="fas fa-wallet"></i>
                 <div>
                     <h3>Saldo</h3>
-                    <p>♧ 1,200.00</p>
+                    <p>♧ <%= user.saldo %></p>
                 </div>
             </div>
-            <% if (!user.isAdm) { %>
+            <% if (user.isAdm) { %>
               <!-- ADM -->
             <div class="card">
                 <i class="fas fa-cog"></i>
@@ -263,13 +350,14 @@
                     <p>Use a nova opção que apareceu no menu lateral! </p>
                 </div>
             </div>
+            <% } else { %>
             <% } %>
               <!-- KEY -->
             <div class="card">
                <i class="fas fa-key"></i>
                <div>
                  <h3>Apikey/Chave</h3>
-                 <p>Veja seus prêmios acumulados!</p>
+                 <p><%= user.key %></p>
                </div>
             </div>
               <!--Novidades-->
@@ -283,13 +371,40 @@
         </div>
     </div>
 
-    <div class="content">
-        <div class="cards-container2">
-            <div class="txt">
-                <img src="https://telegra.ph/file/6cfe04dbe1c7adba875b5.jpg" alt="foto" />
+<div class="content">
+  <!-- CONTEÚDO DA PÁGINA -->
+  <div class="tutotxt"><br>
+    <h1>Top 7 Usuários Mais Ativos</h1>
+    <div class="tutotxtt">
+      <center>
+        <% topUsers.sort((a, b) => b.total - a.total).forEach(function(user) { %><br>
+        <a class="verp" href="/ver/<%= user.username %>">
+          <div class="user-info">
+            <img class="user-photo" src="<%= user.ft %>" alt="Foto do Usuário">
+            <div class="user-details">
+              <small>Level <%= user.total %></small>
+              <div class="user-name">@<%= user.username %></div>
+              <% if (user.isAdm === true) { %>
+                <span class="premium-badge">ADMINISTRADOR</span>
+              <% } else { %>
+              <% if (user.isPremium === true) { %>
+                <span class="premium-badge">Premium</span>
+              <% } else { %>
+                <span class="regular-badge">Comum</span>
+              <% } %>
+              
+              <% } %>
             </div>
-        </div>
+          </div>
+        </a>
+        <hr><br>
+        <% }); %>
+      </center>
     </div>
+  </div>
+  <!-- FIM DO CONTEÚDO DA PÁGINA -->
+</div>
+
 
     <br>
     <br>
@@ -299,10 +414,22 @@
     <footer>
         <div class="footer-buttons">
             <button class="round-button"><i class="fas fa-bars"onclick="openNav()" ></i></button>
+            
             <button class="round-button"><i class="fas fa-heart"></i></button>
+            
             <button class="round-button"><i class="fas fa-home"></i></button>
-            <button class="round-button"><i class="fas fa-envelope"></i></button>
-            <button class="round-button"><i class="fas fa-cog"></i></button>
+            
+            <button class="round-button">
+            <a href="/foto">
+            <i class="fa fa-cloud-upload"></i>
+            </a>
+            </button>
+            
+            <button class="round-button">
+            <a href="/myperfil">
+            <i class="fas fa-cog"></i>
+            </a>
+            </button>
         </div>
     </footer>
 
