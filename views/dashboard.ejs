@@ -216,29 +216,7 @@
     <div class="content">
         <h1 class="painel">PAINEL:</h1>
         <div class="cards-container">
-        <% if (!user.isBaned===true) { %>
-
-          <% if (!user.isPremium===true) { %>
-              <!-- NICK DO USUARIO -->
-            <div class="card">
-                <i class="fas fa-user"></i>
-                <div>
-                    <h3>Usuário</h3>
-                    <p>@<%= user.username %></p>
-                </div>
-            </div>
-            <% } else { %>
-              <!--usuario premium-->
-            <div class="card">
-              <i class="fa fa-user-plus"></i>
-            <div>
-              <h3>Usuários Plus</h3>
-               <p>@<%= user.username %> Agora você pode personalizar sua key!</p>
-            </div>
-            </div>
-              <% } %>
-
-                <% } else { %>
+        <% if (user.isBaned===true) { %>
               <!--  BLOQUEADO-->
             <div class="card">
                 <i class="fas fa-lock"></i>
@@ -247,6 +225,27 @@
                     <p>Você esta impossibilitado(a) de utilizar o site no momento</p>
                 </div>
             </div>
+          <% } %>
+          <% if (user.isPremium===true) { %>
+              <!--usuario premium-->
+            <div class="card">
+              <i class="fa fa-crown"></i>
+            <div>
+              <h3>Usuários Plus</h3>
+               <p>@<%= user.username %> Agora você pode personalizar sua key!</p>
+            </div>
+            </div>
+            <% } else { %>
+              <!-- NICK DO USUARIO -->
+            <div class="card">
+                <i class="fas fa-user"></i>
+                <div>
+                    <h3>Usuário</h3>
+                    <p>@<%= user.username %></p>
+                </div>
+            </div>
+              <% } %>
+
               <!-- SALDO -->
             <div class="card">
                 <i class="fas fa-wallet"></i>
@@ -255,14 +254,16 @@
                     <p>♧ 1,200.00</p>
                 </div>
             </div>
+            <% if (!user.isAdm) { %>
               <!-- ADM -->
             <div class="card">
-                <i class="fas fa-crown"></i>
+                <i class="fas fa-cog"></i>
                 <div>
                     <h3>Administração</h3>
                     <p>Use a nova opção que apareceu no menu lateral! </p>
                 </div>
             </div>
+            <% } %>
               <!-- KEY -->
             <div class="card">
                <i class="fas fa-key"></i>
