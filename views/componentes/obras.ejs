@@ -1,1 +1,25 @@
-
+<div class="container">
+  <div class="titulo">
+    <div class="barrinha"></div>
+    <h3 class="ladoBarrinha">Seus Uploads</h3>
+  </div>
+  
+  <% if (mangas.length > 0) { %> <!-- Verifica se há algum upload -->
+    <div class="carousel">
+      <% mangas.slice().reverse().forEach(manga => { %> <!-- Exibe na ordem inversa -->
+        <div class="conteudo" key="<%= manga._id %>">
+          <a href="/foto/<%= manga._id %>">
+            <li class="li">
+              <img class="img" src="<%= manga.coverUrl %>" alt="<%= manga.name %>">
+              <div class="name">
+                <span><%= manga.name %></span>
+              </div>
+            </li>
+          </a>
+        </div>
+      <% }); %>
+    </div>
+  <% } else { %>
+    <p>Você ainda não fez nenhum upload.</p> <!-- Mensagem caso não haja uploads -->
+  <% } %>
+</div>

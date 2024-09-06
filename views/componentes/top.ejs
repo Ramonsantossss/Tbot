@@ -1,0 +1,33 @@
+<div class="content">
+  <!-- CONTEÚDO DA PÁGINA -->
+  <div class="tutotxt"><br>
+    <h1>Top 7 Usuários Mais Ativos</h1>
+    <div class="tutotxtt">
+      <center>
+        <% topUsers.sort((a, b) => b.total - a.total).forEach(function(user) { %><br>
+        <a class="verp" href="/ver/<%= user.username %>">
+          <div class="user-info">
+            <img class="user-photo" src="<%= user.ft %>" alt="Foto do Usuário">
+            <div class="user-details">
+              <small>Level <%= user.total %></small>
+              <div class="user-name">@<%= user.username %></div>
+              <% if (user.isAdm === true) { %>
+                <span class="premium-badge">ADMINISTRADOR</span>
+              <% } else { %>
+              <% if (user.isPremium === true) { %>
+                <span class="premium-badge">Premium</span>
+              <% } else { %>
+                <span class="regular-badge">Comum</span>
+              <% } %>
+              
+              <% } %>
+            </div>
+          </div>
+        </a>
+        <hr><br>
+        <% }); %>
+      </center>
+    </div>
+  </div>
+  <!-- FIM DO CONTEÚDO DA PÁGINA -->
+</div>
