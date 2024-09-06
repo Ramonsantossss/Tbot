@@ -1,7 +1,9 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>List</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Listagem de Mangás</title>
   <link rel="stylesheet" href="/css/styles.css">
   <style>
     * {
@@ -9,105 +11,124 @@
       padding: 0;
       box-sizing: border-box;
     }
-
     body {
-      background-color: black;
-      color: white;
       font-family: Arial, sans-serif;
-      margin: 20px;
+      background-color: #333; /* Cor de fundo do tema escuro */
+      color: #fff; /* Cor do texto para o tema escuro */
+      padding: 20px;
     }
-
     h1 {
       text-align: center;
-      font-size: 56px;
       margin-bottom: 20px;
-      color: #a29bfe; /* roxo */
+      color: #3498db; /* Cor do título principal */
     }
-
-    a {
-      color: #0984e3; /* azul */
-      text-decoration: none;
-    }
-
-    a:hover {
-      text-decoration: underline;
-    }
-
     .upload-link {
       display: block;
+      width: 200px;
+      margin: 0 auto;
       text-align: center;
+      padding: 10px;
+      background-color: #3498db; /* Cor do botão de upload */
+      color: #fff;
+      text-decoration: none;
+      border-radius: 5px;
       margin-bottom: 20px;
-      font-size: 40px;
-      background-color: #6c5ce7; /* roxo */
-      padding: 25px;
-      border-radius: 8px;
-      color: white;
     }
-
-    ul {
-      list-style: none;
-      padding: 0;
+    .upload-link:hover {
+      background-color: #2980b9; /* Cor do botão de upload (hover) */
     }
-
-    li {
-      background-color: #2d3436; /* cinza escuro */
-      margin: 10px 0;
-      padding: 15px;
-      border-radius: 10px;
+    .container {
+      margin-top: 20px;
+    }
+    .titulo {
+      width: 100%;
       display: flex;
       align-items: center;
-    }
-
-    .manga-item {
-      display: flex;
-      flex: 1;
-    }
-
-    .manga-item img {
-      max-width: 428px; /* Largura máxima */
-      max-height: 428px; /* Altura máxima */
-      object-fit: cover; /* Garante que a imagem mantenha a proporção e preencha o espaço */
-      border-radius: 5px;
-      margin-right: 20px; /* Espaço entre a imagem e o texto */
-    }
-
-    .manga-details {
-      flex: 1;
-    }
-
-    .manga-details h2 {
-      font-size: 24px;
       margin-bottom: 10px;
-      color: #dfe6e9; /* branco sujo */
     }
-
-    .manga-details p {
-      font-size: 16px; /* Reduzindo o tamanho da fonte */
-      margin-bottom: 5px;
+    .barrinha {
+      width: 30px;
+      height: 5px;
+      background-color: #3498db; /* Cor da barra do título */
+      margin-right: 10px;
+    }
+    .titulo h3 {
+      font-size: 1.5rem;
+      color: #3498db; /* Cor do título da seção */
+    }
+    .carousel {
+      display: flex;
+      overflow-x: auto;
+      gap: 10px;
+      padding-bottom: 10px;
+    }
+    .carousel::-webkit-scrollbar {
+      display: none;
+    }
+    .conteudo {
+      flex: 0 0 auto;
+      width: 135px; /* Ajuste o tamanho da largura da imagem */
+      position: relative;
       overflow: hidden;
-      word-wrap: break-word; /* Permitindo que as palavras quebrem a linha */
-      color: white;
+      border-radius: 5px;
+    }
+    .li {
+      background-color: #555; /* Cor de fundo do item da lista */
+      padding: 0;
+      position: relative;
+      overflow: hidden;
+      height: 200px; /* Ajuste o tamanho da altura da imagem */
+      border-radius: 5px;
+    }
+    .img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      position: absolute;
+      top: 0;
+      left: 0;
+      transition: transform 0.3s ease;
+    }
+    .name {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background-color: rgba(0, 0, 0, 0.7); /* Fundo semi-transparente para o título */
+      padding: 5px;
+      text-align: center;
+      z-index: 1;
+    }
+    .name span {
+      font-weight: bold;
+      color: #fff; /* Cor do nome do mangá */
+      font-size: 0.7rem; /* Ajuste o tamanho da fonte */
     }
   </style>
 </head>
 <body>
-  <h1>Uploads</h1>
+  <h1>Listagem de Mangás</h1>
   <a href="/foto/upload" class="upload-link">Upload de Novo Catálogo</a>
-  <ul>
-    <% mangas.forEach(manga => { %>
-      <li>
-        <a href="/foto/<%= manga._id %>">
-          <div class="manga-item">
-            <img src="<%= manga.coverUrl %>" alt="<%= manga.name %>">
-            <div class="manga-details">
-              <h2><%= manga.name %></h2>
-              <p><%= manga.description %></p>
-              <p>Tags: <%= manga.tags.join(', ') %></p>
-            </div>
-          </div>
-        </a>
-      </li>
-    <% }); %>
-  </ul>
+  
+  <div class="container">
+    <div class="titulo">
+      <div class="barrinha"></div>
+      <h3>Recentes</h3>
+    </div>
+    <div class="carousel">
+      <% mangas.forEach(manga => { %>
+        <div class="conteudo" key="<%= manga._id %>">
+          <a href="/foto/<%= manga._id %>">
+            <li class="li">
+              <img class="img" src="<%= manga.coverUrl %>" alt="<%= manga.name %>">
+              <div class="name">
+                <span><%= manga.name %></span>
+              </div>
+            </li>
+          </a>
+        </div>
+      <% }); %>
+    </div>
+  </div>
 </body>
 </html>

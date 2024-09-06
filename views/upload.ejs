@@ -1,101 +1,212 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
-  <title>Upload</title>
-  <link rel="stylesheet" href="/css/styles.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Upload de Obra</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background-color: #121212; /* Cor de fundo escura */
-      color: #fff; /* Cor do texto */
+      font-family: 'Roboto', sans-serif;
+      background-color: #121212;
+      color: #e0e0e0;
       margin: 0;
       padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
     }
 
     .container {
-      max-width: 90%; /* Largura máxima do conteúdo */
-      margin: 0 auto; /* Centralizar o conteúdo na página */
-      padding: 20px; /* Espaçamento interno */
+      background-color: #1e1e1e;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      width: 100%;
+      max-width: 600px;
+      padding: 30px;
+      box-sizing: border-box;
     }
 
     h1 {
-      font-size: 34px; /* Tamanho do título */
-      color: #6c5ce7; /* Cor do título */
-      margin-bottom: 20px; /* Espaçamento inferior */
+      font-size: 24px;
+      color: #6c5ce7;
+      text-align: center;
+      margin-bottom: 20px;
     }
 
     form {
-      background-color: #212121; /* Cor de fundo do formulário */
-      padding: 20px; /* Espaçamento interno */
-      border-radius: 10px; /* Bordas arredondadas */
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Sombra suave */
+      display: flex;
+      flex-direction: column;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
     }
 
     label {
-      font-size: 28px; /* Tamanho do texto */
-      display: block; /* Mostrar em bloco */
-      margin-bottom: 10px; /* Espaçamento inferior */
+      font-size: 14px;
+      margin-bottom: 8px;
+      display: block;
     }
 
     input[type="text"],
-    input[type="file"],
     textarea {
-      width: calc(100% - 40px); /* Largura do campo de entrada */
-      padding: 10px; /* Espaçamento interno */
-      margin-bottom: 15px; /* Espaçamento inferior */
-      border: 1px solid #333; /* Borda cinza */
-      border-radius: 5px; /* Bordas arredondadas */
-      font-size: 26px; /* Tamanho do texto */
-      background-color: #333; /* Cor de fundo */
-      color: #fff; /* Cor do texto */
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #333;
+      border-radius: 4px;
+      font-size: 14px;
+      background-color: #333;
+      color: #e0e0e0;
+      box-sizing: border-box;
+      margin-top: 5px;
+    }
+
+    .checkbox-group {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 10px;
+    }
+
+    .checkbox-group label {
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      margin-bottom: 0;
     }
 
     input[type="checkbox"] {
-      margin-right: 5px; /* Espaçamento direita */
+      margin-right: 10px;
     }
 
     button {
-      width: 100%; /* Largura total */
-      background-color: #6c5ce7; /* Cor de fundo do botão */
-      color: #fff; /* Cor do texto */
-      border: none; /* Sem borda */
-      border-radius: 5px; /* Bordas arredondadas */
-      padding: 10px; /* Espaçamento interno */
-      font-size: 28px; /* Tamanho do texto */
-      cursor: pointer; /* Cursor de ponteiro */
-      transition: background-color 0.3s; /* Transição suave */
+      padding: 12px;
+      background-color: #6c5ce7;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s;
     }
 
     button:hover {
-      background-color: #a29bfe; /* Cor de fundo do botão ao passar o mouse */
+      background-color: #5439a6;
+    }
+
+    .file-upload {
+      border: 2px dashed #6c5ce7;
+      border-radius: 4px;
+      position: relative;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    .file-upload:hover {
+      background-color: #1b1b1b;
+    }
+
+    .file-upload input[type="file"] {
+      position: absolute;
+      left: 0;
+      top: 0;
+      opacity: 0;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+    }
+
+    .file-upload span {
+      display: block;
+      margin-top: 10px;
+      font-size: 14px;
+      color: #e0e0e0;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>Upload de Catálogo</h1>
+    <h1>Upload de Obra</h1>
     <form action="/foto/upload" method="post" enctype="multipart/form-data">
-      <label for="name">Nome:</label>
-      <input type="text" id="name" name="name" required>
-      
-      <label for="description">Descrição:</label>
-      <textarea id="description" name="description" rows="4" required></textarea>
-      
-      <label>Tags:</label>
-      <div>
-        <input type="checkbox" id="SFW" name="tags" value="SFW">
-        <label for="romance">SFW</label>
+      <div class="form-group">
+        <label for="name">Nome:</label>
+        <input type="text" id="name" name="name" required>
       </div>
-      <div>
-        <input type="checkbox" id="NSFW" name="tags" value="NSFW">
-        <label for="full_color">NSFW</label>
+
+      <div class="form-group">
+        <label for="alt_titles">Títulos Alternativos:</label>
+        <textarea id="alt_titles" name="alt_titles" rows="2" placeholder="Separe os títulos por vírgula"></textarea>
       </div>
-      
-      <label for="cover">Capa do catálogo:</label>
-      <input type="file" id="cover" name="cover" required>
-      
+
+      <div class="form-group">
+        <label for="author">Autor:</label>
+        <input type="text" id="author" name="author" required>
+      </div>
+
+      <div class="form-group">
+        <label for="artist">Artista:</label>
+        <input type="text" id="artist" name="artist" required>
+      </div>
+
+      <div class="form-group">
+        <label for="description">Descrição:</label>
+        <textarea id="description" name="description" rows="4" required></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Tags:</label>
+        <div class="checkbox-group">
+          <label><input type="checkbox" id="action" name="tags" value="action"> Action</label>
+          <label><input type="checkbox" id="adventure" name="tags" value="adventure"> Adventure</label>
+          <label><input type="checkbox" id="comedy" name="tags" value="comedy"> Comedy</label>
+          <label><input type="checkbox" id="drama" name="tags" value="drama"> Drama</label>
+          <label><input type="checkbox" id="fantasy" name="tags" value="fantasy"> Fantasy</label>
+          <label><input type="checkbox" id="horror" name="tags" value="horror"> Horror</label>
+          <label><input type="checkbox" id="isekai" name="tags" value="isekai"> Isekai</label>
+          <label><input type="checkbox" id="mystery" name="tags" value="mystery"> Mystery</label>
+          <label><input type="checkbox" id="romance" name="tags" value="romance"> Romance</label>
+          <label><input type="checkbox" id="sci-fi" name="tags" value="sci-fi"> Sci-Fi</label>
+          <label><input type="checkbox" id="slice_of_life" name="tags" value="slice_of_life"> Slice of Life</label>
+          <label><input type="checkbox" id="sports" name="tags" value="sports"> Sports</label>
+          <label><input type="checkbox" id="supernatural" name="tags" value="supernatural"> Supernatural</label>
+          <label><input type="checkbox" id="tragedy" name="tags" value="tragedy"> Tragedy</label>
+          <label><input type="checkbox" id="martial_arts" name="tags" value="martial_arts"> Martial Arts</label>
+          <label><input type="checkbox" id="mecha" name="tags" value="mecha"> Mecha</label>
+          <label><input type="checkbox" id="psychological" name="tags" value="psychological"> Psychological</label>
+          <label><input type="checkbox" id="historical" name="tags" value="historical"> Historical</label>
+          <label><input type="checkbox" id="harem" name="tags" value="harem"> Harem</label>
+          <label><input type="checkbox" id="yaoi" name="tags" value="yaoi"> Yaoi</label>
+          <label><input type="checkbox" id="yuri" name="tags" value="yuri"> Yuri</label>
+          <label><input type="checkbox" id="gender_bender" name="tags" value="gender_bender"> Gender Bender</label>
+          <label><input type="checkbox" id="shoujo" name="tags" value="shoujo"> Shoujo</label>
+          <label><input type="checkbox" id="shounen" name="tags" value="shounen"> Shounen</label>
+          <label><input type="checkbox" id="seinen" name="tags" value="seinen"> Seinen</label>
+          <label><input type="checkbox" id="josei" name="tags" value="josei"> Josei</label>
+          <label><input type="checkbox" id="doujinshi" name="tags" value="doujinshi"> Doujinshi</label>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="cover">Capa do catálogo:</label>
+        <div class="file-upload">
+          Arraste e solte o arquivo aqui ou clique para selecionar
+          <input type="file" id="cover" name="cover" required>
+          <span id="file-name"></span>
+        </div>
+      </div>
+
       <button type="submit">Upload</button>
     </form>
   </div>
+
+  <script>
+    document.getElementById('cover').addEventListener('change', function(event) {
+      var fileName = event.target.files[0].name;
+      document.getElementById('file-name').textContent = fileName;
+    });
+  </script>
 </body>
 </html>
