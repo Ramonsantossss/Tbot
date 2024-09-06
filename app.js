@@ -247,22 +247,22 @@ function ensureAuthenticated(req, res, next) {
 //============\\
 app.get('/', async (req, res) => {
   const user = req.session.user;
-
+  
   if (user) {
-    const { username, password, verificationCode, isVerified } = user;
-    if (isVerified === true) {
+      const { username, password, verificationCode, isVerified } = user;
       const userDb = await User.findOne({ username, password });
+      const userId = userDb._id;
+      const mangas = await Manga.find({ userId: userId });
       const users = userDb;
       const quantidadeRegistrados = await User.countDocuments();
       const topUsers = await User.find().sort({ total: -1 }).limit(7);
-      return res.render('dashboard', { user, userDb, users, topUsers, quantidade: quantidadeRegistrados });
-    } else {
-      return res.redirect('/verify');
-    }
+      return res.render('dashboard', { user, userDb, users, topUsers, quantidade: quantidadeRegistrados, mangas });
+
   } else {
     return res.redirect('/login');
   }
 });
+
 
 
 app.get('/home', async (req, res) => {
@@ -345,7 +345,7 @@ app.post('/register', async (req, res) => {
     const insta = "@clovermyt"
     const zap = "https://trevomangas.shop/"
     const yt = "https://youtube.com/@clovermods"
-    const wallpaper = "https://telegra.ph/file/56fa53ec05377a51311cc.jpg"
+    const wallpaper = "https://telegra.ph/file/0f84f060434e1e4395e13.jpg"
 
     const motivo = `Ola ${username} Seu código de verificação é: ${verificationCode}`
     const texto = "código de verificação"
@@ -364,9 +364,9 @@ app.post('/register', async (req, res) => {
     const user = new User({ username, password, email, key, saldo, total, ft, zap, insta, yt, wallpaper, verificationCode, isVerified: false, isPremium: false, isAdm: false, isBaned: false });
 
     await user.save();
-    console.log(user)
+    //console.log(user)
     req.session.user = user;
-    res.redirect('/verify');
+    res.redirect('/');
 
   } catch (error) {
     console.error(error);
