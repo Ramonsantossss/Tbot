@@ -1,24 +1,117 @@
-    <div class="navbar">
-        <h2>Trevo Community</h2>
-    </div>
+<div class="navbar">
+  <h2>Trevo Community</h2>
+</div>
 
 
-    <div id="mySidebar" class="sidebar">
+
+<div id="mySidebar" class="sidebar">
         <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
         <hr>
-        <details class="apis">
-        <summary>Download</summary>
-        <a href="#">Play MP3</a>
-        <a href="#">Play MP4</a>
-        <a href="#">Ytmp3</a>
-        <a href="#">Ytmp4</a>
-        </details>
+<details class="apis">
+  <summary>UPLOADS</summary>
+  <a href="/all?key=<%= userDb.key %>&username=<%= user.username %>" target="_blank">Todas as Imagens</a>
+</details>
+
+<details class="apis">
+  <summary>DOWNLOADER</summary>
+  <a href="/download/tiktok?url=https://vm.tiktok.com/ZM6QerVq7/&key=<%= userDb.key %>&username=<%= user.username %>" target="_blank">TkTok video & Audio</a>
+  <a href="/download/ytmp3?url=https://www.youtube.com/watch?v=7AlAYttGnAg&key=<%= userDb.key %>&username=<%= user.username %>" target="_blank">Youtube Audio</a>
+  <a href="/download/ytmp4?url=https://www.youtube.com/watch?v=7AlAYttGnAg&key=<%= userDb.key %>&username=<%= user.username %>" target="_blank">Youtube Video</a>
+  <a href="/yt/playmp3?query=vmz baka&key=<%= userDb.key %>&username=<%= user.username %>" target="_blank">Play MP3</a>
+  <a href="/yt/playmp4?query=vmz baka&key=<%= userDb.key %>&username=<%= user.username %>" target="_blank">Play MP4</a>
+  <a href="/download/pinterest?query=naruto&key=<%= userDb.key %>&username=<%= user.username %>" target="_blank">Pinterest</a>
+</details>
+
+<details class="apis">
+  <summary>PESQUISAS</summary>
+  <a href="/googlefoto?q=trevo&key=<%= userDb.key %>&username=<%= user.username %>" target="_blank">Google Fotos</a>
+  <a href="/play-store-search?appName=WHATSAPP&key=<%= userDb.key %>&username=<%= user.username %>" target="_blank">Play Store</a>
+</details>
+
+<details class="apis">
+  <summary>BANERS/CANVAS</summary>
+  <a href="/welcome?nick=clover&background=https://i.ibb.co/4YBNyvP/images-76.jpg&guildName=clover grupo&guildIcon=https://telegra.ph/file/87fe9fdbf08280460e531.jpg&memberCount=233&avatar=https://i.ibb.co/1s8T3sY/48f7ce63c7aa.jpg&key=<%= userDb.key %>&username=<%= user.username %>" target="_blank">Welcome</a>
+  <a href="/goodbye?nick=clover&background=https://i.ibb.co/4YBNyvP/images-76.jpg&guildName=clover grupo&guildIcon=https://telegra.ph/file/87fe9fdbf08280460e531.jpg&memberCount=233&avatar=https://i.ibb.co/1s8T3sY/48f7ce63c7aa.jpg0&key=<%= userDb.key %>&username=<%= user.username %>" target="_blank">Goodbye</a>
+  <a href="/welcome2?key=<%= userDb.key %>&username=<%= user.username %>&nick=Grupo AniKit&background=https://marketplace.canva.com/EAFKIsxfWjI/1/0/1600w/canva-papel-de-parede-coração-gradiente-bege-rosa-e-azul-eS21LuYsgUs.jpg&perfil=https://telegra.ph/file/87fe9fdbf08280460e531.jpg&grupo=https://telegra.ph/file/87fe9fdbf08280460e531.jpg&numero=#55759865986347" target="_blank">Welcome 2</a>
+  <a href="/goodbye2?key=<%= userDb.key %>&username=<%= user.username %>&nick=Grupo AniKit&background=https://marketplace.canva.com/EAFKIsxfWjI/1/0/1600w/canva-papel-de-parede-coração-gradiente-bege-rosa-e-azul-eS21LuYsgUs.jpg&perfil=https://telegra.ph/file/87fe9fdbf08280460e531.jpg&grupo=https://telegra.ph/file/87fe9fdbf08280460e531.jpg&numero=#55759865986347" target="_blank">Goodbye 2</a>
+  <a href="/levelup?avatar=https://i.ibb.co/1s8T3sY/48f7ce63c7aa.jpg0&key=<%= userDb.key %>&username=<%= user.username %>" target="_blank">Level Up</a>
+  <a href="/cardgame?foto=https://i.pinimg.com/550x/1a/46/23/1a4623024e77ca419b01f00c12cd245d.jpg&atk=33&def=44&nick=Clover Mods&legenda=Um mago de grande poder&key=<%= userDb.key %>&username=<%= user.username %>&texto=anikit" target="_blank">Card Game</a>
+  <a href="/ranking?nick=clover&currxp=100&needxp=1000&level=2&rank=https://i.ibb.co/Wn9cvnv/FABLED.png&avatar=https://i.pinimg.com/originals/6a/6b/26/6a6b2619c79441b69fd716053613c6ec.png&background=https://telegra.ph/file/e28fabcd7e856b4bcef0a.jpg&key=<%= userDb.key %>&username=<%= user.username %>" target="_blank">Ranking</a>
+  <a href="/music-card1?key=<%= user.key %>&username=<%= user.username %>&thumbnail=https://telegra.ph/file/87fe9fdbf08280460e531.jpg&backgroundcolor=070707&autor=Clover%20%40clovermyt&nome=CloverM&starttime=0%3A02&endtime=2%3A56" target="_blank">Card Musica 1</a>
+  <a href="/music-card2?key=<%= user.key %>&username=<%= user.username %>&thumbnail=https://telegra.ph/file/87fe9fdbf08280460e531.jpg&backgroundcolor=070707&autor=Clover%20%40clovermyt&nome=CloverM&starttime=0%3A02&endtime=2%3A56" target="_blank">Card Musica 2</a>
+  <a href="/music-card3?key=<%= user.key %>&username=<%= user.username %>&thumbnail=https://telegra.ph/file/87fe9fdbf08280460e531.jpg&backgroundcolor=070707&autor=Clover%20%40clovermyt&nome=CloverM" target="_blank">Card Musica 3</a>
+  <a href="/music-card4?key=<%= user.key %>&username=<%= user.username %>&thumbnail=https://telegra.ph/file/87fe9fdbf08280460e531.jpg&backgroundcolor=070707" target="_blank">Card Musica 4</a>
+</details>
+
+<details class="apis">
+  <summary>ALEATORIAS</summary>
+  <a href="/18/travazap?username=<%= user.username %>&key=<%= user.key %>" target="_blank">Foto pra perfil</a>
+  <a href="/frase-amor?key=<%= userDb.key %>&username=<%= user.username %>" target="_blank">Frase Amor</a>
+  <a href="/frases-pensador?key=<%= userDb.key %>&username=<%= user.username %>" target="_blank">Frases Pensador</a>
+  <a href="/wallpaper2?key=<%= userDb.key %>&username=<%= user.username %>" target="_blank">Wallpaper2</a>
+  <a href="/styletext?text=some_text&key=<%= userDb.key %>&username=<%= user.username %>" target="_blank">Style Text</a>
+</details>
+
+<details class="apis">
+  <summary>WALLPAPER</summary>
+  <a href="/wallpaper/satanic?key=<%= userDb.key %>&username=<%= user.username %>" target="_blank">Wallpaper Satanic</a>
+  <a href="/wallpaper/cyberspace?key=<%= userDb.key %>&username=<%= user.username %>" target="_blank">Wallpaper Cyberspace</a>
+  <a href="/wallpaper/gaming?key=<%= userDb.key %>&username=<%= user.username %>" target="_blank">Wallpaper Gamer</a>
+  <a href="/wallpaper/wallpapertec?key=<%= userDb.key %>&username=<%= user.username %>" target="_blank">Wallpaper Tecnológico</a>
+  <a href="/wallpaper/ppcouple?key=<%= userDb.key %>&username=<%= user.username %>" target="_blank">PPcouple</a>
+  <a href="/wallpaper/pubg?key=<%= userDb.key %>&username=<%= user.username %>" target="_blank">Wallpaper PUBG</a>
+  <a href="/wallpaper/katana?key=<%= userDb.key %>&username=<%= user.username %>" target="_blank">Wallpaper Katana</a>
+  <a href="/wallpaper/anime1?key=<%= userDb.key %>&username=<%= user.username %>" target="_blank">Wallpaper Anime 1</a>
+  <a href="/wallpaper/anime2?key=<%= userDb.key %>&username=<%= user.username %>" target="_blank">Wallpaper Anime 2</a>
+  <a href="/wallpaper/anime3?key=<%= userDb.key %>&username=<%= user.username %>" target="_blank">Wallpaper Anime 3</a>
+</details>
+
+<details class="apis">
+  <summary>SFW</summary>
+        <a href="/nime/cosplay?key=<%= userDb.key %>&username=<%= user.username %>">cosplay</a>
+        <a href="/nime/waifu?key=<%= userDb.key %>&username=<%= user.username %>">waifu</a>
+        <a href="/nime/waifu2?key=<%= userDb.key %>&username=<%= user.username %>">waifu2</a>
+        <a href="/nime/shota?key=<%= userDb.key %>&username=<%= user.username %>">shota</a>
+        <a href="/nime/loli?key=<%= userDb.key %>&username=<%= user.username %>">loli</a>
+        <a href="/nime/yotsuba?key=<%= userDb.key %>&username=<%= user.username %>">yotsuba</a>
+        <a href="/nime/shinomiya?key=<%= userDb.key %>&username=<%= user.username %>">shinomiya</a>
+        <a href="/nime/yumeko?key=<%= userDb.key %>&username=<%= user.username %>">yumeko</a>
+        <a href="/nime/tejina?key=<%= userDb.key %>&username=<%= user.username %>">tejina</a>
+        <a href="/nime/chiho?key=<%= userDb.key %>&username=<%= user.username %>">chiho</a>
+        <a href="/nime/shizuka?key=<%= userDb.key %>&username=<%= user.username %>">shizuka</a>
+        <a href="/nime/boruto?key=<%= userDb.key %>&username=<%= user.username %>">boruto</a>
+        <a href="/nime/kagori?key=<%= userDb.key %>&username=<%= user.username %>">kagori</a>
+        <a href="/nime/kaga?key=<%= userDb.key %>&username=<%= user.username %>">kaga</a>
+        <a href="/nime/kotori?key=<%= userDb.key %>&username=<%= user.username %>">kotori</a>
+        <a href="/nime/mikasa?key=<%= userDb.key %>&username=<%= user.username %>">mikasa</a>
+        <a href="/nime/akiyama?key=<%= userDb.key %>&username=<%= user.username %>">akiyama</a>
+        <a href="/nime/hinata?key=<%= userDb.key %>&username=<%= user.username %>">hinata</a>
+        <a href="/nime/minato?key=<%= userDb.key %>&username=<%= user.username %>">minato</a>
+        <a href="/nime/naruto?key=<%= userDb.key %>&username=<%= user.username %>">naruto</a>
+        <a href="/nime/nezuko?key=<%= userDb.key %>&username=<%= user.username %>">nezuko</a>
+        <a href="/nime/yuki?key=<%= userDb.key %>&username=<%= user.username %>">yuki</a>
+        <a href="/nime/hestia?key=<%= userDb.key %>&username=<%= user.username %>">hestia</a>
+        <a href="/nime/emilia?key=<%= userDb.key %>&username=<%= user.username %>">emilia</a>
+        <a href="/nime/itachi?key=<%= userDb.key %>&username=<%= user.username %>">itachi</a>
+        <a href="/nime/elaina?key=<%= userDb.key %>&username=<%= user.username %>">elaina</a>
+        <a href="/nime/madara?key=<%= userDb.key %>&username=<%= user.username %>">madara</a>
+        <a href="/nime/sasuke?key=<%= userDb.key %>&username=<%= user.username %>">sasuke</a>
+        <a href="/nime/deidara?key=<%= userDb.key %>&username=<%= user.username %>">deidara</a>
+        <a href="/nime/sakura?key=<%= userDb.key %>&username=<%= user.username %>">sakura</a>
+        <a href="/nime/tsunade?key=<%= userDb.key %>&username=<%= user.username %>">tsunade</a>
+</details>
+
         <hr>
         <% if (user.isAdm) { %>
+        <div class="apis">
         <a href="/admin">Administração</a>
+        </div>
         <% } else { %>
         <% } %>
+        <div class="apis">
         <a href="#">Ajuda</a>
+        </div>
+        <div class="apis">
         <a href="/login">Sair</a>
-
-    </div>
+        </div>
+</div>
