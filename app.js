@@ -59,6 +59,9 @@ var pin = require(__dirname + '/data/pinterest.js');
 const PORT = 8000;
 
 const app = express();
+const http = require('http').createServer(app)
+
+
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -6565,6 +6568,37 @@ app.get('/teste', async (req, res) => {
 });
 
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+
+// Rotas de chat //
+app.get('/chat-global', async(req, res) => {
+  const user = req.session.user;
+  if (user) {
+    const { username, password, verificationCode, isVerified } = user;
+    const userDb = await User.findOne({ username, password });
+    const userId = userDb._id;
+    const users = userDb;
+    
+    return res.render('chat', { user, userDb, users });
+    
+  } else {
+    return res.redirect('/login');
+  }
+})
+
+
+
+
+http.listen(PORT, () => {
+    console.log(`Listening on port ${PORT}`)
+})
+
+// Socket 
+const io = require('socket.io')(http)
+
+io.on('connection', (socket) => {
+    console.log('Connected...')
+    socket.on('message', (msg) => {
+        socket.broadcast.emit('message', msg)
+    })
+
+})
