@@ -1,3 +1,7 @@
+/* Geral CSS */
+*  {
+  font-family: Arial, sans-serif;
+}
 /* Navbar */
 .navbar {
   position: fixed;
@@ -382,3 +386,7 @@ hr {
 h1, h2, h3 {
   color: limegreen;
 }
+/* PARTE DO CHAT */
+
+/* FIM */
+
