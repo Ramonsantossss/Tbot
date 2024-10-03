@@ -243,6 +243,31 @@ function ensureAuthenticated(req, res, next) {
 }
 
 
+// Substitua pela sua chave de API do PostImages
+const POSTIMAGES_API_KEY = 'e65af70085c92ecd489405848217cda8';
+
+// Função para fazer upload no PostImages
+async function uploadImageToPostImages(imagePath) {
+  const form = new FormData();
+  form.append('file', fs.createReadStream(imagePath));
+  
+  try {
+    const response = await axios.post('https://api.postimages.org/1/upload', form, {
+      headers: {
+        ...form.getHeaders(),
+      },
+      params: {
+        key: POSTIMAGES_API_KEY,
+      },
+    });
+
+    return response.data.url;  // Retorna o link direto da imagem
+  } catch (error) {
+    throw new Error(`Erro ao fazer upload no PostImages: ${error.message}`);
+  }
+}
+
+
 // Rotas
 
 
@@ -619,30 +644,33 @@ app.get('/foto/upload', ensureAuthenticated, (req, res) => {
   res.render('upload');
 });
 
-// Rota para upload de mangá
+
+// Rota para upload de mangá (substituindo Telegra.ph)
 app.post('/foto/upload', multer({ dest: './uploads/' }).single('cover'), async (req, res) => {
   try {
     const { name, alt_titles, author, artist, description, tags } = req.body;
     const userId = req.session.user._id;
 
     if (!req.file) {
-      return res.status(400).json({ error: 'A capa do manga é obrigatória' });
+      return res.status(400).json({ error: 'A capa do mangá é obrigatória' });
     }
 
     const coverPath = req.file.path;
-    const formData = new FormData();
-    formData.append('file', fs.createReadStream(coverPath));
+    const coverUrl = await uploadImageToPostImages(coverPath);  // Faz upload no PostImages
 
-    const response = await axios.post('https://telegra.ph/upload', formData, {
-      headers: formData.getHeaders()
+    const newManga = new Manga({
+      name,
+      alt_titles: alt_titles.split(',').map(t => t.trim()),
+      author,
+      artist,
+      description,
+      tags,
+      coverUrl,
+      userId,
     });
-
-    const coverUrl = `https://telegra.ph${response.data[0].src}`;
-
-    const newManga = new Manga({ name, alt_titles: alt_titles.split(',').map(t => t.trim()), author, artist, description, tags, coverUrl, userId });
     await newManga.save();
 
-    fs.unlinkSync(coverPath);
+    fs.unlinkSync(coverPath);  // Remove o arquivo temporário após o upload
 
     res.redirect('/foto');
   } catch (error) {
@@ -650,17 +678,7 @@ app.post('/foto/upload', multer({ dest: './uploads/' }).single('cover'), async (
   }
 });
 
-app.get('/foto/:id', ensureAuthenticated, async (req, res) => {
-  try {
-    const manga = await Manga.findById(req.params.id);
-    const isOwner = manga.userId.toString() === req.session.user._id.toString();
-    res.render('manga', { manga, isOwner });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-
+// Rota para upload de capítulos com imagens (substituindo Telegra.ph)
 app.post('/foto/:id/uploadChapter', ensureAuthenticated, upload.array('images'), async (req, res) => {
   const user = req.session.user;
   const { username } = user;
@@ -692,35 +710,11 @@ app.post('/foto/:id/uploadChapter', ensureAuthenticated, upload.array('images'),
     if (req.files && req.files.length > 0) {
       const files = req.files;
 
-      // Função para fazer o upload em lotes
-      const uploadBatch = async (batch) => {
-        for (const file of batch) {
-          const formData = new FormData();
-          formData.append('file', fs.createReadStream(file.path));
-
-          try {
-            const response = await axios.post('https://telegra.ph/upload', formData, {
-              headers: formData.getHeaders()
-            });
-
-            if (response.data && response.data[0] && response.data[0].src) {
-              const imageUrl = `https://telegra.ph${response.data[0].src}`;
-              images.push(imageUrl);
-            } else {
-              throw new Error('Falha ao fazer o upload da imagem: resposta inválida');
-            }
-
-            fs.unlinkSync(file.path);
-          } catch (error) {
-            throw new Error(`Erro ao processar o upload de capítulo: ${error.message}`);
-          }
-        }
-      };
-
-      // Limitar o tamanho do lote para até 50 imagens
-      const batchSize = Math.min(files.length, 50);
-      const batch = files.slice(0, batchSize);
-      await uploadBatch(batch);
+      for (const file of files) {
+        const imageUrl = await uploadImageToPostImages(file.path);  // Upload de cada imagem no PostImages
+        images.push(imageUrl);
+        fs.unlinkSync(file.path);  // Remove o arquivo temporário após o upload
+      }
     }
 
     manga.chapters.push({ chapterNumber: chapterNum, title, images });
@@ -730,9 +724,64 @@ app.post('/foto/:id/uploadChapter', ensureAuthenticated, upload.array('images'),
   } catch (error) {
     res.status(500).json({ error: `Erro ao processar o upload de capítulo: ${error.message}` });
   }
-
 });
 
+
+app.get('/foto/:id', ensureAuthenticated, async (req, res) => {
+  try {
+    const manga = await Manga.findById(req.params.id);
+    const isOwner = manga.userId.toString() === req.session.user._id.toString();
+    res.render('manga', { manga, isOwner });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Rota para adicionar imagens a um capítulo existente
+app.post('/foto/:mangaId/chapters/:chapterId/uploadImages', ensureAuthenticated, upload.array('images', 50), async (req, res) => {
+  const user = req.session.user;
+  const { username } = user;
+
+  try {
+    const mangaId = req.params.mangaId;
+    const chapterId = req.params.chapterId;
+
+    const manga = await Manga.findById(mangaId);
+
+    if (!manga) {
+      return res.status(404).json({ error: 'Mangá não encontrado' });
+    }
+
+    if (manga.userId.toString() !== req.session.user._id.toString()) {
+      return res.status(403).json({ error: 'Você não tem permissão para adicionar imagens a este mangá' });
+    }
+
+    const chapter = manga.chapters.find(ch => ch._id.toString() === chapterId);
+
+    if (!chapter) {
+      return res.status(404).json({ error: 'Capítulo não encontrado' });
+    }
+
+    const images = [];
+    const files = req.files;
+
+    // Upload de imagens em lotes no PostImages
+    for (const file of files) {
+      const imageUrl = await uploadImageToPostImages(file.path);  // Faz o upload de cada imagem
+      images.push(imageUrl);
+      fs.unlinkSync(file.path);  // Remove o arquivo temporário após o upload
+    }
+
+    // Adiciona as novas imagens ao capítulo existente
+    chapter.images.push(...images);
+    adicionarSaldo(username);
+    await manga.save();
+
+    res.status(200).json({ message: 'Imagens adicionadas ao capítulo com sucesso' });
+  } catch (error) {
+    res.status(500).json({ error: `Erro ao processar o upload de imagens: ${error.message}` });
+  }
+});
 
 
 app.post('/foto/:mangaId/chapters/:chapterId/uploadImages', ensureAuthenticated, upload.array('images', 50), async (req, res) => {
