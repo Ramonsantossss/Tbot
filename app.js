@@ -247,26 +247,28 @@ function ensureAuthenticated(req, res, next) {
 const POSTIMAGES_API_KEY = 'e65af70085c92ecd489405848217cda8';
 
 // Função para fazer upload no PostImages
-async function uploadImageToPostImages(imagePath) {
-  const form = new FormData();
-  form.append('file', fs.createReadStream(imagePath));
-  
-  try {
-    const response = await axios.post('https://api.postimages.org/1/upload', form, {
-      headers: {
-        ...form.getHeaders(),
-      },
-      params: {
-        key: POSTIMAGES_API_KEY,
-      },
-    });
+async function uploadImageToPostImages(midia) {
+return new Promise(async (resolve, reject) => {
+    try {
+      let { ext } = await fromBuffer(midia);
+      let form = new FormData();
+      form.append('reqtype', 'fileupload');
+      form.append('fileToUpload', midia, 'tmp.' + ext);
 
-    return response.data.url;  // Retorna o link direto da imagem
-  } catch (error) {
-    throw new Error(`Erro ao fazer upload no PostImages: ${error.message}`);
-  }
+      await fetch('https://catbox.moe/user/api.php', {
+        method: 'POST',
+        body: form
+      })
+      .then(response => response.text())
+      .then(link => {
+        resolve(link.trim());
+      })
+      .catch(erro => reject(erro));
+    } catch (erro) {
+      return console.log(erro);
+    }
+  });
 }
-
 
 // Rotas
 
